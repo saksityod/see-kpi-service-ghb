@@ -1,0 +1,1441 @@
+Folder PATH listing
+Volume serial number is CA6A-8C0F
+C:.
++---app
+|   +---Console
+|   |   \---Commands
+|   +---Events
+|   +---Exceptions
+|   +---Http
+|   |   +---Controllers
+|   |   |   \---Auth
+|   |   +---Middleware
+|   |   \---Requests
+|   +---Jobs
+|   +---Listeners
+|   +---Policies
+|   \---Providers
++---bootstrap
+|   \---cache
++---config
++---database
+|   +---factories
+|   +---migrations
+|   \---seeds
++---public
+|   +---explain_files
+|   |   +---initial_validate
+|   |   |   +---107595
+|   |   |   \---undefined
+|   |   \---validate
+|   |       \---1
+|   \---test
++---resources
+|   +---assets
+|   |   \---sass
+|   +---lang
+|   |   \---en
+|   \---views
+|       +---errors
+|       \---vendor
++---storage
+|   +---app
+|   +---exports
+|   +---framework
+|   |   +---cache
+|   |   |   +---19
+|   |   |   |   \---d8
+|   |   |   +---1b
+|   |   |   |   \---9c
+|   |   |   +---1c
+|   |   |   |   \---f6
+|   |   |   +---3a
+|   |   |   |   \---49
+|   |   |   +---68
+|   |   |   |   \---ea
+|   |   |   +---9b
+|   |   |   |   \---a5
+|   |   |   +---aa
+|   |   |   |   \---17
+|   |   |   +---d2
+|   |   |   |   \---08
+|   |   |   +---d6
+|   |   |   |   \---40
+|   |   |   +---e1
+|   |   |   |   \---06
+|   |   |   +---e8
+|   |   |   |   \---31
+|   |   |   \---f8
+|   |   |       \---fc
+|   |   +---sessions
+|   |   \---views
+|   \---logs
++---tests
+\---vendor
+    +---adldap2
+    |   +---adldap2
+    |   |   +---docs
+    |   |   \---src
+    |   |       +---Auth
+    |   |       +---Connections
+    |   |       +---Contracts
+    |   |       |   +---Auth
+    |   |       |   +---Connections
+    |   |       |   \---Schemas
+    |   |       +---Exceptions
+    |   |       |   \---Auth
+    |   |       +---Models
+    |   |       |   \---Traits
+    |   |       +---Objects
+    |   |       +---Query
+    |   |       |   \---Bindings
+    |   |       +---Schemas
+    |   |       \---Search
+    |   \---adldap2-laravel
+    |       +---src
+    |       |   +---Commands
+    |       |   +---Config
+    |       |   +---Events
+    |       |   +---Exceptions
+    |       |   +---Facades
+    |       |   +---Middleware
+    |       |   \---Traits
+    |       \---tests
+    |           +---Handlers
+    |           \---Models
+    +---bin
+    +---classpreloader
+    |   \---classpreloader
+    |       \---src
+    |           +---Exceptions
+    |           \---Parser
+    +---composer
+    +---danielstjules
+    |   \---stringy
+    |       +---src
+    |       \---tests
+    +---dnoegel
+    |   \---php-xdg-base-dir
+    |       +---src
+    |       \---tests
+    +---doctrine
+    |   +---inflector
+    |   |   +---lib
+    |   |   |   \---Doctrine
+    |   |   |       \---Common
+    |   |   |           \---Inflector
+    |   |   \---tests
+    |   |       \---Doctrine
+    |   |           \---Tests
+    |   |               \---Common
+    |   |                   \---Inflector
+    |   \---instantiator
+    |       +---src
+    |       |   \---Doctrine
+    |       |       \---Instantiator
+    |       |           \---Exception
+    |       \---tests
+    |           \---DoctrineTest
+    |               +---InstantiatorPerformance
+    |               +---InstantiatorTest
+    |               |   \---Exception
+    |               \---InstantiatorTestAsset
+    +---fzaninotto
+    |   \---faker
+    |       +---src
+    |       |   \---Faker
+    |       |       +---Calculator
+    |       |       +---Guesser
+    |       |       +---ORM
+    |       |       |   +---CakePHP
+    |       |       |   +---Doctrine
+    |       |       |   +---Mandango
+    |       |       |   +---Propel
+    |       |       |   +---Propel2
+    |       |       |   \---Spot
+    |       |       \---Provider
+    |       |           +---ar_JO
+    |       |           +---ar_SA
+    |       |           +---at_AT
+    |       |           +---bg_BG
+    |       |           +---bn_BD
+    |       |           +---cs_CZ
+    |       |           +---da_DK
+    |       |           +---de_AT
+    |       |           +---de_CH
+    |       |           +---de_DE
+    |       |           +---el_GR
+    |       |           +---en_AU
+    |       |           +---en_CA
+    |       |           +---en_GB
+    |       |           +---en_IN
+    |       |           +---en_NZ
+    |       |           +---en_PH
+    |       |           +---en_SG
+    |       |           +---en_UG
+    |       |           +---en_US
+    |       |           +---en_ZA
+    |       |           +---es_AR
+    |       |           +---es_ES
+    |       |           +---es_PE
+    |       |           +---es_VE
+    |       |           +---fa_IR
+    |       |           +---fi_FI
+    |       |           +---fr_BE
+    |       |           +---fr_CA
+    |       |           +---fr_CH
+    |       |           +---fr_FR
+    |       |           +---he_IL
+    |       |           +---hr_HR
+    |       |           +---hu_HU
+    |       |           +---hy_AM
+    |       |           +---id_ID
+    |       |           +---is_IS
+    |       |           +---it_CH
+    |       |           +---it_IT
+    |       |           +---ja_JP
+    |       |           +---ka_GE
+    |       |           +---kk_KZ
+    |       |           +---ko_KR
+    |       |           +---lt_LT
+    |       |           +---lv_LV
+    |       |           +---me_ME
+    |       |           +---mn_MN
+    |       |           +---nb_NO
+    |       |           +---ne_NP
+    |       |           +---nl_BE
+    |       |           +---nl_NL
+    |       |           +---pl_PL
+    |       |           +---pt_BR
+    |       |           +---pt_PT
+    |       |           +---ro_MD
+    |       |           +---ro_RO
+    |       |           +---ru_RU
+    |       |           +---sk_SK
+    |       |           +---sl_SI
+    |       |           +---sr_Cyrl_RS
+    |       |           +---sr_Latn_RS
+    |       |           +---sr_RS
+    |       |           +---sv_SE
+    |       |           +---tr_TR
+    |       |           +---uk_UA
+    |       |           +---vi_VN
+    |       |           +---zh_CN
+    |       |           \---zh_TW
+    |       \---test
+    |           \---Faker
+    |               +---Calculator
+    |               \---Provider
+    |                   +---ar_JO
+    |                   +---ar_SA
+    |                   +---at_AT
+    |                   +---bg_BG
+    |                   +---bn_BD
+    |                   +---cs_CZ
+    |                   +---da_DK
+    |                   +---de_AT
+    |                   +---de_CH
+    |                   +---de_DE
+    |                   +---en_AU
+    |                   +---en_CA
+    |                   +---en_IN
+    |                   +---en_NZ
+    |                   +---en_PH
+    |                   +---en_SG
+    |                   +---en_UG
+    |                   +---en_US
+    |                   +---en_ZA
+    |                   +---es_ES
+    |                   +---fi_FI
+    |                   +---fr_BE
+    |                   +---fr_CH
+    |                   +---fr_FR
+    |                   +---id_ID
+    |                   +---it_CH
+    |                   +---it_IT
+    |                   +---ja_JP
+    |                   +---mn_MN
+    |                   +---nl_BE
+    |                   +---nl_NL
+    |                   +---pt_BR
+    |                   +---pt_PT
+    |                   +---ro_RO
+    |                   +---sv_SE
+    |                   +---uk_UA
+    |                   \---zh_TW
+    +---hamcrest
+    |   \---hamcrest-php
+    |       +---generator
+    |       |   \---parts
+    |       +---hamcrest
+    |       |   \---Hamcrest
+    |       |       +---Arrays
+    |       |       +---Collection
+    |       |       +---Core
+    |       |       +---Internal
+    |       |       +---Number
+    |       |       +---Text
+    |       |       +---Type
+    |       |       \---Xml
+    |       \---tests
+    |           \---Hamcrest
+    |               +---Array
+    |               +---Collection
+    |               +---Core
+    |               +---Number
+    |               +---Text
+    |               +---Type
+    |               \---Xml
+    +---jakub-onderka
+    |   +---php-console-color
+    |   |   +---src
+    |   |   |   \---JakubOnderka
+    |   |   |       \---PhpConsoleColor
+    |   |   \---tests
+    |   |       \---JakubOnderka
+    |   |           \---PhpConsoleColor
+    |   \---php-console-highlighter
+    |       +---examples
+    |       +---src
+    |       |   \---JakubOnderka
+    |       |       \---PhpConsoleHighlighter
+    |       \---tests
+    |           \---JakubOnderka
+    |               \---PhpConsoleHighligter
+    +---jeremeamia
+    |   \---SuperClosure
+    |       \---src
+    |           +---Analyzer
+    |           |   \---Visitor
+    |           \---Exception
+    +---laravel
+    |   \---framework
+    |       \---src
+    |           \---Illuminate
+    |               +---Auth
+    |               |   +---Access
+    |               |   +---Console
+    |               |   +---Middleware
+    |               |   \---Passwords
+    |               +---Broadcasting
+    |               |   \---Broadcasters
+    |               +---Bus
+    |               +---Cache
+    |               |   \---Console
+    |               |       \---stubs
+    |               +---Config
+    |               +---Console
+    |               |   \---Scheduling
+    |               +---Container
+    |               +---Contracts
+    |               |   +---Auth
+    |               |   |   \---Access
+    |               |   +---Broadcasting
+    |               |   +---Bus
+    |               |   +---Cache
+    |               |   +---Config
+    |               |   +---Console
+    |               |   +---Container
+    |               |   +---Cookie
+    |               |   +---Database
+    |               |   +---Debug
+    |               |   +---Encryption
+    |               |   +---Events
+    |               |   +---Filesystem
+    |               |   +---Foundation
+    |               |   +---Hashing
+    |               |   +---Http
+    |               |   +---Logging
+    |               |   +---Mail
+    |               |   +---Pagination
+    |               |   +---Pipeline
+    |               |   +---Queue
+    |               |   +---Redis
+    |               |   +---Routing
+    |               |   +---Support
+    |               |   +---Validation
+    |               |   \---View
+    |               +---Cookie
+    |               |   \---Middleware
+    |               +---Database
+    |               |   +---Capsule
+    |               |   +---Connectors
+    |               |   +---Console
+    |               |   |   +---Migrations
+    |               |   |   \---Seeds
+    |               |   |       \---stubs
+    |               |   +---Eloquent
+    |               |   |   \---Relations
+    |               |   +---Migrations
+    |               |   |   \---stubs
+    |               |   +---Query
+    |               |   |   +---Grammars
+    |               |   |   \---Processors
+    |               |   \---Schema
+    |               |       \---Grammars
+    |               +---Encryption
+    |               +---Events
+    |               +---Filesystem
+    |               +---Foundation
+    |               |   +---Auth
+    |               |   |   \---Access
+    |               |   +---Bootstrap
+    |               |   +---Bus
+    |               |   +---Console
+    |               |   |   +---Optimize
+    |               |   |   \---stubs
+    |               |   +---Exceptions
+    |               |   +---Http
+    |               |   |   \---Middleware
+    |               |   +---Providers
+    |               |   +---Support
+    |               |   |   \---Providers
+    |               |   +---Testing
+    |               |   \---Validation
+    |               +---Hashing
+    |               +---Http
+    |               |   +---Exception
+    |               |   \---Middleware
+    |               +---Log
+    |               +---Mail
+    |               |   \---Transport
+    |               +---Pagination
+    |               +---Pipeline
+    |               +---Queue
+    |               |   +---Capsule
+    |               |   +---Connectors
+    |               |   +---Console
+    |               |   |   \---stubs
+    |               |   +---Failed
+    |               |   \---Jobs
+    |               +---Redis
+    |               +---Routing
+    |               |   +---Console
+    |               |   |   \---stubs
+    |               |   \---Matching
+    |               +---Session
+    |               |   +---Console
+    |               |   |   \---stubs
+    |               |   \---Middleware
+    |               +---Support
+    |               |   +---Debug
+    |               |   +---Facades
+    |               |   \---Traits
+    |               +---Translation
+    |               +---Validation
+    |               \---View
+    |                   +---Compilers
+    |                   +---Engines
+    |                   \---Middleware
+    +---league
+    |   \---flysystem
+    |       +---build
+    |       \---src
+    |           +---Adapter
+    |           |   \---Polyfill
+    |           +---Plugin
+    |           \---Util
+    +---maatwebsite
+    |   \---excel
+    |       \---src
+    |           +---config
+    |           \---Maatwebsite
+    |               \---Excel
+    |                   +---Classes
+    |                   +---Collections
+    |                   +---Exceptions
+    |                   +---Facades
+    |                   +---Files
+    |                   +---Filters
+    |                   +---Parsers
+    |                   +---Readers
+    |                   \---Writers
+    +---mockery
+    |   \---mockery
+    |       +---docs
+    |       |   +---cookbook
+    |       |   +---getting_started
+    |       |   \---reference
+    |       |       \---mockery
+    |       +---examples
+    |       |   \---starship
+    |       +---library
+    |       |   \---Mockery
+    |       |       +---Adapter
+    |       |       |   \---Phpunit
+    |       |       +---CountValidator
+    |       |       +---Exception
+    |       |       +---Generator
+    |       |       |   \---StringManipulation
+    |       |       |       \---Pass
+    |       |       +---Loader
+    |       |       \---Matcher
+    |       +---tests
+    |       |   \---Mockery
+    |       |       +---Generator
+    |       |       |   \---StringManipulation
+    |       |       |       \---Pass
+    |       |       +---Loader
+    |       |       +---Test
+    |       |       |   \---Generator
+    |       |       \---_files
+    |       \---travis
+    +---monolog
+    |   \---monolog
+    |       +---doc
+    |       +---src
+    |       |   \---Monolog
+    |       |       +---Formatter
+    |       |       +---Handler
+    |       |       |   +---Curl
+    |       |       |   +---FingersCrossed
+    |       |       |   \---SyslogUdp
+    |       |       \---Processor
+    |       \---tests
+    |           \---Monolog
+    |               +---Formatter
+    |               +---Handler
+    |               |   \---Fixtures
+    |               \---Processor
+    +---mtdowling
+    |   \---cron-expression
+    |       +---src
+    |       |   \---Cron
+    |       \---tests
+    |           \---Cron
+    +---namshi
+    |   \---jose
+    |       +---src
+    |       |   \---Namshi
+    |       |       \---JOSE
+    |       |           +---Base64
+    |       |           \---Signer
+    |       |               +---OpenSSL
+    |       |               \---SecLib
+    |       \---tests
+    |           \---Namshi
+    |               \---JOSE
+    |                   \---Test
+    |                       \---Signer
+    |                           +---OpenSSL
+    |                           \---SecLib
+    +---nesbot
+    |   \---carbon
+    |       \---src
+    |           \---Carbon
+    |               \---Lang
+    +---nikic
+    |   \---php-parser
+    |       +---bin
+    |       +---doc
+    |       |   \---component
+    |       +---grammar
+    |       +---lib
+    |       |   \---PhpParser
+    |       |       +---Builder
+    |       |       +---Comment
+    |       |       +---Lexer
+    |       |       +---Node
+    |       |       |   +---Expr
+    |       |       |   |   +---AssignOp
+    |       |       |   |   +---BinaryOp
+    |       |       |   |   \---Cast
+    |       |       |   +---Name
+    |       |       |   +---Scalar
+    |       |       |   |   \---MagicConst
+    |       |       |   \---Stmt
+    |       |       |       \---TraitUseAdaptation
+    |       |       +---NodeVisitor
+    |       |       +---Parser
+    |       |       +---PrettyPrinter
+    |       |       +---Serializer
+    |       |       \---Unserializer
+    |       +---test
+    |       |   +---code
+    |       |   |   +---parser
+    |       |   |   |   +---errorHandling
+    |       |   |   |   +---expr
+    |       |   |   |   |   +---fetchAndCall
+    |       |   |   |   |   \---uvs
+    |       |   |   |   +---scalar
+    |       |   |   |   \---stmt
+    |       |   |   |       +---class
+    |       |   |   |       +---function
+    |       |   |   |       +---generator
+    |       |   |   |       +---loop
+    |       |   |   |       \---namespace
+    |       |   |   \---prettyPrinter
+    |       |   |       +---expr
+    |       |   |       \---stmt
+    |       |   \---PhpParser
+    |       |       +---Builder
+    |       |       +---Lexer
+    |       |       +---Node
+    |       |       |   +---Scalar
+    |       |       |   \---Stmt
+    |       |       +---NodeVisitor
+    |       |       +---Parser
+    |       |       +---Serializer
+    |       |       \---Unserializer
+    |       \---test_old
+    +---paragonie
+    |   \---random_compat
+    |       +---dist
+    |       +---lib
+    |       \---other
+    +---phpdocumentor
+    |   +---reflection-common
+    |   |   +---src
+    |   |   \---tests
+    |   |       +---common
+    |   |       \---unit
+    |   +---reflection-docblock
+    |   |   +---examples
+    |   |   |   \---playing-with-descriptions
+    |   |   +---src
+    |   |   |   \---DocBlock
+    |   |   |       \---Tags
+    |   |   |           +---Factory
+    |   |   |           \---Formatter
+    |   |   \---tests
+    |   |       +---integration
+    |   |       \---unit
+    |   |           \---DocBlock
+    |   |               \---Tags
+    |   |                   \---Formatter
+    |   \---type-resolver
+    |       +---examples
+    |       +---src
+    |       |   \---Types
+    |       \---tests
+    |           \---unit
+    |               \---Types
+    +---phpoffice
+    |   \---phpexcel
+    |       +---Classes
+    |       |   \---PHPExcel
+    |       |       +---CachedObjectStorage
+    |       |       +---CalcEngine
+    |       |       +---Calculation
+    |       |       |   \---Token
+    |       |       +---Cell
+    |       |       +---Chart
+    |       |       |   \---Renderer
+    |       |       +---Helper
+    |       |       +---locale
+    |       |       |   +---bg
+    |       |       |   +---cs
+    |       |       |   +---da
+    |       |       |   +---de
+    |       |       |   +---en
+    |       |       |   |   \---uk
+    |       |       |   +---es
+    |       |       |   +---fi
+    |       |       |   +---fr
+    |       |       |   +---hu
+    |       |       |   +---it
+    |       |       |   +---nl
+    |       |       |   +---no
+    |       |       |   +---pl
+    |       |       |   +---pt
+    |       |       |   |   \---br
+    |       |       |   +---ru
+    |       |       |   +---sv
+    |       |       |   \---tr
+    |       |       +---Reader
+    |       |       |   +---Excel2007
+    |       |       |   \---Excel5
+    |       |       +---RichText
+    |       |       +---Shared
+    |       |       |   +---Escher
+    |       |       |   |   +---DgContainer
+    |       |       |   |   |   \---SpgrContainer
+    |       |       |   |   \---DggContainer
+    |       |       |   |       \---BstoreContainer
+    |       |       |   |           \---BSE
+    |       |       |   +---JAMA
+    |       |       |   |   \---utils
+    |       |       |   +---OLE
+    |       |       |   |   \---PPS
+    |       |       |   +---PCLZip
+    |       |       |   \---trend
+    |       |       +---Style
+    |       |       +---Worksheet
+    |       |       |   +---AutoFilter
+    |       |       |   |   \---Column
+    |       |       |   \---Drawing
+    |       |       \---Writer
+    |       |           +---Excel2007
+    |       |           +---Excel5
+    |       |           +---OpenDocument
+    |       |           |   \---Cell
+    |       |           \---PDF
+    |       +---Examples
+    |       |   +---data
+    |       |   |   \---continents
+    |       |   +---images
+    |       |   \---templates
+    |       \---unitTests
+    |           +---Classes
+    |           |   \---PHPExcel
+    |           |       +---Calculation
+    |           |       +---Cell
+    |           |       +---Chart
+    |           |       +---Reader
+    |           |       +---Shared
+    |           |       +---Style
+    |           |       \---Worksheet
+    |           |           \---AutoFilter
+    |           |               \---Column
+    |           +---custom
+    |           \---rawTestData
+    |               +---Calculation
+    |               |   +---DateTime
+    |               |   +---Engineering
+    |               |   +---Financial
+    |               |   +---Functions
+    |               |   +---Logical
+    |               |   +---LookupRef
+    |               |   +---MathTrig
+    |               |   \---TextData
+    |               +---Cell
+    |               +---Reader
+    |               +---Shared
+    |               \---Style
+    +---phpseclib
+    |   \---phpseclib
+    |       +---build
+    |       +---phpseclib
+    |       |   +---Crypt
+    |       |   +---File
+    |       |   +---Math
+    |       |   +---Net
+    |       |   |   \---SFTP
+    |       |   \---System
+    |       |       \---SSH
+    |       +---tests
+    |       |   +---Functional
+    |       |   |   \---Net
+    |       |   \---Unit
+    |       |       +---Crypt
+    |       |       |   +---AES
+    |       |       |   +---Hash
+    |       |       |   \---RSA
+    |       |       +---File
+    |       |       |   +---ASN1
+    |       |       |   \---X509
+    |       |       +---Math
+    |       |       |   \---BigInteger
+    |       |       \---Net
+    |       \---travis
+    +---phpspec
+    |   +---php-diff
+    |   |   +---example
+    |   |   \---lib
+    |   |       \---Diff
+    |   |           \---Renderer
+    |   |               +---Html
+    |   |               \---Text
+    |   +---phpspec
+    |   |   +---.phpspec
+    |   |   +---bin
+    |   |   +---features
+    |   |   |   +---bootstrap
+    |   |   |   |   +---autoloader
+    |   |   |   |   \---Fake
+    |   |   |   +---code_generation
+    |   |   |   +---config
+    |   |   |   +---construction
+    |   |   |   +---exception_handling
+    |   |   |   +---extensions
+    |   |   |   +---formatter
+    |   |   |   +---invalid_usage
+    |   |   |   +---matchers
+    |   |   |   +---options
+    |   |   |   \---runner
+    |   |   +---integration
+    |   |   |   \---PhpSpec
+    |   |   |       +---Console
+    |   |   |       |   \---Prompter
+    |   |   |       \---Loader
+    |   |   |           \---examples
+    |   |   +---spec
+    |   |   |   \---PhpSpec
+    |   |   |       +---CodeAnalysis
+    |   |   |       +---CodeGenerator
+    |   |   |       |   +---Generator
+    |   |   |       |   \---Writer
+    |   |   |       +---Config
+    |   |   |       +---Console
+    |   |   |       +---Event
+    |   |   |       +---Exception
+    |   |   |       |   +---Example
+    |   |   |       |   +---Fracture
+    |   |   |       |   \---Wrapper
+    |   |   |       +---Formatter
+    |   |   |       |   +---Html
+    |   |   |       |   \---Presenter
+    |   |   |       |       +---Differ
+    |   |   |       |       +---Exception
+    |   |   |       |       \---Value
+    |   |   |       +---Listener
+    |   |   |       +---Loader
+    |   |   |       |   +---Node
+    |   |   |       |   \---Transformer
+    |   |   |       +---Locator
+    |   |   |       |   \---PSR0
+    |   |   |       +---Matcher
+    |   |   |       +---Message
+    |   |   |       +---Process
+    |   |   |       |   +---Context
+    |   |   |       |   +---Prerequisites
+    |   |   |       |   +---ReRunner
+    |   |   |       |   \---Shutdown
+    |   |   |       +---Runner
+    |   |   |       |   \---Maintainer
+    |   |   |       +---Util
+    |   |   |       \---Wrapper
+    |   |   |           \---Subject
+    |   |   |               \---Expectation
+    |   |   \---src
+    |   |       \---PhpSpec
+    |   |           +---CodeAnalysis
+    |   |           +---CodeGenerator
+    |   |           |   +---Generator
+    |   |           |   |   \---templates
+    |   |           |   \---Writer
+    |   |           +---Config
+    |   |           +---Console
+    |   |           |   +---Assembler
+    |   |           |   +---Command
+    |   |           |   \---Prompter
+    |   |           +---Event
+    |   |           +---Exception
+    |   |           |   +---Example
+    |   |           |   +---Fracture
+    |   |           |   +---Generator
+    |   |           |   +---Locator
+    |   |           |   \---Wrapper
+    |   |           +---Extension
+    |   |           +---Factory
+    |   |           +---Formatter
+    |   |           |   +---Html
+    |   |           |   |   \---Template
+    |   |           |   \---Presenter
+    |   |           |       +---Differ
+    |   |           |       +---Exception
+    |   |           |       \---Value
+    |   |           +---IO
+    |   |           +---Listener
+    |   |           +---Loader
+    |   |           |   +---Node
+    |   |           |   \---Transformer
+    |   |           +---Locator
+    |   |           |   \---PSR0
+    |   |           +---Matcher
+    |   |           +---Message
+    |   |           +---Process
+    |   |           |   +---Context
+    |   |           |   +---Prerequisites
+    |   |           |   +---ReRunner
+    |   |           |   \---Shutdown
+    |   |           +---Resources
+    |   |           |   \---schema
+    |   |           +---Runner
+    |   |           |   \---Maintainer
+    |   |           +---Util
+    |   |           \---Wrapper
+    |   |               \---Subject
+    |   |                   \---Expectation
+    |   \---prophecy
+    |       +---spec
+    |       |   \---Prophecy
+    |       |       +---Argument
+    |       |       |   \---Token
+    |       |       +---Call
+    |       |       +---Comparator
+    |       |       +---Doubler
+    |       |       |   +---ClassPatch
+    |       |       |   \---Generator
+    |       |       |       \---Node
+    |       |       +---Exception
+    |       |       |   +---Call
+    |       |       |   +---Doubler
+    |       |       |   +---Prediction
+    |       |       |   \---Prophecy
+    |       |       +---Prediction
+    |       |       +---Promise
+    |       |       +---Prophecy
+    |       |       \---Util
+    |       \---src
+    |           \---Prophecy
+    |               +---Argument
+    |               |   \---Token
+    |               +---Call
+    |               +---Comparator
+    |               +---Doubler
+    |               |   +---ClassPatch
+    |               |   \---Generator
+    |               |       \---Node
+    |               +---Exception
+    |               |   +---Call
+    |               |   +---Doubler
+    |               |   +---Prediction
+    |               |   \---Prophecy
+    |               +---PhpDocumentor
+    |               +---Prediction
+    |               +---Promise
+    |               +---Prophecy
+    |               \---Util
+    +---phpunit
+    |   +---php-code-coverage
+    |   |   +---build
+    |   |   +---scripts
+    |   |   +---src
+    |   |   |   \---CodeCoverage
+    |   |   |       +---Driver
+    |   |   |       +---Exception
+    |   |   |       +---Report
+    |   |   |       |   +---HTML
+    |   |   |       |   |   \---Renderer
+    |   |   |       |   |       \---Template
+    |   |   |       |   |           +---css
+    |   |   |       |   |           +---fonts
+    |   |   |       |   |           \---js
+    |   |   |       |   +---Node
+    |   |   |       |   \---XML
+    |   |   |       |       \---File
+    |   |   |       \---Util
+    |   |   \---tests
+    |   |       +---PHP
+    |   |       |   \---CodeCoverage
+    |   |       |       \---Report
+    |   |       \---_files
+    |   +---php-file-iterator
+    |   |   \---src
+    |   +---php-text-template
+    |   |   \---src
+    |   +---php-timer
+    |   |   +---src
+    |   |   \---tests
+    |   +---php-token-stream
+    |   |   +---build
+    |   |   +---src
+    |   |   |   \---Token
+    |   |   |       \---Stream
+    |   |   \---tests
+    |   |       +---Token
+    |   |       \---_fixture
+    |   +---phpunit
+    |   |   +---src
+    |   |   |   +---Extensions
+    |   |   |   +---Framework
+    |   |   |   |   +---Assert
+    |   |   |   |   +---Constraint
+    |   |   |   |   |   \---JsonMatches
+    |   |   |   |   +---Error
+    |   |   |   |   \---TestSuite
+    |   |   |   +---Runner
+    |   |   |   |   \---Filter
+    |   |   |   |       \---Group
+    |   |   |   +---TextUI
+    |   |   |   \---Util
+    |   |   |       +---Log
+    |   |   |       +---PHP
+    |   |   |       |   \---Template
+    |   |   |       \---TestDox
+    |   |   |           \---ResultPrinter
+    |   |   \---tests
+    |   |       +---Extensions
+    |   |       +---Fail
+    |   |       +---Framework
+    |   |       |   \---Constraint
+    |   |       |       \---JsonMatches
+    |   |       +---Regression
+    |   |       |   +---GitHub
+    |   |       |   |   +---1149
+    |   |       |   |   +---1216
+    |   |       |   |   +---1265
+    |   |       |   |   +---1330
+    |   |       |   |   +---1335
+    |   |       |   |   +---1337
+    |   |       |   |   +---1348
+    |   |       |   |   +---1351
+    |   |       |   |   +---1374
+    |   |       |   |   +---1437
+    |   |       |   |   +---1468
+    |   |       |   |   +---1471
+    |   |       |   |   +---1472
+    |   |       |   |   +---1570
+    |   |       |   |   +---2158
+    |   |       |   |   +---244
+    |   |       |   |   +---322
+    |   |       |   |   +---433
+    |   |       |   |   +---445
+    |   |       |   |   +---498
+    |   |       |   |   +---503
+    |   |       |   |   +---581
+    |   |       |   |   +---74
+    |   |       |   |   +---765
+    |   |       |   |   +---797
+    |   |       |   |   \---873
+    |   |       |   \---Trac
+    |   |       |       +---1021
+    |   |       |       +---523
+    |   |       |       +---578
+    |   |       |       +---684
+    |   |       |       \---783
+    |   |       +---Runner
+    |   |       +---TextUI
+    |   |       +---Util
+    |   |       |   \---TestDox
+    |   |       \---_files
+    |   |           +---Inheritance
+    |   |           \---JsonData
+    |   \---phpunit-mock-objects
+    |       +---build
+    |       +---src
+    |       |   \---Framework
+    |       |       \---MockObject
+    |       |           +---Builder
+    |       |           +---Exception
+    |       |           +---Generator
+    |       |           +---Invocation
+    |       |           +---Matcher
+    |       |           \---Stub
+    |       \---tests
+    |           +---MockObject
+    |           |   +---Invocation
+    |           |   \---Matcher
+    |           \---_fixture
+    +---psr
+    |   \---log
+    |       \---Psr
+    |           \---Log
+    |               \---Test
+    +---psy
+    |   \---psysh
+    |       +---bin
+    |       +---src
+    |       |   \---Psy
+    |       |       +---CodeCleaner
+    |       |       +---Command
+    |       |       |   \---ListCommand
+    |       |       +---Exception
+    |       |       +---ExecutionLoop
+    |       |       +---Formatter
+    |       |       +---Output
+    |       |       +---Readline
+    |       |       +---Reflection
+    |       |       +---TabCompletion
+    |       |       |   \---Matcher
+    |       |       +---Util
+    |       |       \---VarDumper
+    |       \---test
+    |           +---fixtures
+    |           |   +---default
+    |           |   |   +---.config
+    |           |   |   |   \---psysh
+    |           |   |   \---.local
+    |           |   |       \---share
+    |           |   |           \---psysh
+    |           |   +---legacy
+    |           |   |   \---.psysh
+    |           |   +---mixed
+    |           |   |   \---.psysh
+    |           |   \---project
+    |           +---Psy
+    |           |   \---Test
+    |           |       +---CodeCleaner
+    |           |       |   \---Fixtures
+    |           |       +---Exception
+    |           |       +---Formatter
+    |           |       +---Readline
+    |           |       +---Reflection
+    |           |       +---TabCompletion
+    |           |       \---Util
+    |           \---tools
+    +---sebastian
+    |   +---comparator
+    |   |   +---build
+    |   |   +---src
+    |   |   \---tests
+    |   |       \---_files
+    |   +---diff
+    |   |   +---src
+    |   |   |   \---LCS
+    |   |   \---tests
+    |   |       +---fixtures
+    |   |       \---LCS
+    |   +---environment
+    |   |   +---src
+    |   |   \---tests
+    |   +---exporter
+    |   |   +---src
+    |   |   \---tests
+    |   +---global-state
+    |   |   +---src
+    |   |   \---tests
+    |   |       \---_fixture
+    |   +---recursion-context
+    |   |   +---src
+    |   |   \---tests
+    |   \---version
+    |       \---src
+    +---swiftmailer
+    |   \---swiftmailer
+    |       +---doc
+    |       |   \---uml
+    |       +---lib
+    |       |   +---classes
+    |       |   |   \---Swift
+    |       |   |       +---ByteStream
+    |       |   |       +---CharacterReader
+    |       |   |       +---CharacterReaderFactory
+    |       |   |       +---CharacterStream
+    |       |   |       +---Encoder
+    |       |   |       +---Events
+    |       |   |       +---KeyCache
+    |       |   |       +---Mailer
+    |       |   |       +---Mime
+    |       |   |       |   +---ContentEncoder
+    |       |   |       |   +---HeaderEncoder
+    |       |   |       |   \---Headers
+    |       |   |       +---Plugins
+    |       |   |       |   +---Decorator
+    |       |   |       |   +---Loggers
+    |       |   |       |   +---Pop
+    |       |   |       |   \---Reporters
+    |       |   |       +---Signers
+    |       |   |       +---StreamFilters
+    |       |   |       \---Transport
+    |       |   |           \---Esmtp
+    |       |   |               \---Auth
+    |       |   \---dependency_maps
+    |       \---tests
+    |           +---acceptance
+    |           |   \---Swift
+    |           |       +---ByteStream
+    |           |       +---CharacterReaderFactory
+    |           |       +---Encoder
+    |           |       +---KeyCache
+    |           |       +---Mime
+    |           |       |   +---ContentEncoder
+    |           |       |   \---HeaderEncoder
+    |           |       \---Transport
+    |           |           \---StreamBuffer
+    |           +---bug
+    |           |   \---Swift
+    |           +---fixtures
+    |           +---smoke
+    |           |   \---Swift
+    |           |       \---Smoke
+    |           +---unit
+    |           |   \---Swift
+    |           |       +---ByteStream
+    |           |       +---CharacterReader
+    |           |       +---CharacterStream
+    |           |       +---Encoder
+    |           |       +---Events
+    |           |       +---KeyCache
+    |           |       +---Mailer
+    |           |       +---Mime
+    |           |       |   +---ContentEncoder
+    |           |       |   +---HeaderEncoder
+    |           |       |   \---Headers
+    |           |       +---Plugins
+    |           |       |   +---Loggers
+    |           |       |   \---Reporters
+    |           |       +---Signers
+    |           |       +---StreamFilters
+    |           |       \---Transport
+    |           |           +---Esmtp
+    |           |           |   \---Auth
+    |           |           \---EsmtpTransport
+    |           \---_samples
+    |               +---charsets
+    |               |   +---iso-2022-jp
+    |               |   +---iso-8859-1
+    |               |   \---utf-8
+    |               +---dkim
+    |               +---files
+    |               \---smime
+    +---symfony
+    |   +---console
+    |   |   +---Command
+    |   |   +---Descriptor
+    |   |   +---Event
+    |   |   +---Formatter
+    |   |   +---Helper
+    |   |   +---Input
+    |   |   +---Logger
+    |   |   +---Output
+    |   |   +---Question
+    |   |   +---Resources
+    |   |   |   \---bin
+    |   |   +---Style
+    |   |   +---Tester
+    |   |   \---Tests
+    |   |       +---Command
+    |   |       +---Descriptor
+    |   |       +---Fixtures
+    |   |       |   \---Style
+    |   |       |       \---SymfonyStyle
+    |   |       |           +---command
+    |   |       |           \---output
+    |   |       +---Formatter
+    |   |       +---Helper
+    |   |       +---Input
+    |   |       +---Logger
+    |   |       +---Output
+    |   |       +---Style
+    |   |       \---Tester
+    |   +---css-selector
+    |   |   +---Exception
+    |   |   +---Node
+    |   |   +---Parser
+    |   |   |   +---Handler
+    |   |   |   +---Shortcut
+    |   |   |   \---Tokenizer
+    |   |   +---Tests
+    |   |   |   +---Node
+    |   |   |   +---Parser
+    |   |   |   |   +---Handler
+    |   |   |   |   \---Shortcut
+    |   |   |   \---XPath
+    |   |   |       \---Fixtures
+    |   |   \---XPath
+    |   |       \---Extension
+    |   +---debug
+    |   |   +---Exception
+    |   |   +---FatalErrorHandler
+    |   |   +---Resources
+    |   |   |   \---ext
+    |   |   |       \---tests
+    |   |   \---Tests
+    |   |       +---Exception
+    |   |       +---FatalErrorHandler
+    |   |       +---Fixtures
+    |   |       |   \---psr4
+    |   |       \---Fixtures2
+    |   +---dom-crawler
+    |   |   +---Field
+    |   |   \---Tests
+    |   |       +---Field
+    |   |       \---Fixtures
+    |   +---event-dispatcher
+    |   |   +---Debug
+    |   |   +---DependencyInjection
+    |   |   \---Tests
+    |   |       +---Debug
+    |   |       \---DependencyInjection
+    |   +---finder
+    |   |   +---Adapter
+    |   |   +---Comparator
+    |   |   +---Exception
+    |   |   +---Expression
+    |   |   +---Iterator
+    |   |   +---Shell
+    |   |   \---Tests
+    |   |       +---Comparator
+    |   |       +---Expression
+    |   |       +---FakeAdapter
+    |   |       +---Fixtures
+    |   |       |   +---A
+    |   |       |   |   \---B
+    |   |       |   |       \---C
+    |   |       |   +---copy
+    |   |       |   |   \---A
+    |   |       |   |       \---B
+    |   |       |   |           \---C
+    |   |       |   +---one
+    |   |       |   |   \---b
+    |   |       |   +---r+e.gex[c]a(r)s
+    |   |       |   |   \---dir
+    |   |       |   \---with space
+    |   |       +---Iterator
+    |   |       \---Shell
+    |   +---http-foundation
+    |   |   +---Exception
+    |   |   +---File
+    |   |   |   +---Exception
+    |   |   |   \---MimeType
+    |   |   +---Resources
+    |   |   |   \---stubs
+    |   |   +---Session
+    |   |   |   +---Attribute
+    |   |   |   +---Flash
+    |   |   |   \---Storage
+    |   |   |       +---Handler
+    |   |   |       \---Proxy
+    |   |   \---Tests
+    |   |       +---File
+    |   |       |   +---Fixtures
+    |   |       |   |   \---directory
+    |   |       |   \---MimeType
+    |   |       \---Session
+    |   |           +---Attribute
+    |   |           +---Flash
+    |   |           \---Storage
+    |   |               +---Handler
+    |   |               \---Proxy
+    |   +---http-kernel
+    |   |   +---Bundle
+    |   |   +---CacheClearer
+    |   |   +---CacheWarmer
+    |   |   +---Config
+    |   |   +---Controller
+    |   |   +---DataCollector
+    |   |   |   \---Util
+    |   |   +---Debug
+    |   |   +---DependencyInjection
+    |   |   +---Event
+    |   |   +---EventListener
+    |   |   +---Exception
+    |   |   +---Fragment
+    |   |   +---HttpCache
+    |   |   +---Log
+    |   |   +---Profiler
+    |   |   \---Tests
+    |   |       +---Bundle
+    |   |       +---CacheClearer
+    |   |       +---CacheWarmer
+    |   |       +---Config
+    |   |       +---Controller
+    |   |       +---DataCollector
+    |   |       |   \---Util
+    |   |       +---Debug
+    |   |       +---DependencyInjection
+    |   |       +---EventListener
+    |   |       +---Fixtures
+    |   |       |   +---BaseBundle
+    |   |       |   |   \---Resources
+    |   |       |   +---Bundle1Bundle
+    |   |       |   |   \---Resources
+    |   |       |   +---Bundle2Bundle
+    |   |       |   +---ChildBundle
+    |   |       |   |   \---Resources
+    |   |       |   +---Controller
+    |   |       |   +---ExtensionAbsentBundle
+    |   |       |   +---ExtensionLoadedBundle
+    |   |       |   |   \---DependencyInjection
+    |   |       |   +---ExtensionNotValidBundle
+    |   |       |   |   \---DependencyInjection
+    |   |       |   +---ExtensionPresentBundle
+    |   |       |   |   +---Command
+    |   |       |   |   \---DependencyInjection
+    |   |       |   \---Resources
+    |   |       |       +---BaseBundle
+    |   |       |       +---Bundle1Bundle
+    |   |       |       +---ChildBundle
+    |   |       |       \---FooBundle
+    |   |       +---Fragment
+    |   |       +---HttpCache
+    |   |       \---Profiler
+    |   |           \---Mock
+    |   +---polyfill-mbstring
+    |   |   \---Resources
+    |   |       \---unidata
+    |   +---polyfill-php56
+    |   +---polyfill-util
+    |   +---process
+    |   |   +---Exception
+    |   |   +---Pipes
+    |   |   \---Tests
+    |   +---routing
+    |   |   +---Annotation
+    |   |   +---Exception
+    |   |   +---Generator
+    |   |   |   \---Dumper
+    |   |   +---Loader
+    |   |   |   \---schema
+    |   |   |       \---routing
+    |   |   +---Matcher
+    |   |   |   \---Dumper
+    |   |   \---Tests
+    |   |       +---Annotation
+    |   |       +---Fixtures
+    |   |       |   +---AnnotatedClasses
+    |   |       |   +---dumper
+    |   |       |   \---OtherAnnotatedClasses
+    |   |       +---Generator
+    |   |       |   \---Dumper
+    |   |       +---Loader
+    |   |       \---Matcher
+    |   |           \---Dumper
+    |   +---translation
+    |   |   +---Catalogue
+    |   |   +---DataCollector
+    |   |   +---Dumper
+    |   |   +---Exception
+    |   |   +---Extractor
+    |   |   +---Loader
+    |   |   |   \---schema
+    |   |   |       \---dic
+    |   |   |           \---xliff-core
+    |   |   +---Tests
+    |   |   |   +---Catalogue
+    |   |   |   +---DataCollector
+    |   |   |   +---Dumper
+    |   |   |   +---fixtures
+    |   |   |   |   \---resourcebundle
+    |   |   |   |       +---corrupted
+    |   |   |   |       +---dat
+    |   |   |   |       \---res
+    |   |   |   +---Loader
+    |   |   |   \---Writer
+    |   |   \---Writer
+    |   +---var-dumper
+    |   |   +---Caster
+    |   |   +---Cloner
+    |   |   +---Dumper
+    |   |   +---Exception
+    |   |   +---Resources
+    |   |   |   \---functions
+    |   |   +---Test
+    |   |   \---Tests
+    |   |       +---Caster
+    |   |       +---Fixtures
+    |   |       \---Test
+    |   \---yaml
+    |       +---Exception
+    |       \---Tests
+    |           \---Fixtures
+    +---tijsverkoyen
+    |   \---css-to-inline-styles
+    |       \---src
+    |           \---Css
+    |               +---Property
+    |               \---Rule
+    +---tymon
+    |   \---jwt-auth
+    |       +---src
+    |       |   +---Claims
+    |       |   +---Commands
+    |       |   +---config
+    |       |   +---Exceptions
+    |       |   +---Facades
+    |       |   +---Middleware
+    |       |   +---Providers
+    |       |   |   +---Auth
+    |       |   |   +---JWT
+    |       |   |   +---Storage
+    |       |   |   \---User
+    |       |   \---Validators
+    |       \---tests
+    |           +---Commands
+    |           +---Middleware
+    |           +---Providers
+    |           |   +---Auth
+    |           |   +---JWT
+    |           |   +---Storage
+    |           |   \---User
+    |           +---Stubs
+    |           \---Validators
+    +---vlucas
+    |   \---phpdotenv
+    |       \---src
+    \---webmozart
+        \---assert
+            +---src
+            \---tests

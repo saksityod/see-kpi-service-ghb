@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+
+	var iusers = [];
+	iusers.push({rule_id: 2, processing_seq: 1, operator: "Or", complete_flag: 1});
+	console.log(iusers);
+
+		
+});
+	
+	// function senddata() {
+		// var file1 = document.getElementById('file1');
+		// var fd = new FormData();
+		// fd.append('file',file1);
+		// $.ajax( {url:'http://localhost/dqs_api/public/dqs_import_export',
+				 // type:"post",
+				 // dataType:"json",
+				 // contentType : false,
+				 // data: fd, 
+				 // headers: {Authorization: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJKb2huIiwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0XC9kcXNfYXBpXC9wdWJsaWNcL3Nlc3Npb24iLCJpYXQiOjE0Nzk4NjkxMzcsImV4cCI6MTQ3OTkwNTEzNywibmJmIjoxNDc5ODY5MTM3LCJqdGkiOiI0YjI4YmQ2ZmQxMjg4MTY0MmZmYTY4ZTJkYjZkZjAwMCJ9.KdsfSgmabH08OBWUdS51fuK7N7uc718jlovfyUHBbHg"},
+				 // success:function(data, textStatus, jqXHR) {console.log(data);},
+				 // error: function(jqXHR, textStatus, errorThrown) {console.log(errorThrown);}
+		// });
+	// }
+</script>
+</head>
+<body>
+
+	<p>DQS Test</p>
+	<form>
+	<input type="file" name="file" id="file1">
+	<input type="submit" value="Submit">
+	</form>
+
+<script>
+	// Variable to store your files
+	var files;
+
+	// Add events
+	$('input[type=file]').on('change', prepareUpload);
+
+	// Grab the files and set them to our variable
+	function prepareUpload(event)
+	{
+	  files = event.target.files;
+	}
+	$('form').on('submit', uploadFiles);
+
+	// Catch the form submit and upload the files
+	function uploadFiles(event)
+	{
+	  event.stopPropagation(); // Stop stuff happening
+		event.preventDefault(); // Totally stop stuff happening
+
+		// START A LOADING SPINNER HERE
+
+		// Create a formdata object and add the files
+		var data = new FormData();
+		$.each(files, function(key, value)
+		{
+			data.append(key, value);
+		});
+
+		$.ajax({
+			url: 'http://localhost/tyw_api/public/cds_result?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjMsImlzcyI6Imh0dHA6XC9cL2xvY2FsaG9zdFwvdHl3X2FwaVwvcHVibGljXC9zZXNzaW9uIiwiaWF0IjoxNDg2MjY3NjQxLCJleHAiOjE0ODYzMDM2NDEsIm5iZiI6MTQ4NjI2NzY0MSwianRpIjoiMTllNDcwMTAxYzEwY2I0Zjk5ZmUyZTdiYzFhM2M5ODQifQ.o38muEoz2rSk_LSwxmaq4Y4TH4HK6tnyA2rSIwTb4oY',
+			type: 'POST',
+			data: data,
+			cache: false,
+			dataType: 'json',
+			processData: false, // Don't process the files
+			contentType: false, // Set content type to false as jQuery will tell the server its a query string request
+			success: function(data, textStatus, jqXHR)
+			{
+				console.log(data);
+			},
+			error: function(jqXHR, textStatus, errorThrown)
+			{
+				// Handle errors here
+				console.log('ERRORS: ' + textStatus);
+				// STOP LOADING SPINNER
+			}
+		});
+	}	
+</script>
+
+</body>
+</html>

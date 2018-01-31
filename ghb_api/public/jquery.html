@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+
+	var iusers = [];
+	var employees = [];
+	iusers.push({appraisal_item_result_id: 1, score: 9});
+	iusers.push({appraisal_item_result_id: 2, score: 99});
+
+
+	$.ajax( {url:'http://10.15.100.12/tyw_api/public/appraisal/11',
+			 type:"patch",
+			 dataType:"json",
+			 contentType : 'application/json',
+			 data: JSON.stringify({
+				appraisal: iusers,
+				stage_id: 17
+			 }), 
+			 headers: {Authorization: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0XC90eXdfYXBpXC9wdWJsaWNcL3Nlc3Npb24iLCJpYXQiOjE0ODg4NzA4OTUsImV4cCI6MTQ4ODkwNjg5NSwibmJmIjoxNDg4ODcwODk1LCJqdGkiOiIwNmFlMGIyYzIyNzlkNmY0ZTMyYjA3MWI1NTZkYTgyNCJ9.s_fDqOR4-E410CxukF_tmnzjn3o-GMq7FIR-MEjWqzE"},
+			 success:function(data, textStatus, jqXHR) {console.log(data);},
+			 error: function(jqXHR, textStatus, errorThrown) {console.log(errorThrown);}
+	});
+	
+		
+});
+</script>
+</head>
+<body>
+
+<p>DQS Test</p>
+<input type="file" name="import" multiple>
+
+<form action="http://10.15.100.12/tyw_api/public/appraisal_data/export?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjMsImlzcyI6Imh0dHA6XC9cLzEwLjE1LjEwMC4xMlwvdHl3X2FwaVwvcHVibGljXC9zZXNzaW9uIiwiaWF0IjoxNDg3ODE4Mjg3LCJleHAiOjE0ODc4NTQyODcsIm5iZiI6MTQ4NzgxODI4NywianRpIjoiOWYwOWExMjZkOTA1NTAyMWI5ZjU2ODdmNjFiZWIzZmEifQ.Kh1v6an9tJF64XeXUxu0JXXI1EkMX4QbYpVmW3iy3y8" method="POST">
+<input type="submit">
+</form>
+
+</body>
+</html>
