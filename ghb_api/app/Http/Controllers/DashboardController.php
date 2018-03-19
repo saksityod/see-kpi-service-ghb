@@ -255,6 +255,7 @@ class DashboardController extends Controller
 		
 	}
 
+	//edit by toto 2018-03-19 14:14
 	public function kpi_list(Request $request){
 		$qinput = array();
 		/*
@@ -264,6 +265,28 @@ class DashboardController extends Controller
 			WHERE 1=1
 		";
 		*/
+		// $query = "
+		// SELECT distinct air.item_id, air.item_name
+		// 	FROM appraisal_item_result air
+		// 	inner join appraisal_item ai on air.item_id=ai.item_id
+		// 	inner join appraisal_structure aps on ai.structure_id = aps.structure_id
+		
+		// 	WHERE 1=1
+		// 	and aps.form_id=1
+		// 	";
+		
+		// $qfooter = " GROUP BY air.item_id
+		// 	ORDER BY air.item_id ";
+		
+		// if ($request->appraisal_type_id == 1) {
+		// 	empty($request->appraisal_level) ?: ($query .= " and level_id = ? " AND $qinput[] = $request->appraisal_level);
+		// 	empty($request->org_id) ?: ($query .= " and org_id = ? " AND $qinput[] = $request->org_id);
+		// } else {
+		// 	empty($request->emp_id) ?: ($query .= " and emp_id = ? " AND $qinput[] = $request->emp_id);
+		// }
+			
+		// $items = DB::select($query.$qfooter,$qinput);
+		// return response()->json($items);
 		$query = "
 		SELECT distinct air.item_id, air.item_name
 			FROM appraisal_item_result air
@@ -278,10 +301,11 @@ class DashboardController extends Controller
 			ORDER BY air.item_id ";
 		
 		if ($request->appraisal_type_id == 1) {
-			empty($request->appraisal_level) ?: ($query .= " and level_id = ? " AND $qinput[] = $request->appraisal_level);
-			empty($request->org_id) ?: ($query .= " and org_id = ? " AND $qinput[] = $request->org_id);
+			empty($request->appraisal_level) ?: ($query .= " and air.level_id = ? " AND $qinput[] = $request->appraisal_level);
+			empty($request->org_id) ?: ($query .= " and air.org_id = ? " AND $qinput[] = $request->org_id);
+			empty($request->kpi_type_id) ?: ($query .= " and air.kpi_type_id = ? " AND $qinput[] = $request->kpi_type_id);
 		} else {
-			empty($request->emp_id) ?: ($query .= " and emp_id = ? " AND $qinput[] = $request->emp_id);
+			empty($request->emp_id) ?: ($query .= " and air.emp_id = ? " AND $qinput[] = $request->emp_id);
 		}
 			
 		$items = DB::select($query.$qfooter,$qinput);

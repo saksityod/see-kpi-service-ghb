@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="appraisal_report" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="822" leftMargin="10" rightMargin="10" topMargin="10" bottomMargin="10" isSummaryWithPageHeaderAndFooter="true" uuid="06b504be-999f-4bff-8a47-9cd206daf9a0">
+	<property name="ireport.zoom" value="1.2100000000000255"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="param_year" class="java.lang.String">
+		<defaultValueExpression><![CDATA[2017]]></defaultValueExpression>
+	</parameter>
+	<parameter name="param_period" class="java.lang.String">
+		<property name="a" value="1"/>
+		<property name="b" value="2"/>
+		<defaultValueExpression><![CDATA[1]]></defaultValueExpression>
+	</parameter>
+	<parameter name="param_level" class="java.lang.String">
+		<defaultValueExpression><![CDATA["All"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="param_org" class="java.lang.String">
+		<parameterDescription><![CDATA[]]></parameterDescription>
+		<defaultValueExpression><![CDATA["All"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="param_kpi_type" class="java.lang.String"/>
+	<parameter name="param_kpi" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT main.appraisal_level_name
+,main.org_name
+,main.perspective_id
+,main.perspective_name
+,main.item_name
+,main.uom_name
+,main.target_value
+,main.actual_value
+,main.actual_target
+,concat('#',case
+	when atrt.color_code is null and actual_target < mint.min_begin then mint.min_color_code
+	when atrt.color_code is null and actual_target > maxt.max_end then maxt.max_color_code
+else atrt.color_code end) as actual_target_color_code
+,main.forecast_value
+,main.actual_forecast
+,concat('#',case
+	when afrt.color_code is null and actual_forecast < mint.min_begin then mint.min_color_code
+	when afrt.color_code is null and actual_forecast > maxt.max_end then maxt.max_color_code
+else afrt.color_code end) as actual_forecast_color_code
+,date(now()) as show_date
+,appraisal_level_name as level_name
+,main.item_result_id
+,reason.reason
+,reason.reason_name
+FROM(
+SELECT air.emp_result_id,
+		air.item_result_id,
+		air.level_id,
+		air.org_id,
+		air.item_id,
+		ere.result_threshold_group_id,
+		al.appraisal_level_name,
+		org.org_name,
+		per.perspective_id,
+		per.perspective_name,
+		air.item_name,
+		uom.uom_name,
+		air.target_value,
+		air.actual_value,
+		ifnull((air.actual_value*100)/air.target_value,0) as actual_target,
+		air.forecast_value,
+		ifnull((air.actual_value*100)/air.forecast_value,0) as actual_forecast
+		FROM appraisal_item_result air
+		inner join appraisal_item ai on ai.item_id = air.item_id
+		inner join kpi_type kt on kt.kpi_type_id = ai.kpi_type_id
+		inner join perspective per on per.perspective_id = ai.perspective_id
+		inner join uom on uom.uom_id = ai.uom_id
+		inner join appraisal_level al on al.level_id = air.level_id
+		inner join org on org.org_id = air.org_id
+		inner join emp_result ere on ere.emp_result_id = air.emp_result_id
+		where air.period_id = $P{param_period}
+		and ere.appraisal_type_id = 1
+		and (air.level_id = $P{param_level} or 'ALL' = $P{param_level})
+		and (air.org_id = $P{param_org} or 'ALL' = $P{param_org})
+		and (ai.kpi_type_id = $P{param_kpi_type} or 'ALL' = $P{param_kpi_type})
+		and (ai.kpi_id = $P{param_kpi} or 'ALL' = $P{param_kpi})
+)main
+left join result_threshold atrt on atrt.result_threshold_group_id = main.result_threshold_group_id
+and atrt.begin_threshold <= main.actual_target and atrt.end_threshold >= main.actual_target
+left join result_threshold afrt on afrt.result_threshold_group_id = main.result_threshold_group_id
+and afrt.begin_threshold <= main.actual_forecast and afrt.end_threshold >= main.actual_forecast
+inner join (
+			SELECT min_threshold.emp_result_id
+			,min_threshold.result_threshold_group_id
+			,min_threshold.min_begin
+			,color_code as min_color_code
+			from(
+				SELECT air.emp_result_id
+				,ere.result_threshold_group_id
+				,min(rt.begin_threshold) as min_begin
+				FROM appraisal_item_result air
+				inner join emp_result ere on ere.emp_result_id = air.emp_result_id
+				inner join result_threshold rt on rt.result_threshold_group_id = ere.result_threshold_group_id
+				inner join appraisal_item ai on ai.item_id = air.item_id
+				inner join kpi_type kt on kt.kpi_type_id = ai.kpi_type_id
+				where air.period_id = $P{param_period}
+				and ere.appraisal_type_id = 1
+				and (air.level_id = $P{param_level} or 'ALL' = $P{param_level})
+				and (air.org_id = $P{param_org} or 'ALL' = $P{param_org})
+				and (ai.kpi_type_id = $P{param_kpi_type} or 'ALL' = $P{param_kpi_type})
+				and (ai.kpi_id = $P{param_kpi} or 'ALL' = $P{param_kpi})
+				group by air.emp_result_id
+			)min_threshold
+			inner join result_threshold srh on srh.result_threshold_group_id = min_threshold.result_threshold_group_id
+			and srh.begin_threshold = min_threshold.min_begin
+)mint on mint.emp_result_id = main.emp_result_id
+inner join (
+			SELECT max_threshold.emp_result_id
+			,max_threshold.result_threshold_group_id
+			,max_threshold.max_end
+			,color_code as max_color_code
+			from(
+				SELECT air.emp_result_id
+				,ere.result_threshold_group_id
+				,max(rt.end_threshold) as max_end
+				FROM appraisal_item_result air
+				inner join emp_result ere on ere.emp_result_id = air.emp_result_id
+				inner join result_threshold rt on rt.result_threshold_group_id = ere.result_threshold_group_id
+				inner join appraisal_item ai on ai.item_id = air.item_id
+				inner join kpi_type kt on kt.kpi_type_id = ai.kpi_type_id
+				where air.period_id = $P{param_period}
+				and ere.appraisal_type_id = 1
+				and (air.level_id = $P{param_level} or 'ALL' = $P{param_level})
+				and (air.org_id = $P{param_org} or 'ALL' = $P{param_org})
+				and (ai.kpi_type_id = $P{param_kpi_type} or 'ALL' = $P{param_kpi_type})
+				and (ai.kpi_id = $P{param_kpi} or 'ALL' = $P{param_kpi})
+				group by air.emp_result_id
+			)max_threshold
+			inner join result_threshold srh on srh.result_threshold_group_id = max_threshold.result_threshold_group_id
+			and srh.end_threshold = max_threshold.max_end
+)maxt on maxt.emp_result_id = main.emp_result_id
+left join (
+	SELECT item_result_id
+	,'ปัญหาและอุปสรรค' as reason
+	,reason_id
+	,concat(RowNumber,'. ',reason_name) as reason_name
+	FROM(
+	SELECT  @row_num := IF(@prev_value=r.item_result_id,@row_num+1,1) AS RowNumber
+	,r.item_result_id
+	,r.reason_id
+	,r.reason_name
+	,@prev_value := r.item_result_id
+	FROM reason r,
+	(SELECT @row_num := 1) x,
+	(SELECT @prev_value := '') y
+	)f
+	ORDER BY item_result_id, reason_id
+)reason on reason.item_result_id = main.item_result_id
+-- where reason.reason IS NOT NULL
+order by main.level_id
+,main.org_id
+,main.perspective_id
+,main.item_id
+,reason_id]]>
+	</queryString>
+	<field name="appraisal_level_name" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="org_name" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="perspective_id" class="java.lang.Integer">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="perspective_name" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="item_name" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="uom_name" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="target_value" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="actual_value" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="actual_target" class="java.math.BigDecimal"/>
+	<field name="actual_target_color_code" class="java.lang.String"/>
+	<field name="forecast_value" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="actual_forecast" class="java.math.BigDecimal"/>
+	<field name="actual_forecast_color_code" class="java.lang.String"/>
+	<field name="show_date" class="java.sql.Date"/>
+	<field name="level_name" class="java.lang.String"/>
+	<field name="item_result_id" class="java.lang.Long">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="reason" class="java.lang.String"/>
+	<field name="reason_name" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<group name="appraisal_level_name">
+		<groupExpression><![CDATA[$F{appraisal_level_name}]]></groupExpression>
+	</group>
+	<group name="org_name" isResetPageNumber="true" minHeightToStartNewPage="200">
+		<groupExpression><![CDATA[$F{org_name}]]></groupExpression>
+		<groupHeader>
+			<band/>
+		</groupHeader>
+	</group>
+	<group name="perspective_name" isReprintHeaderOnEachPage="true" minHeightToStartNewPage="200">
+		<groupExpression><![CDATA[$F{perspective_name}]]></groupExpression>
+		<groupHeader>
+			<band height="79">
+				<staticText>
+					<reportElement mode="Opaque" x="732" y="44" width="89" height="35" backcolor="#FFDC73" uuid="ce48882e-10ef-4d70-b002-93a309487986"/>
+					<box>
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="1.0"/>
+						<bottomPen lineWidth="1.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+					</textElement>
+					<text><![CDATA[%เทียบคาดการณ์
+เกณฑ์ผลงาน]]></text>
+				</staticText>
+				<textField>
+					<reportElement mode="Opaque" x="1" y="8" width="820" height="36" forecolor="#000000" backcolor="#FFBF00" uuid="2fdffc8a-7dd3-4e1c-8c93-f5c741377c19"/>
+					<box topPadding="1" leftPadding="1" bottomPadding="1" rightPadding="1">
+						<topPen lineWidth="1.0" lineStyle="Solid"/>
+						<leftPen lineWidth="1.0" lineStyle="Solid"/>
+						<bottomPen lineWidth="1.0" lineStyle="Solid"/>
+						<rightPen lineWidth="1.0" lineStyle="Solid"/>
+					</box>
+					<textElement>
+						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+						<paragraph leftIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA["ระดับ : "+$F{appraisal_level_name}+"     หน่วยงาน : "+$F{org_name}+"\n"+
+"Perspective : "+ $F{perspective_name}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement mode="Opaque" x="486" y="44" width="79" height="35" backcolor="#FFDC73" uuid="ea8d1385-4ed6-4f50-9fb1-1d310e44389d"/>
+					<box>
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="1.0"/>
+						<bottomPen lineWidth="1.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+					</textElement>
+					<text><![CDATA[ผลงาน]]></text>
+				</staticText>
+				<staticText>
+					<reportElement mode="Opaque" x="328" y="44" width="79" height="35" backcolor="#FFDC73" uuid="68bfbd1f-8fa9-4c40-9d39-48d69272ed76"/>
+					<box>
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="1.0"/>
+						<bottomPen lineWidth="1.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+					</textElement>
+					<text><![CDATA[หน่วยวัด]]></text>
+				</staticText>
+				<staticText>
+					<reportElement mode="Opaque" x="565" y="44" width="88" height="35" backcolor="#FFDC73" uuid="c7d08d4f-cd80-46f5-b2df-a51481e4fd7f"/>
+					<box>
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="1.0"/>
+						<bottomPen lineWidth="1.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+					</textElement>
+					<text><![CDATA[%เทียบเป้าหมาย
+เกณฑ์ผลงาน]]></text>
+				</staticText>
+				<staticText>
+					<reportElement mode="Opaque" x="407" y="44" width="79" height="35" backcolor="#FFDC73" uuid="8d9e5a7f-121b-4336-876c-4c78e47581c9"/>
+					<box>
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="1.0"/>
+						<bottomPen lineWidth="1.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+					</textElement>
+					<text><![CDATA[เป้าหมาย]]></text>
+				</staticText>
+				<staticText>
+					<reportElement mode="Opaque" x="653" y="44" width="79" height="35" backcolor="#FFDC73" uuid="a1d5bbac-32d0-40ad-9321-5fe5463169f4"/>
+					<box>
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="1.0"/>
+						<bottomPen lineWidth="1.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+					</textElement>
+					<text><![CDATA[คาดการณ์]]></text>
+				</staticText>
+				<staticText>
+					<reportElement mode="Opaque" x="1" y="44" width="327" height="35" backcolor="#FFDC73" uuid="a4cd1d46-9501-4e03-8ac8-a44f9e9a3a3e"/>
+					<box>
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="1.0"/>
+						<bottomPen lineWidth="1.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Performance Review]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="item_name" keepTogether="true">
+		<groupExpression><![CDATA[$F{item_name}]]></groupExpression>
+		<groupHeader>
+			<band height="19">
+				<textField>
+					<reportElement x="1" y="0" width="327" height="19" uuid="5c77f851-1839-45e2-80ec-dd773cb422bb"/>
+					<box>
+						<topPen lineWidth="0.75"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.75"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="TH SarabunPSK" size="14" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
+						<paragraph leftIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{item_name}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="407" y="0" width="79" height="19" uuid="22d95211-60b9-4e71-aa79-cdf71c0ace97"/>
+					<box>
+						<topPen lineWidth="0.75"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.75"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Right" verticalAlignment="Top">
+						<font fontName="TH SarabunPSK" size="14" isBold="true"/>
+						<paragraph rightIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{target_value}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="486" y="0" width="79" height="19" uuid="fbab4440-d257-432c-968b-ab8425012580"/>
+					<box>
+						<topPen lineWidth="0.75"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.75"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Right" verticalAlignment="Top">
+						<font fontName="TH SarabunPSK" size="14" isBold="true"/>
+						<paragraph rightIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{actual_value}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="328" y="0" width="79" height="19" uuid="09a94425-94d7-4588-97e9-dad802b47016"/>
+					<box>
+						<topPen lineWidth="0.75"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.75"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="TH SarabunPSK" size="14" isBold="true"/>
+						<paragraph leftIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{uom_name}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement mode="Opaque" x="565" y="0" width="88" height="19" uuid="f2c8db23-578f-4465-8a18-c23b55c71102">
+						<propertyExpression name="net.sf.jasperreports.style.backcolor"><![CDATA[$F{actual_target_color_code}]]></propertyExpression>
+					</reportElement>
+					<box>
+						<topPen lineWidth="0.75"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.75"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Right" verticalAlignment="Top">
+						<font fontName="TH SarabunPSK" size="14" isBold="true"/>
+						<paragraph rightIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[String.format("%.2f",$F{actual_target})]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement mode="Opaque" x="732" y="0" width="89" height="19" backcolor="#FFFFFF" uuid="6eb243db-3bb9-4fc0-aab3-b67c745d196e">
+						<propertyExpression name="net.sf.jasperreports.style.backcolor"><![CDATA[$F{actual_forecast_color_code}]]></propertyExpression>
+					</reportElement>
+					<box>
+						<topPen lineWidth="0.75"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.75"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Right" verticalAlignment="Top">
+						<font fontName="TH SarabunPSK" size="14" isBold="true"/>
+						<paragraph rightIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[String.format("%.2f",$F{actual_forecast})]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="653" y="0" width="79" height="19" uuid="0ea873fd-303a-4490-a6f1-59a3a0f268cc"/>
+					<box>
+						<topPen lineWidth="0.75"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.75"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Right" verticalAlignment="Top">
+						<font fontName="TH SarabunPSK" size="14" isBold="true"/>
+						<paragraph rightIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{forecast_value}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="reason" keepTogether="true">
+		<groupExpression><![CDATA[$F{reason} != null]]></groupExpression>
+		<groupHeader>
+			<band height="20">
+				<printWhenExpression><![CDATA[$F{reason}!=null]]></printWhenExpression>
+				<textField>
+					<reportElement mode="Opaque" x="1" y="0" width="820" height="20" isRemoveLineWhenBlank="true" backcolor="#F5F5F5" uuid="c04de6d4-8377-4f5a-b81c-6e99d6d5d32a">
+						<printWhenExpression><![CDATA[$F{reason}!=null]]></printWhenExpression>
+					</reportElement>
+					<box>
+						<leftPen lineWidth="1.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement>
+						<font fontName="TH SarabunPSK" size="15" isBold="true" isUnderline="false" isStrikeThrough="false"/>
+						<paragraph leftIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{reason}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="1">
+				<printWhenExpression><![CDATA[$F{reason}!=null]]></printWhenExpression>
+				<line>
+					<reportElement x="0" y="0" width="822" height="1" uuid="cdfde39c-8ed8-4778-b909-fb82679f5f26"/>
+					<graphicElement>
+						<pen lineWidth="0.75"/>
+					</graphicElement>
+				</line>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<columnHeader>
+		<band height="82" splitType="Stretch">
+			<textField>
+				<reportElement x="48" y="0" width="651" height="72" uuid="3ea8c94d-9df1-4b8c-87dd-b25a28e40ff4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="TH SarabunPSK" size="18" isBold="true" pdfEncoding="Identity-H" isPdfEmbedded="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["รายงานตัวชี้วัดตามมิติของ Balance Scorecard : BSC\n"+
+"ประจำปีประเมิน : "+$P{param_year}+"  ระดับ : "+$F{appraisal_level_name}+"  หน่วยงาน : "+$F{org_name}+"\n"+
+"ข้อมูล ณ วันที่ "+ $F{show_date}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="699" y="0" width="123" height="82" uuid="c872483f-5031-4770-8f1c-79665ececd1f"/>
+				<imageExpression><![CDATA["1588_6832_th.jpg"]]></imageExpression>
+			</image>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20">
+			<printWhenExpression><![CDATA[$F{reason}!=null]]></printWhenExpression>
+			<textField>
+				<reportElement mode="Opaque" x="1" y="0" width="820" height="20" isRemoveLineWhenBlank="true" backcolor="#F5F5F5" uuid="ca5a7fc0-d11c-4bfb-a5d4-f23166a53fe0">
+					<printWhenExpression><![CDATA[$F{reason_name} != null]]></printWhenExpression>
+				</reportElement>
+				<box>
+					<leftPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement>
+					<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+					<paragraph leftIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{reason_name}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch">
+			<printWhenExpression><![CDATA[$F{reason} != null]]></printWhenExpression>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band height="20" splitType="Stretch">
+			<textField>
+				<reportElement x="669" y="0" width="128" height="20" uuid="54638e27-bf2b-42cf-8312-6e54baa4af6e"/>
+				<textElement textAlignment="Right">
+					<font fontName="TH SarabunPSK" size="14"/>
+				</textElement>
+				<textFieldExpression><![CDATA["หน้าที่ "+$V{PAGE_NUMBER}+" /"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="797" y="0" width="24" height="20" uuid="ac5448e0-33b7-4db8-ace4-2da5ae10821d"/>
+				<textElement>
+					<font fontName="TH SarabunPSK" size="14"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>
