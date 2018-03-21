@@ -287,6 +287,10 @@ class DashboardController extends Controller
 			
 		// $items = DB::select($query.$qfooter,$qinput);
 		// return response()->json($items);
+		if($request->kpi_type_id=='All') {
+			$request->kpi_type_id = null;
+		}
+
 		$query = "
 		SELECT distinct air.item_id, air.item_name
 			FROM appraisal_item_result air
