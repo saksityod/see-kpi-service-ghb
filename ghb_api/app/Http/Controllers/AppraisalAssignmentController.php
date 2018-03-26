@@ -798,6 +798,7 @@ class AppraisalAssignmentController extends Controller
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}	
+		
 		$qinput = array();
 		$query = "
 			select a.item_id, a.item_name, uom.uom_name,a.structure_id, b.structure_name, b.nof_target_score, f.form_id, f.form_name, f.app_url, 
@@ -812,6 +813,8 @@ class AppraisalAssignmentController extends Controller
 			on b.structure_id = c.structure_id
 			left outer join appraisal_item_level d
 			on a.item_id = d.item_id
+			left outer join appraisal_item_org ao
+			on a.item_id = ao.item_id
 			left outer join appraisal_level e
 			on d.level_id = e.level_id
 			left join uom on  a.uom_id= uom.uom_id
@@ -823,6 +826,9 @@ class AppraisalAssignmentController extends Controller
 			and e.is_active = 1
 		";
 		$qinput[] = $request->emp_result_id;
+		
+		
+		empty($request->org_id) ?: ($org_list = implode (", ", $request->org_id) AND $query .= " and ao.org_id in ({$org_list}) ");
 		empty($request->appraisal_level_id) ?: ($query .= " and d.level_id = ? " AND $qinput[] = $request->appraisal_level_id);	
 		empty($request->appraisal_level_id) ?: ($query .= " and c.appraisal_level_id = ? " AND $qinput[] = $request->appraisal_level_id);	
 		
@@ -1718,7 +1724,7 @@ class AppraisalAssignmentController extends Controller
 		}			
 		
 		foreach ($request->appraisal_items as $i) {
-			
+
 			if ($i['select_flag'] == 1) {
 				if (array_key_exists ( 'form_id' , $i ) == false) {
 					$i['form_id'] = 0;

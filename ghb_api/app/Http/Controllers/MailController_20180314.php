@@ -42,19 +42,20 @@ class MailController extends Controller
 		Config::set('mail.password',$config->mail_password);
 		
 		$emp_list = DB::select("
-			SELECT distinct c.org_id, c.org_name, c.org_email
+			SELECT distinct c.emp_id, c.emp_name, c.email, e.email chief_email
 			FROM monthly_appraisal_item_result a
 			left outer join emp_result b
 			on a.emp_result_id = b.emp_result_id
-			inner join org c
-			on b.org_id = c.org_id
+			inner join employee c
+			on b.emp_id = c.emp_id
 			left outer join appraisal_item d
 			on a.item_id = d.item_id
+			left outer join employee e
+			on c.chief_emp_code = e.emp_code
 			where d.remind_condition_id = 1
 			and a.actual_value < a.target_value
-			and b.appraisal_type_id = 1
+			and b.appraisal_type_id = 2
 			and a.year = date_format(current_date,'%Y')		
-			and c.org_email is not null			
 		");
 		
 
@@ -62,24 +63,26 @@ class MailController extends Controller
 		
 		foreach ($emp_list as $e) {
 			$items = DB::select("
-				SELECT a.item_result_id, d.item_name, c.org_id, c.org_name, c.org_email,
+				SELECT a.item_result_id, d.item_name, c.emp_id, c.emp_name, c.email, e.email chief_email,
 				sum(a.actual_value) actual_value, sum(a.target_value) target_value
 				FROM monthly_appraisal_item_result a
 				left outer join emp_result b
 				on a.emp_result_id = b.emp_result_id
-				inner join org c
-				on b.org_id = c.org_id
+				inner join employee c
+				on b.emp_id = c.emp_id
 				left outer join appraisal_item d
 				on a.item_id = d.item_id
+				left outer join employee e
+				on c.chief_emp_code = e.emp_code
 				where d.remind_condition_id = 1
-				and b.appraisal_type_id = 1
+				and b.appraisal_type_id = 2
 				and a.year = date_format(current_date,'%Y')
 				and a.appraisal_month_no <= date_format(current_date,'%c')
-				and c.org_id = ?
-				group by a.item_result_id, d.item_name, c.org_id, c.org_name, c.org_email
+				and c.emp_id = ?
+				group by a.item_result_id, d.item_name, c.emp_id, c.emp_name, c.email, e.email
 				having sum(a.actual_value) < sum(a.target_value)
 				order by d.item_name asc
-			", array($e->org_id));
+			", array($e->emp_id));
 				
 			$admin_emails = DB::select("
 				select a.email
@@ -90,19 +93,19 @@ class MailController extends Controller
 			");				
 				
 			try {
-				$data = ['items' => $items, 'emp_name' => $e->org_name, 'web_domain' => $config->web_domain];
+				$data = ['items' => $items, 'emp_name' => $e->emp_name, 'web_domain' => $config->web_domain];
 				
-				$from = 'smart-radar@ghb.co.th';
-				$to = [$e->org_email];
-				//$cc = [$e->chief_email];
-				$cc = [];
+				$from = 'gjtestmail2017@gmail.com';
+				$to = [$e->email];
+				$cc = [$e->chief_email];
+				
 				foreach ($admin_emails as $ae) {
 					$cc[] = $ae->email;
 				}				
 				
 				Mail::send('emails.remind', $data, function($message) use ($from, $to, $cc)
 				{
-					$message->from($from, 'Smart-Radar System');
+					$message->from($from, 'SEE-KPI System');
 					$message->to($to);
 					$message->cc($cc);
 					$message->subject('Action Plan Required');
