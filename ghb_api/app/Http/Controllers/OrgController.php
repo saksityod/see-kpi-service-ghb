@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Org;
 use App\AppraisalLevel;
+use App\Employee;
 
 use Auth;
 use DB;
@@ -27,18 +28,45 @@ class OrgController extends Controller
 	
 	public function index(Request $request)
 	{		
+		
+		$emp = Employee::find(Auth::id());
+		$co = Org::find($emp->org_id);
+		
+		$all_emp = DB::select("
+			SELECT sum(b.is_all_employee) count_no
+			from employee a
+			left outer join appraisal_level b
+			on a.level_id = b.level_id
+			where emp_code = ?
+		", array(Auth::id()));
+		
 		empty($request->level_id) ? $level = "" : $level = " and a.level_id = " . $request->level_id . " ";
-		empty($request->org_code) ? $org = "" : $org = " and a.org_code = " . $request->org_code . " ";
-		$items = DB::select("
-			select a.org_id, a.org_code, a.org_name, a.org_abbr, a.is_active, b.org_name parent_org_name, a.parent_org_code, a.level_id, c.appraisal_level_name, a.longitude, a.latitude, a.province_code, d.province_name
-			from org a left outer join
-			org b on b.org_code = a.parent_org_code
-			left outer join appraisal_level c
-			on a.level_id = c.level_id 
-			left outer join province d on a.province_code = d.province_code
-			where 1=1 " . $level . $org . "
-			order by a.org_code asc
-		");
+		//empty($request->org_code) ? $org = "" : $org = " and a.org_code = " . $request->org_code . " ";
+		
+		if ($all_emp->count_no > 0) {
+			$items = DB::select("
+				select a.org_id, a.org_code, a.org_name, a.org_abbr, a.is_active, b.org_name parent_org_name, a.parent_org_code, a.level_id, c.appraisal_level_name, a.longitude, a.latitude, a.province_code, d.province_name
+				from org a left outer join
+				org b on b.org_code = a.parent_org_code
+				left outer join appraisal_level c
+				on a.level_id = c.level_id 
+				left outer join province d on a.province_code = d.province_code
+				where 1=1 " . $level . "
+				order by a.org_code asc
+			");
+		} else {
+			$items = DB::select("
+				select a.org_id, a.org_code, a.org_name, a.org_abbr, a.is_active, b.org_name parent_org_name, a.parent_org_code, a.level_id, c.appraisal_level_name, a.longitude, a.latitude, a.province_code, d.province_name
+				from org a left outer join
+				org b on b.org_code = a.parent_org_code
+				left outer join appraisal_level c
+				on a.level_id = c.level_id 
+				left outer join province d on a.province_code = d.province_code
+				where 1=1 " . $level . "
+				and (a.org_code = {$co->org_code} or a.parent_org_code = {$co->org_code})
+				order by a.org_code asc
+			");			
+		}
 		return response()->json($items);
 	}
 	
