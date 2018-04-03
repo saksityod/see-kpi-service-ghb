@@ -156,7 +156,7 @@ class CommonDataSetController extends Controller
 	{
 		if ($request->is_sql == 1) {
 			$validator = Validator::make($request->all(), [
-				'cds_name' => 'required|max:100|unique:cds',
+				'cds_name' => 'required|max:500|unique:cds',
 				'cds_desc' => 'max:255',
 				'connection_id' => 'required|integer',
 				'is_sql' => 'required|boolean',
@@ -180,7 +180,7 @@ class CommonDataSetController extends Controller
 			}
 		} else {
 			$validator = Validator::make($request->all(), [
-				'cds_name' => 'required|max:100|unique:cds',
+				'cds_name' => 'required|max:500|unique:cds',
 				'cds_desc' => 'max:255',
 				'is_sql' => 'required|boolean',
 				'is_active' => 'required|boolean'
@@ -264,7 +264,7 @@ class CommonDataSetController extends Controller
 		
 		if ($request->is_sql == 1) {
 			$validator = Validator::make($request->all(), [	
-				'cds_name' => 'required|max:100|unique:cds,cds_name,'.$cds_id . ',cds_id',
+				'cds_name' => 'required|max:500|unique:cds,cds_name,'.$cds_id . ',cds_id',
 				'cds_desc' => 'max:255',
 				'connection_id' => 'required|integer',
 				'is_sql' => 'required|boolean',
@@ -286,7 +286,7 @@ class CommonDataSetController extends Controller
 			}
 		} else {
 			$validator = Validator::make($request->all(), [
-				'cds_name' => 'required|max:100|unique:cds,cds_name,'.$cds_id . ',cds_id',
+				'cds_name' => 'required|max:500|unique:cds,cds_name,'.$cds_id . ',cds_id',
 				'cds_desc' => 'max:255',
 				'is_sql' => 'required|boolean',
 				'is_active' => 'required|boolean'
