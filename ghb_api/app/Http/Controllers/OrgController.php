@@ -45,7 +45,7 @@ class OrgController extends Controller
 		
 		if ($all_emp[0]->count_no > 0) {
 			$items = DB::select("
-				select a.org_id, a.org_code, a.org_name, a.org_abbr, a.is_active, b.org_name parent_org_name, a.parent_org_code, a.level_id, c.appraisal_level_name, a.longitude, a.latitude, a.province_code, d.province_name
+				select a.org_id, a.org_name, a.org_code, a.org_abbr, a.is_active, b.org_name parent_org_name, a.parent_org_code, a.level_id, c.appraisal_level_name, a.longitude, a.latitude, a.province_code, d.province_name
 				from org a left outer join
 				org b on b.org_code = a.parent_org_code
 				left outer join appraisal_level c
@@ -56,7 +56,7 @@ class OrgController extends Controller
 			");
 		} else {
 			$items = DB::select("
-				select a.org_id, a.org_code, a.org_name, a.org_abbr, a.is_active, b.org_name parent_org_name, a.parent_org_code, a.level_id, c.appraisal_level_name, a.longitude, a.latitude, a.province_code, d.province_name
+				select a.org_id, a.org_name, a.org_code, a.org_abbr, a.is_active, b.org_name parent_org_name, a.parent_org_code, a.level_id, c.appraisal_level_name, a.longitude, a.latitude, a.province_code, d.province_name
 				from org a left outer join
 				org b on b.org_code = a.parent_org_code
 				left outer join appraisal_level c
