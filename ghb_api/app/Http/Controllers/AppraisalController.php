@@ -7,6 +7,8 @@ use App\WorkflowStage;
 use App\AppraisalItemResult;
 use App\AppraisalLevel;
 use App\EmpResultStage;
+use App\Employee;
+use App\Org;
 use App\ActionPlan;
 use App\Reason;
 use App\AttachFile;
@@ -755,7 +757,8 @@ class AppraisalController extends Controller
 				$items = DB::select($query. " order by period_id,emp_code,org_code  asc ", $qinput);	
 				
 			} else {
-			
+				$emp = Employee::find(Auth::id());
+				$emp_org = Org::find($emp->org_id);
 				$query = "
 					select a.emp_result_id, b.emp_code, b.emp_name, d.appraisal_level_name, e.appraisal_type_id, e.appraisal_type_name, p.position_name, o.org_code, o.org_name, po.org_name parent_org_name, f.to_action, a.stage_id, g.period_id, concat(g.appraisal_period_desc,' Start Date: ',g.start_date,' End Date: ',g.end_date) appraisal_period_desc
 					from emp_result a
@@ -776,6 +779,7 @@ class AppraisalController extends Controller
 					left outer join org po
 					on o.parent_org_code = po.org_code
 					where d.is_hr = 0
+					and (o.org_code = {$emp_org->org_code} or o.parent_org_code = {$emp_org->org_code})
 				";		
 					
 				empty($request->appraisal_year) ?: ($query .= " and g.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
@@ -786,7 +790,7 @@ class AppraisalController extends Controller
 				empty($request->position_id) ?: ($query .= " and a.position_id = ? " AND $qinput[] = $request->position_id);
 				empty($request->emp_id) ?: ($query .= " And a.emp_id = ? " AND $qinput[] = $request->emp_id);
 				
-				$items = DB::select($query. " order by period_id,emp_code,org_code  asc ", $qinput);			
+				$items = DB::select($query. " order by period_id,org_code  asc ", $qinput);			
 			
 			}
 	
