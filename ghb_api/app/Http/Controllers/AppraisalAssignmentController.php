@@ -360,11 +360,11 @@ class AppraisalAssignmentController extends Controller
 				select distinct al.level_id, al.appraisal_level_name
 				from employee e, appraisal_level al
 				where e.level_id = al.level_id
-				and e.chief_emp_code = ?
+				and (e.chief_emp_code = ? or e.emp_code = ?)
 				and e.is_active = 1			
 				and al.is_hr = 0
 				Order by level_id	
-			", array($emp->emp_code));
+			", array($emp->emp_code,$emp->emp_code));
 		}
 		
 		return response()->json($items);
