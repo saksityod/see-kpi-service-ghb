@@ -684,12 +684,16 @@ class AppraisalAssignmentController extends Controller
 				empty($request->period_id) ?: ($query_unassign .= " and p.period_id = ? " AND $qinput[] = $request->period_id);	
 				
 			} else {
-			
+				$emp = Employee::find(Auth::id());
+				$emp_org = Org::find($emp->org_id);
 				$query_unassign = "
 					Select distinct null as emp_result_id,  'Unassigned' as status, null emp_id, null emp_code, null emp_name, o.org_id, o.org_code, o.org_name, null position_name, 'Organization' as appraisal_type_name, 1 appraisal_type_id, 0 period_id, 'Unassigned' appraisal_period_desc
 					From org o
 					Where o.is_active = 1
+					and (o.org_code = ? or o.parent_org_code = ?)
 				";
+				$qinput[] = $emp_org->org_code;
+				$qinput[] = $emp_org->org_code;
 				//empty($request->position_id) ?: ($query_unassign .= " and e.position_id = ? " AND $qinput[] = $request->position_id);
 				empty($request->org_id) ?: ($query_unassign .= " and o.org_id = ? " AND $qinput[] = $request->org_id);
 				//empty($request->emp_code) ?: ($query_unassign .= " and emp_code = ? " AND $qinput[] = $request->emp_code);
@@ -720,7 +724,10 @@ class AppraisalAssignmentController extends Controller
 									   AND er.period_id = p.period_id
 									   AND p.appraisal_year = z.appraisal_year
 									   AND p.appraisal_frequency_id = z.appraisal_frequency_id
+									   and (o.org_code = ? or o.parent_org_code = ?)
 				";
+				$qinput[] = $emp_org->org_code;
+				$qinput[] = $emp_org->org_code;
 				//empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
 				empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
 				//empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
@@ -742,7 +749,10 @@ class AppraisalAssignmentController extends Controller
 					And er.emp_result_id = ir.emp_result_id 
 					and ir.item_id = I.item_id		
 					and er.period_id = p.period_id
+					and (o.org_code = ? or o.parent_org_code = ?)
 				";
+				$qinput[] = $emp_org->org_code;
+				$qinput[] = $emp_org->org_code;
 				//empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
 				empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
 				//empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
