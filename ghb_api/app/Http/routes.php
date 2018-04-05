@@ -205,6 +205,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('org/al_list', 'OrgController@al_list');
 	Route::post('org', 'OrgController@store');
 	Route::post('org/import', 'OrgController@import');
+	Route::patch('org/role', 'OrgController@batch_role');
 	Route::post('org/auto_org_name', 'OrgController@auto_org_name');
 	Route::get('org/{org_id}', 'OrgController@show');
 	Route::patch('org/{org_id}', 'OrgController@update');
