@@ -245,7 +245,10 @@ class AppraisalPeriodController extends Controller
 				$item = new AppraisalPeriod;
 				$item->appraisal_year = $request->appraisal_year;
 				$item->period_no = $p;
-				$item->appraisal_period_desc = $request->appraisal_period_desc . ' ' . $p;
+
+				$pNew = ($a_range==1) ? '' : $p;
+				
+				$item->appraisal_period_desc = $request->appraisal_period_desc . ' ' . $pNew;
 				$item->appraisal_frequency_id = $request->appraisal_frequency_id;
 				$item->bonus_period_desc = $request->bonus_period_desc . ' ' . $bp;
 				$item->bonus_frequency_id = $request->bonus_frequency_id;

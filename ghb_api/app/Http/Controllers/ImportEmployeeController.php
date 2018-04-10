@@ -262,6 +262,10 @@ class ImportEmployeeController extends Controller
         if ($validator->fails()) {
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else {
+        	empty($request->working_start_date) ? $request->working_start_date = null : $request->working_start_date;
+			empty($request->probation_end_date) ? $request->probation_end_date = null : $request->probation_end_date;
+			empty($request->acting_end_date) ? $request->acting_end_date = null : $request->acting_end_date;
+			
 			$item->emp_code = $request->emp_code;
 			$item->emp_name = $request->emp_name;
 			$item->working_start_date = $request->working_start_date;
