@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\SystemConfiguration;
+use App\Employee;
 
 use PDO;
 use Auth;
@@ -36,6 +37,48 @@ class ReportController extends Controller
 		return response()->json($items);
     }	
 	
+	public function auto_employee_name(Request $request)
+	{
+		$emp = Employee::find(Auth::id());
+		$all_emp = DB::select("
+			SELECT sum(b.is_all_employee) count_no
+			from employee a
+			left outer join appraisal_level b
+			on a.level_id = b.level_id
+			where emp_code = ?
+		", array(Auth::id()));
+
+		$level_id = empty($request->level_id) ? "" : "and level_id = {$request->level_id}";
+		$org_id = empty($request->org_id) ? "" : "and org_id = {$request->org_id}";
+		
+		if ($all_emp[0]->count_no > 0) {
+			$items = DB::select("
+				Select e.emp_code, e.emp_name, p.position_id, p.position_name
+				From employee e
+				left join position p
+				on e.position_id = p.position_id
+				Where e.emp_name like ?
+				and e.is_active = 1
+				Order by e.emp_name
+			", array('%'.$request->emp_name.'%'));
+		} else {
+			$items = DB::select("
+				Select e.emp_code, e.emp_name, p.position_id, p.position_name
+				From employee e
+				left join position p
+				on e.position_id = p.position_id
+				Where 1=1
+				And e.emp_name like ?
+				".$level_id."
+				".$org_id."
+				and e.is_active = 1
+				Order by e.emp_name
+			", array('%'.$request->emp_name.'%'));
+		}
+		return response()->json($items);
+		
+	}
+
 	public function usage_log(Request $request) 
 	{
 
@@ -75,8 +118,17 @@ class ReportController extends Controller
 		}
 		empty($request->emp_id) ?: ($query .= " and b.emp_code = ? " AND $qinput[] = $request->emp_id);
 		empty($request->position_id) ?: ($query .= " and b.position_id = ? " AND $qinput[] = $request->position_id);
-		empty($request->level_id) ?: ($query .= " and b.level_id = ? " AND $qinput[] = $request->level_id);
-		empty($request->org_id) ?: ($query .= " and b.org_id = ? " AND $qinput[] = $request->org_id);
+
+		if($request->appraisal_type==1) {
+			empty($request->level_id) ?: ($query .= " and d.level_id = ? " AND $qinput[] = $request->level_id);
+			empty($request->org_id) ?: ($query .= " and d.org_id = ? " AND $qinput[] = $request->org_id);
+		} else {
+			empty($request->level_id) ?: ($query .= " and b.level_id = ? " AND $qinput[] = $request->level_id);
+			empty($request->org_id) ?: ($query .= " and b.org_id = ? " AND $qinput[] = $request->org_id);
+		}
+
+		// empty($request->level_id) ?: ($query .= " and b.level_id = ? " AND $qinput[] = $request->level_id);
+		// empty($request->org_id) ?: ($query .= " and b.org_id = ? " AND $qinput[] = $request->org_id);
 		
 	
 		$items = DB::select($query . $qfooter, $qinput);
@@ -85,7 +137,7 @@ class ReportController extends Controller
 	
 		$groups = array();
 		foreach ($items as $item) {
-			$key = $item->appraisal_level_name;
+			$key = ($request->appraisal_type==1) ? $item->org_name : $item->appraisal_level_name;
 			if (!isset($groups[$key])) {
 				$groups[$key] = array(
 					'items' => array($item),

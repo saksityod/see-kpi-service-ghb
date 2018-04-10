@@ -355,6 +355,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('report/al_list','ReportController@al_list');
 	//add by toto 2018-03-19 14:14
 	Route::get('report/list_kpi_type','ReportController@list_kpi_type');
+	Route::get('report/auto_employee_name','ReportController@auto_employee_name');
 	
 	// Import Assignment //
 	Route::get('import_assignment/org_list', 'ImportAssignmentController@org_list');
