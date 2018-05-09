@@ -230,6 +230,8 @@ class DashboardController extends Controller
 			on a.org_id = c.org_id
 			left outer join appraisal_level d
 			on c.level_id = d.level_id
+			inner join appraisal_period ap
+			on ap.period_id = a.period_id
 			inner join (
 				select org_id, org_name, org_code
 				from org x left outer join appraisal_level y
@@ -247,7 +249,9 @@ class DashboardController extends Controller
 			where appraisal_type_id = 1
 		";
 
-		empty($request->district_code) ?: ($org_query .= " and c.parent_org_code = ? " AND $org_input[] = $request->district_code);	
+		empty($request->district_code) ?: ($org_query .= " and c.parent_org_code = ? " AND $org_input[] = $request->district_code);
+		empty($request->year) ?: ($org_query .= " and ap.appraisal_year = ? " AND $org_input[] = $request->year);
+		empty($request->period) ?: ($org_query .= " and a.period_id = ? " AND $org_input[] = $request->period);
 		
 		$org_list = DB::select($org_query, $org_input);	
 		
@@ -287,33 +291,56 @@ class DashboardController extends Controller
 			
 		// $items = DB::select($query.$qfooter,$qinput);
 		// return response()->json($items);
-		if($request->kpi_type_id=='All') {
-			$request->kpi_type_id = null;
-		}
+		// if($request->kpi_type_id=='All') {
+		// 	$request->kpi_type_id = null;
+		// }
+
+		// $query = "
+		// SELECT distinct air.item_id, air.item_name
+		// 	FROM appraisal_item_result air
+		// 	inner join appraisal_item ai on air.item_id=ai.item_id
+		// 	inner join appraisal_structure aps on ai.structure_id = aps.structure_id
+		
+		// 	WHERE 1=1
+		// 	and aps.form_id=1
+		// 	";
+		
+		// $qfooter = " GROUP BY air.item_id
+		// 	ORDER BY air.item_id ";
+		
+		// if ($request->appraisal_type_id == 1) {
+		// 	empty($request->appraisal_level) ?: ($query .= " and air.level_id = ? " AND $qinput[] = $request->appraisal_level);
+		// 	empty($request->org_id) ?: ($query .= " and air.org_id = ? " AND $qinput[] = $request->org_id);
+		// 	empty($request->kpi_type_id) ?: ($query .= " and air.kpi_type_id = ? " AND $qinput[] = $request->kpi_type_id);
+		// } else {
+		// 	empty($request->emp_id) ?: ($query .= " and air.emp_id = ? " AND $qinput[] = $request->emp_id);
+		// }
+			
+		// $items = DB::select($query.$qfooter,$qinput);
+		// return response()->json($items);
+
+		$qinput = array();
+		$levelId = (empty($request->appraisal_level)) ? "0" : $request->appraisal_level;
+		$OrgId = (empty($request->org_id)) ? "0" : $request->org_id;
+		$PeriodId = (empty($request->period)) ? " " : " and air.period_id = " . $request->period;
+		$EmpIdStr = (empty($request->emp_id)) ? " " : " AND air.emp_id = {$request->emp_id}";
 
 		$query = "
-		SELECT distinct air.item_id, air.item_name
+			SELECT air.item_id, air.item_name
 			FROM appraisal_item_result air
-			inner join appraisal_item ai on air.item_id=ai.item_id
-			inner join appraisal_structure aps on ai.structure_id = aps.structure_id
-		
-			WHERE 1=1
-			and aps.form_id=1
-			";
-		
-		$qfooter = " GROUP BY air.item_id
-			ORDER BY air.item_id ";
-		
-		if ($request->appraisal_type_id == 1) {
-			empty($request->appraisal_level) ?: ($query .= " and air.level_id = ? " AND $qinput[] = $request->appraisal_level);
-			empty($request->org_id) ?: ($query .= " and air.org_id = ? " AND $qinput[] = $request->org_id);
-			empty($request->kpi_type_id) ?: ($query .= " and air.kpi_type_id = ? " AND $qinput[] = $request->kpi_type_id);
-		} else {
-			empty($request->emp_id) ?: ($query .= " and air.emp_id = ? " AND $qinput[] = $request->emp_id);
-		}
-			
-		$items = DB::select($query.$qfooter,$qinput);
+			INNER JOIN appraisal_item ai on air.item_id=ai.item_id
+			INNER JOIN appraisal_structure aps on ai.structure_id = aps.structure_id
+			WHERE aps.form_id = 1
+			AND air.level_id = {$levelId}
+			AND air.org_id = {$OrgId}
+			".$PeriodId."
+			".$EmpIdStr."
+			GROUP BY air.item_id
+			ORDER BY air.item_id";
+
+		$items = DB::select($query);
 		return response()->json($items);
+
 	}
 
 	public function dashboard_content(Request $request){
