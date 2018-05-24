@@ -25,6 +25,107 @@ class ReportController extends Controller
 	{
 		//$this->middleware('jwt.auth');
 	}
+
+	public function del_sql() {
+
+		// $appraisal_item_result = DB::select("
+		// 	SELECT air.item_result_id
+		// 	FROM appraisal_item_result air
+		// 	LEFT JOIN employee er ON er.emp_id = air.emp_id and er.level_id = air.level_id and er.position_id = air.position_id and er.org_id = air.org_id
+		// 	WHERE er.emp_id IS NULL;
+		// ");
+
+		// foreach ($appraisal_item_result as $key => $value) {
+		// 	DB::table('appraisal_item_result')->where('item_result_id', '=', $value->item_result_id)->delete();
+		// }
+
+		$emp_result = DB::select("
+			SELECT air.emp_result_id
+			FROM emp_result er
+			LEFT JOIN appraisal_item_result air ON er.emp_result_id = air.emp_result_id
+			WHERE air.emp_result_id IS NULL;
+		");
+
+		foreach ($emp_result as $key => $value) {
+			DB::table('emp_result')->where('emp_result_id', '=', $value->emp_result_id)->delete();
+		}
+
+		$emp_result_stage = DB::select("
+			SELECT er.emp_result_stage_id
+			FROM emp_result_stage er
+			LEFT JOIN appraisal_item_result air ON er.emp_result_id = air.emp_result_id
+			WHERE air.emp_result_id IS NULL;
+		");
+
+		foreach ($emp_result_stage as $key => $value) {
+			DB::table('emp_result_stage')->where('emp_result_stage_id', '=', $value->emp_result_stage_id)->delete();
+		}
+
+		$structure_result = DB::select("
+			SELECT er.structure_result_id
+			FROM structure_result er
+			LEFT JOIN appraisal_item_result air ON er.emp_result_id = air.emp_result_id
+			WHERE air.emp_result_id IS NULL;
+		");
+
+		foreach ($structure_result as $key => $value) {
+			DB::table('structure_result')->where('structure_result_id', '=', $value->structure_result_id)->delete();
+		}
+
+		$monthly_appraisal_item_result = DB::select("
+			SELECT er.item_result_id
+			FROM monthly_appraisal_item_result er
+			LEFT JOIN appraisal_item_result air ON er.emp_result_id = air.emp_result_id
+			WHERE er.emp_result_id IS NULL;
+		");
+
+		foreach ($monthly_appraisal_item_result as $key => $value) {
+			DB::table('monthly_appraisal_item_result')->where('item_result_id', '=', $value->item_result_id)->delete();
+		}
+
+		$cds_result_doc = DB::select("
+			SELECT cds_result_doc_id
+			FROM cds_result_doc er
+			LEFT JOIN cds_result air ON er.cds_result_id = air.cds_result_id
+			WHERE air.cds_result_id IS NULL;
+		");
+
+		foreach ($cds_result_doc as $key => $value) {
+			DB::table('cds_result_doc')->where('cds_result_doc_id', '=', $value->cds_result_doc_id)->delete();
+		}
+
+		$appraisal_item_result_doc = DB::select("
+			SELECT result_doc_id
+			FROM appraisal_item_result_doc er
+			LEFT JOIN appraisal_item_result air ON er.item_result_id = air.item_result_id
+			WHERE air.item_result_id IS NULL
+		");
+
+		foreach ($appraisal_item_result_doc as $key => $value) {
+			DB::table('appraisal_item_result_doc')->where('result_doc_id', '=', $value->result_doc_id)->delete();
+		}
+
+		// $cds_result = DB::select("
+		// 	SELECT cds_result_id
+		// 	FROM cds_result
+		// 	WHERE cds_result_id NOT IN(
+		// 		SELECT cds.cds_result_id FROM cds_result cds 
+		// 		INNER JOIN appraisal_item_result air 
+		// 			ON air.org_id = cds.org_id
+		// 			AND air.level_id = cds.level_id
+		// 		WHERE EXISTS(
+		// 			SELECT 1 FROM kpi_cds_mapping 
+		// 			WHERE item_id = air.item_id
+		// 			AND cds_id = cds.cds_id
+		// 		)
+		// 	)
+		// ");
+
+		// foreach ($cds_result as $key => $value) {
+		// 	DB::table('cds_result')->where('cds_result_id', '=', $value->cds_result_id)->delete();
+		// }
+
+	}
 	
     public function al_list()
     {

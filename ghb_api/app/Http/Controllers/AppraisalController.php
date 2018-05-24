@@ -38,10 +38,16 @@ class AppraisalController extends Controller
 	
 	public function year_list()
 	{
+		// $items = DB::select("
+		// 	Select distinct appraisal_year appraisal_year_id, appraisal_year
+		// 	from appraisal_period 
+		// 	order by appraisal_year desc
+		// ");
 		$items = DB::select("
-			Select distinct appraisal_year appraisal_year_id, appraisal_year
-			from appraisal_period 
-			order by appraisal_year desc
+			SELECT DISTINCT appraisal_year appraisal_year_id,
+			appraisal_year
+			from appraisal_period
+			LEFT OUTER JOIN system_config on system_config.current_appraisal_year = appraisal_period.appraisal_year
 		");
 		return response()->json($items);
 	}

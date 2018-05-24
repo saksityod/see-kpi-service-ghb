@@ -38,9 +38,15 @@ class DashboardController extends Controller
 
 	public function year_list()
 	{
+		// $items = DB::select("
+		// 	SELECT appraisal_year FROM appraisal_period
+		// 	GROUP BY appraisal_year ORDER BY appraisal_year
+		// ");
 		$items = DB::select("
-			SELECT appraisal_year FROM appraisal_period
-			GROUP BY appraisal_year ORDER BY appraisal_year
+			SELECT DISTINCT appraisal_year appraisal_year_id,
+			appraisal_year
+			from appraisal_period
+			LEFT OUTER JOIN system_config on system_config.current_appraisal_year = appraisal_period.appraisal_year
 		");
 		return response()->json($items);
 	}

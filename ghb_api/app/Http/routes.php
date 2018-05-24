@@ -376,6 +376,8 @@ Route::group(['middleware' => 'cors'], function()
 
 	Route::Resource('generate', 'JasperController@generate');
 
+	Route::get('report/del_sql','ReportController@del_sql');
+
 	
 	
 	Route::get('404', ['as' => 'notfound', function () {

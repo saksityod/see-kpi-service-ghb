@@ -842,7 +842,7 @@ class AppraisalAssignmentController extends Controller
 		empty($request->appraisal_level_id) ?: ($query .= " and d.level_id = ? " AND $qinput[] = $request->appraisal_level_id);	
 		empty($request->appraisal_level_id) ?: ($query .= " and c.appraisal_level_id = ? " AND $qinput[] = $request->appraisal_level_id);	
 		
-		$qfooter = " order by b.seq_no, a.item_id, ar.structure_weight_percent desc ";
+		$qfooter = "group by a.item_id order by b.seq_no, a.item_id, ar.structure_weight_percent desc ";
 		
 		// echo $query . $qfooter;
 		// echo"<br>";
@@ -1339,81 +1339,96 @@ class AppraisalAssignmentController extends Controller
 						empty($tg_id) ? $tg_id = null : $tg_id = $tg_id->threshold_group_id;
 						
 						foreach ($request->appraisal_items as $i) {
-							if ($i['form_id'] == 1) {		
-								$aitem = new AppraisalItemResult;
-								$aitem->emp_result_id = $emp_result->emp_result_id;
-								$aitem->kpi_type_id = $i['kpi_type_id'];
-								$aitem->period_id = $period_id;
-								$aitem->emp_id = $emp_id;
-								$aitem->chief_emp_id = $chief_emp_id;
-								$aitem->level_id = $level_id;
-								$aitem->org_id = $org_id;
-								$aitem->position_id = $position_id;
-								$aitem->item_id = $i['item_id'];
-								$aitem->item_name = $i['item_name'];
-								$aitem->target_value = $i['target_value'];
-								$aitem->weight_percent = $i['weight_percent'];
-								array_key_exists('score0', $i) ? $aitem->score0 = $i['score0'] : null;
-								array_key_exists('score1', $i) ? $aitem->score1 = $i['score1'] : null;
-								array_key_exists('score2', $i) ? $aitem->score2 = $i['score2'] : null;
-								array_key_exists('score3', $i) ? $aitem->score3 = $i['score3'] : null;
-								array_key_exists('score4', $i) ? $aitem->score4 = $i['score4'] : null;
-								array_key_exists('score5', $i) ? $aitem->score5 = $i['score5'] : null;
-								array_key_exists('forecast_value', $i) ? $aitem->forecast_value = $i['forecast_value'] : null;
-								$aitem->over_value = 0;
-								$aitem->weigh_score = 0;
-								$aitem->structure_weight_percent = $i['total_weight'];
-								$aitem->threshold_group_id = $tg_id;
-								$aitem->created_by = Auth::id();
-								$aitem->updated_by = Auth::id();
-								$aitem->save();					
+							$check_item = DB::select("
+								select count(1) cnt
+								from appraisal_item ai
+								inner join appraisal_item_org aio on aio.item_id = ai.item_id
+								inner join org on org.org_id = aio.org_id
+								inner join appraisal_item_level ail on ail.item_id = ai.item_id
+								inner join appraisal_level al on al.level_id = ail.level_id
+								where ai.item_id = '".$i['item_id']."'
+								and org.org_id = {$org_id}
+								and al.level_id = {$level_id}
+							");
 
-							} elseif ($i['form_id'] == 2) {
+							if($check_item[0]->cnt > 0) {
 
-								$aitem = new AppraisalItemResult;
-								$aitem->emp_result_id = $emp_result->emp_result_id;
-								$aitem->period_id = $period_id;
-								$aitem->emp_id = $emp_id;
-								$aitem->chief_emp_id = $chief_emp_id;
-								$aitem->level_id = $level_id;
-								$aitem->org_id = $org_id;
-								$aitem->position_id = $position_id;
-								$aitem->item_id = $i['item_id'];
-								$aitem->item_name = $i['item_name'];
-								$aitem->target_value = $i['target_value'];
-								$aitem->weight_percent = $i['weight_percent'];
-								$aitem->over_value = 0;
-								$aitem->weigh_score = 0;
-								$aitem->structure_weight_percent = $i['total_weight'];
-								$aitem->threshold_group_id = $tg_id;
-								$aitem->created_by = Auth::id();
-								$aitem->updated_by = Auth::id();
-								$aitem->save();
-								
-							} elseif ($i['form_id'] == 3) {
-						
-								$aitem = new AppraisalItemResult;
-								$aitem->emp_result_id = $emp_result->emp_result_id;
-								$aitem->period_id = $period_id;
-								$aitem->emp_id = $emp_id;
-								$aitem->chief_emp_id = $chief_emp_id;
-								$aitem->level_id = $level_id;
-								$aitem->org_id = $org_id;
-								$aitem->position_id = $position_id;
-								$aitem->item_id = $i['item_id'];
-								$aitem->item_name = $i['item_name'];
-								$aitem->max_value = $i['max_value'];
-								$aitem->deduct_score_unit = $i['deduct_score_unit'];
-								$aitem->weight_percent = 0;
-								$aitem->over_value = 0;
-								$aitem->weigh_score = 0;
-								$aitem->structure_weight_percent = $i['total_weight'];
-								$aitem->threshold_group_id = $tg_id;
-								$aitem->created_by = Auth::id();
-								$aitem->updated_by = Auth::id();
-								$aitem->save();
+								if ($i['form_id'] == 1) {		
+									$aitem = new AppraisalItemResult;
+									$aitem->emp_result_id = $emp_result->emp_result_id;
+									$aitem->kpi_type_id = $i['kpi_type_id'];
+									$aitem->period_id = $period_id;
+									$aitem->emp_id = $emp_id;
+									$aitem->chief_emp_id = $chief_emp_id;
+									$aitem->level_id = $level_id;
+									$aitem->org_id = $org_id;
+									$aitem->position_id = $position_id;
+									$aitem->item_id = $i['item_id'];
+									$aitem->item_name = $i['item_name'];
+									$aitem->target_value = $i['target_value'];
+									$aitem->weight_percent = $i['weight_percent'];
+									array_key_exists('score0', $i) ? $aitem->score0 = $i['score0'] : null;
+									array_key_exists('score1', $i) ? $aitem->score1 = $i['score1'] : null;
+									array_key_exists('score2', $i) ? $aitem->score2 = $i['score2'] : null;
+									array_key_exists('score3', $i) ? $aitem->score3 = $i['score3'] : null;
+									array_key_exists('score4', $i) ? $aitem->score4 = $i['score4'] : null;
+									array_key_exists('score5', $i) ? $aitem->score5 = $i['score5'] : null;
+									array_key_exists('forecast_value', $i) ? $aitem->forecast_value = $i['forecast_value'] : null;
+									$aitem->over_value = 0;
+									$aitem->weigh_score = 0;
+									$aitem->structure_weight_percent = $i['total_weight'];
+									$aitem->threshold_group_id = $tg_id;
+									$aitem->created_by = Auth::id();
+									$aitem->updated_by = Auth::id();
+									$aitem->save();					
+
+								} elseif ($i['form_id'] == 2) {
+
+									$aitem = new AppraisalItemResult;
+									$aitem->emp_result_id = $emp_result->emp_result_id;
+									$aitem->period_id = $period_id;
+									$aitem->emp_id = $emp_id;
+									$aitem->chief_emp_id = $chief_emp_id;
+									$aitem->level_id = $level_id;
+									$aitem->org_id = $org_id;
+									$aitem->position_id = $position_id;
+									$aitem->item_id = $i['item_id'];
+									$aitem->item_name = $i['item_name'];
+									$aitem->target_value = $i['target_value'];
+									$aitem->weight_percent = $i['weight_percent'];
+									$aitem->over_value = 0;
+									$aitem->weigh_score = 0;
+									$aitem->structure_weight_percent = $i['total_weight'];
+									$aitem->threshold_group_id = $tg_id;
+									$aitem->created_by = Auth::id();
+									$aitem->updated_by = Auth::id();
+									$aitem->save();
+									
+								} elseif ($i['form_id'] == 3) {
 							
-							} 	
+									$aitem = new AppraisalItemResult;
+									$aitem->emp_result_id = $emp_result->emp_result_id;
+									$aitem->period_id = $period_id;
+									$aitem->emp_id = $emp_id;
+									$aitem->chief_emp_id = $chief_emp_id;
+									$aitem->level_id = $level_id;
+									$aitem->org_id = $org_id;
+									$aitem->position_id = $position_id;
+									$aitem->item_id = $i['item_id'];
+									$aitem->item_name = $i['item_name'];
+									$aitem->max_value = $i['max_value'];
+									$aitem->deduct_score_unit = $i['deduct_score_unit'];
+									$aitem->weight_percent = 0;
+									$aitem->over_value = 0;
+									$aitem->weigh_score = 0;
+									$aitem->structure_weight_percent = $i['total_weight'];
+									$aitem->threshold_group_id = $tg_id;
+									$aitem->created_by = Auth::id();
+									$aitem->updated_by = Auth::id();
+									$aitem->save();
+								
+								}
+							}
 						}						
 					} else {
 						$already_assigned = ['emp_id' => $e['emp_id'], 'org_id' => $e['org_id'], 'period_id' => $period_id];
@@ -1562,82 +1577,97 @@ class AppraisalAssignmentController extends Controller
 					empty($tg_id) ? $tg_id = null : $tg_id = $tg_id->threshold_group_id;	
 					
 					foreach ($request->appraisal_items as $i) {
-						if ($i['form_id'] == 1) {		
 
-							$aitem = new AppraisalItemResult;
-							$aitem->emp_result_id = $emp_result->emp_result_id;
-							$aitem->kpi_type_id = $i['kpi_type_id'];
-							$aitem->period_id = $period_id;
-							$aitem->emp_id = $emp_id;
-							$aitem->chief_emp_id = $chief_emp_id;
-							$aitem->org_id = $org_id;
-							$aitem->position_id = $position_id;
-							$aitem->level_id = $level_id;
-							$aitem->item_id = $i['item_id'];
-							$aitem->item_name = $i['item_name'];
-							$aitem->target_value = $i['target_value'];
-							$aitem->weight_percent = $i['weight_percent'];
-							array_key_exists('score0', $i) ? $aitem->score0 = $i['score0'] : null;
-							array_key_exists('score1', $i) ? $aitem->score1 = $i['score1'] : null;
-							array_key_exists('score2', $i) ? $aitem->score2 = $i['score2'] : null;
-							array_key_exists('score3', $i) ? $aitem->score3 = $i['score3'] : null;
-							array_key_exists('score4', $i) ? $aitem->score4 = $i['score4'] : null;
-							array_key_exists('score5', $i) ? $aitem->score5 = $i['score5'] : null;
-							array_key_exists('forecast_value', $i) ? $aitem->forecast_value = $i['forecast_value'] : null;
-							$aitem->over_value = 0;
-							$aitem->weigh_score = 0;
-							$aitem->threshold_group_id = $tg_id;
-							$aitem->structure_weight_percent = $i['total_weight'];
-							$aitem->created_by = Auth::id();
-							$aitem->updated_by = Auth::id();
-							$aitem->save();										
-			
-						} elseif ($i['form_id'] == 2) {
+						$check_item = DB::select("
+							select count(1) cnt
+							from appraisal_item ai
+							inner join appraisal_item_org aio on aio.item_id = ai.item_id
+							inner join org on org.org_id = aio.org_id
+							inner join appraisal_item_level ail on ail.item_id = ai.item_id
+							inner join appraisal_level al on al.level_id = ail.level_id
+							where ai.item_id = '".$i['item_id']."'
+							and org.org_id = {$org_id}
+							and al.level_id = {$level_id}
+						");
 
-							$aitem = new AppraisalItemResult;
-							$aitem->emp_result_id = $emp_result->emp_result_id;
-							$aitem->period_id = $period_id;
-							$aitem->emp_id = $emp_id;
-							$aitem->chief_emp_id = $chief_emp_id;
-							$aitem->org_id = $org_id;
-							$aitem->position_id = $position_id;
-							$aitem->level_id = $level_id;
-							$aitem->item_id = $i['item_id'];
-							$aitem->item_name = $i['item_name'];
-							$aitem->target_value = $i['target_value'];
-							$aitem->weight_percent = $i['weight_percent'];
-							$aitem->over_value = 0;
-							$aitem->weigh_score = 0;
-							$aitem->threshold_group_id = $tg_id;
-							$aitem->structure_weight_percent = $i['total_weight'];
-							$aitem->created_by = Auth::id();
-							$aitem->updated_by = Auth::id();
-							$aitem->save();
-							
-						} elseif ($i['form_id'] == 3) {
-					
-							$aitem = new AppraisalItemResult;
-							$aitem->emp_result_id = $emp_result->emp_result_id;
-							$aitem->period_id = $period_id;
-							$aitem->emp_id = $emp_id;
-							$aitem->chief_emp_id = $chief_emp_id;
-							$aitem->org_id = $org_id;
-							$aitem->position_id = $position_id;
-							$aitem->level_id = $level_id;
-							$aitem->item_id = $i['item_id'];
-							$aitem->item_name = $i['item_name'];
-							$aitem->max_value = $i['max_value'];
-							$aitem->deduct_score_unit = $i['deduct_score_unit'];
-							$aitem->weight_percent = 0;
-							$aitem->over_value = 0;
-							$aitem->weigh_score = 0;
-							$aitem->threshold_group_id = $tg_id;
-							$aitem->structure_weight_percent = $i['total_weight'];
-							$aitem->created_by = Auth::id();
-							$aitem->updated_by = Auth::id();
-							$aitem->save();
+						if($check_item[0]->cnt > 0) {
+
+							if ($i['form_id'] == 1) {		
+								$aitem = new AppraisalItemResult;
+								$aitem->emp_result_id = $emp_result->emp_result_id;
+								$aitem->kpi_type_id = $i['kpi_type_id'];
+								$aitem->period_id = $period_id;
+								$aitem->emp_id = $emp_id;
+								$aitem->chief_emp_id = $chief_emp_id;
+								$aitem->org_id = $org_id;
+								$aitem->position_id = $position_id;
+								$aitem->level_id = $level_id;
+								$aitem->item_id = $i['item_id'];
+								$aitem->item_name = $i['item_name'];
+								$aitem->target_value = $i['target_value'];
+								$aitem->weight_percent = $i['weight_percent'];
+								array_key_exists('score0', $i) ? $aitem->score0 = $i['score0'] : null;
+								array_key_exists('score1', $i) ? $aitem->score1 = $i['score1'] : null;
+								array_key_exists('score2', $i) ? $aitem->score2 = $i['score2'] : null;
+								array_key_exists('score3', $i) ? $aitem->score3 = $i['score3'] : null;
+								array_key_exists('score4', $i) ? $aitem->score4 = $i['score4'] : null;
+								array_key_exists('score5', $i) ? $aitem->score5 = $i['score5'] : null;
+								array_key_exists('forecast_value', $i) ? $aitem->forecast_value = $i['forecast_value'] : null;
+								$aitem->over_value = 0;
+								$aitem->weigh_score = 0;
+								$aitem->threshold_group_id = $tg_id;
+								$aitem->structure_weight_percent = $i['total_weight'];
+								$aitem->created_by = Auth::id();
+								$aitem->updated_by = Auth::id();
+								$aitem->save();										
+				
+							} elseif ($i['form_id'] == 2) {
+
+								$aitem = new AppraisalItemResult;
+								$aitem->emp_result_id = $emp_result->emp_result_id;
+								$aitem->period_id = $period_id;
+								$aitem->emp_id = $emp_id;
+								$aitem->chief_emp_id = $chief_emp_id;
+								$aitem->org_id = $org_id;
+								$aitem->position_id = $position_id;
+								$aitem->level_id = $level_id;
+								$aitem->item_id = $i['item_id'];
+								$aitem->item_name = $i['item_name'];
+								$aitem->target_value = $i['target_value'];
+								$aitem->weight_percent = $i['weight_percent'];
+								$aitem->over_value = 0;
+								$aitem->weigh_score = 0;
+								$aitem->threshold_group_id = $tg_id;
+								$aitem->structure_weight_percent = $i['total_weight'];
+								$aitem->created_by = Auth::id();
+								$aitem->updated_by = Auth::id();
+								$aitem->save();
+								
+							} elseif ($i['form_id'] == 3) {
 						
-						} 	
+								$aitem = new AppraisalItemResult;
+								$aitem->emp_result_id = $emp_result->emp_result_id;
+								$aitem->period_id = $period_id;
+								$aitem->emp_id = $emp_id;
+								$aitem->chief_emp_id = $chief_emp_id;
+								$aitem->org_id = $org_id;
+								$aitem->position_id = $position_id;
+								$aitem->level_id = $level_id;
+								$aitem->item_id = $i['item_id'];
+								$aitem->item_name = $i['item_name'];
+								$aitem->max_value = $i['max_value'];
+								$aitem->deduct_score_unit = $i['deduct_score_unit'];
+								$aitem->weight_percent = 0;
+								$aitem->over_value = 0;
+								$aitem->weigh_score = 0;
+								$aitem->threshold_group_id = $tg_id;
+								$aitem->structure_weight_percent = $i['total_weight'];
+								$aitem->created_by = Auth::id();
+								$aitem->updated_by = Auth::id();
+								$aitem->save();
+							
+							}
+						}
 					}	
 			
 				} else {
@@ -1994,39 +2024,37 @@ class AppraisalAssignmentController extends Controller
 				} 
 			} else {
 				// select flag false
-				$air = DB::select("
-					select emp_id, level_id, position_id, org_id, period_id, item_result_id , item_id
-					from appraisal_item_result 
-					where item_result_id = '".$i['item_result_id']."'
-				");
+				// $air = DB::select("
+				// 	select level_id, org_id, item_result_id , item_id
+				// 	from appraisal_item_result 
+				// 	where item_result_id = '".$i['item_result_id']."'
+				// ");
 
-				if(!empty($air)) {
-					$cds = DB::select("
-						select cds.cds_result_id, cds.cds_id
-						from cds_result cds
-						inner join kpi_cds_mapping kcm on kcm.cds_id = cds.cds_id
-						inner join appraisal_item_result air on air.item_id = kcm.item_id 
-						where cds.level_id = '".$air[0]->level_id."'
-						and cds.position_id = '".$air[0]->position_id."'
-						and cds.org_id = '".$air[0]->org_id."'
-						and cds.period_id = '".$air[0]->period_id."'
-						and air.item_id = '".$air[0]->item_id."'
-					");
-				}
+				// if(!empty($air)) {
+				// 	$cds = DB::select("
+				// 		select cds.cds_result_id, cds.cds_id
+				// 		from cds_result cds
+				// 		inner join kpi_cds_mapping kcm on kcm.cds_id = cds.cds_id
+				// 		inner join appraisal_item_result air on air.item_id = kcm.item_id 
+				// 		where cds.level_id = '".$air[0]->level_id."'
+				// 		and cds.org_id = '".$air[0]->org_id."'
+				// 		and air.item_id = '".$air[0]->item_id."'
+				// 	");
+				// }
 
 				$aitem = AppraisalItemResult::find($i['item_result_id']);
 				$aitem_doc = DB::table('appraisal_item_result_doc')->where('item_result_id', '=', $i['item_result_id']);
 				$aitem_month = DB::table('monthly_appraisal_item_result')->where('item_result_id', '=', $i['item_result_id']);
 
-				if(!empty($cds)) $aitem_cds = DB::table('cds_result')->where('cds_id', '=', $cds[0]->cds_id);
-				if(!empty($cds)) {
-					foreach ($cds as $key => $value) {
-						$aitem_cds_doc = DB::table('cds_result_doc')->where('cds_result_id', '=', $value->cds_result_id);
-						if (!empty($aitem_cds_doc)) {
-							$aitem_cds_doc->delete();
-						}
-					}
-				}
+				// if(!empty($cds)) $aitem_cds = DB::table('cds_result')->where('cds_id', '=', $cds[0]->cds_id);
+				// if(!empty($cds)) {
+				// 	foreach ($cds as $key => $value) {
+				// 		$aitem_cds_doc = DB::table('cds_result_doc')->where('cds_result_id', '=', $value->cds_result_id);
+				// 		if (!empty($aitem_cds_doc)) {
+				// 			$aitem_cds_doc->delete();
+				// 		}
+				// 	}
+				// }
 
 				if (!empty($aitem)) {
 					$aitem->delete();
@@ -2037,9 +2065,9 @@ class AppraisalAssignmentController extends Controller
 				if (!empty($aitem_month)) {
 					$aitem_month->delete();
 				}
-				if (!empty($aitem_cds)) {
-					$aitem_cds->delete();
-				}
+				// if (!empty($aitem_cds)) {
+				// 	$aitem_cds->delete();
+				// }
 			}
 		}		
 		
@@ -2060,33 +2088,27 @@ class AppraisalAssignmentController extends Controller
 			if ($item->status == 'Assigned' || $item->status == 'Reject' || $item->status == 'Draft') {
 				
 				$air = DB::select("
-					select emp_id, level_id, position_id, org_id, period_id, item_result_id 
+					select level_id, org_id, item_result_id
 					from appraisal_item_result 
 					where emp_result_id = {$item->emp_result_id}
 				");
 
-				$cds = DB::select("
-					select cds_result_id
-					from cds_result 
-					where emp_id = ".$air[0]->emp_id."
-					and level_id = ".$air[0]->level_id."
-					and position_id = ".$air[0]->position_id."
-					and org_id = ".$air[0]->org_id."
-					and period_id = ".$air[0]->period_id."
-				");
+				// $cds = DB::select("
+				// 	select cds_result_id
+				// 	from cds_result 
+				// 	where level_id = ".$air[0]->level_id."
+				// 	and org_id = ".$air[0]->org_id."
+				// ");
 				
 				EmpResultStage::where('emp_result_id',$item->emp_result_id)->delete();
 				AppraisalItemResult::where('emp_result_id',$item->emp_result_id)->delete();
 				DB::table('structure_result')->where('emp_result_id', '=', $item->emp_result_id)->delete();
 				DB::table('monthly_appraisal_item_result')->where('emp_result_id', '=', $item->emp_result_id)->delete();
-				DB::table('cds_result')
-				->where('emp_id', '=', $air[0]->emp_id)
-				->where('level_id', '=', $air[0]->level_id)
-				->where('position_id', '=', $air[0]->position_id)
-				->where('org_id', '=', $air[0]->org_id)
-				->where('period_id', '=', $air[0]->period_id)->delete();
+				// DB::table('cds_result')
+				// ->where('level_id', '=', $air[0]->level_id)
+				// ->where('org_id', '=', $air[0]->org_id)->delete();
 				DB::table('appraisal_item_result_doc')->where('item_result_id', '=', $air[0]->item_result_id)->delete();
-				DB::table('cds_result_doc')->where('cds_result_id', '=', $cds[0]->cds_result_id)->delete();
+				// DB::table('cds_result_doc')->where('cds_result_id', '=', $cds[0]->cds_result_id)->delete();
 				$item->delete();
 			} else {
 				return response()->json(['status' => 400, 'data' => 'Cannot delete Appraisal Assignment at this stage.']);

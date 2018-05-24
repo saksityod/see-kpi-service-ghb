@@ -628,7 +628,10 @@ class CDSResultController extends Controller
 				select distinct year
 				from cds_result
 			) a
-			order by current_appraisal_year desc
+			order by (
+			 SELECT current_appraisal_year
+			 FROM system_config
+			) DESC
 		");
 		return response()->json($items);
 	}
