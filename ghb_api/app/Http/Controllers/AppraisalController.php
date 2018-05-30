@@ -1483,7 +1483,7 @@ class AppraisalController extends Controller
 		}		
 		
 		$validator = Validator::make($request->all(), [
-			'reason_name' => 'required|max:255'
+			'reason_name' => 'required'
 		]);
 		
 		if ($validator->fails()) {
@@ -1532,7 +1532,7 @@ class AppraisalController extends Controller
 		}
 		
 		$validator = Validator::make($request->all(), [
-			'reason_name' => 'required|max:255'
+			'reason_name' => 'required'
 		]);
 
 		if ($validator->fails()) {

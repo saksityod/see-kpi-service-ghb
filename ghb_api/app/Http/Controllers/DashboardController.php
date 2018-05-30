@@ -2683,7 +2683,8 @@ class DashboardController extends Controller
 				}
 			} else {
 				$vector = DB::select("
-					select province_code, avg(a.percent_achievement) average
+					select province_code, if(ai.value_type_id = 1,(sum(a.actual_value)/sum(a.target_value))*100,(((sum(a.target_value)-sum(a.actual_value))/sum(a.target_value))*100)+100) average
+					#province_code, avg(a.percent_achievement) average
 					#(select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 					#from result_threshold x
 					#left outer join result_threshold_group y on x.result_threshold_group_id = y.result_threshold_group_id
@@ -2691,11 +2692,10 @@ class DashboardController extends Controller
 					#and avg(a.percent_achievement) between x.begin_threshold and x.end_threshold
 					#) color_code
 					from appraisal_item_result a
-					left outer join emp_result b
-					on a.emp_result_id = b.emp_result_id
-					left outer join org c
-					on a.org_id = c.org_id
-					where b.appraisal_type_id = 1	
+					left outer join emp_result b on a.emp_result_id = b.emp_result_id
+					left outer join org c on a.org_id = c.org_id
+					inner join appraisal_item ai on ai.item_id = a.item_id
+					where b.appraisal_type_id = 1
 					and a.period_id = ?
 					and a.item_id = ?
 					and exists (
@@ -2997,7 +2997,8 @@ class DashboardController extends Controller
 					air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
 					#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 					air.percent_achievement percent_target,
-					ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+					#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+					if(ai.value_type_id = 1,(air.actual_value/air.forecast_value)*100,(((air.forecast_value-air.actual_value)/air.forecast_value)*100)+100) percent_forecast
 				FROM appraisal_item_result air
 				INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
 				INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
