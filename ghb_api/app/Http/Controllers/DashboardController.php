@@ -265,7 +265,7 @@ class DashboardController extends Controller
 		
 	}
 
-	//edit by toto 2018-03-19 14:14
+	//edit by toto 2018-05-31
 	public function kpi_list(Request $request){
 		$qinput = array();
 		/*
@@ -330,9 +330,10 @@ class DashboardController extends Controller
 		$OrgId = (empty($request->org_id)) ? "0" : $request->org_id;
 		$PeriodId = (empty($request->period)) ? " " : " and air.period_id = " . $request->period;
 		$EmpIdStr = (empty($request->emp_id)) ? " " : " AND air.emp_id = {$request->emp_id}";
+		$KPI_type = (empty($request->kpi_type_id) || $request->kpi_type_id=='All') ? " " : " AND ai.kpi_type_id = {$request->kpi_type_id}";
 
 		$query = "
-			SELECT air.item_id, air.item_name
+			SELECT ai.item_id, ai.item_name
 			FROM appraisal_item_result air
 			INNER JOIN appraisal_item ai on air.item_id=ai.item_id
 			INNER JOIN appraisal_structure aps on ai.structure_id = aps.structure_id
@@ -341,6 +342,7 @@ class DashboardController extends Controller
 			AND air.org_id = {$OrgId}
 			".$PeriodId."
 			".$EmpIdStr."
+			".$KPI_type."
 			GROUP BY air.item_id
 			ORDER BY air.item_id";
 
@@ -2186,14 +2188,16 @@ class DashboardController extends Controller
 									"startvalue" => $trendlines_target,
 									"color" => "#1aaf5d",
 									"valueOnRight" => "1",
-									"displayvalue" => "Target{br}".$trendlines_target."",
+									"tooltext" => "Target{br}".$trendlines_target."",
+									"displayvalue" => "{br}{br}".$trendlines_target."",
 									 "thickness"=> "3"				
 								],
 								[
 									 "startvalue" => $items[0]->forecast_value,
 									 "color" => "#DC143C",
 									 "valueOnRight" => "1",
-									 "displayvalue" => "Forecast{br}".$items[0]->forecast_value."",
+									 "tooltext" => "Forecast{br}".$items[0]->forecast_value."",
+									 "displayvalue" => "{br}{br}".$items[0]->forecast_value."",
 									  "thickness"=> "3"							
 								]
 							]
@@ -2814,7 +2818,8 @@ class DashboardController extends Controller
 						air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
 						#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 						air.percent_achievement percent_target,
-						ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+						#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+						if(ai.value_type_id = 1,(air.actual_value/air.forecast_value)*100,(((air.forecast_value-air.actual_value)/air.forecast_value)*100)+100) percent_forecast
 					FROM appraisal_item_result air
 					INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
 					INNER JOIN perspective p ON p.perspective_id = ai.perspective_id

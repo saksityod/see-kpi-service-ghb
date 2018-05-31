@@ -262,15 +262,15 @@ class ReportController extends Controller
 		return response()->json($result);	
 	}
 
-	//add by toto 2018-03-19 14:14
+	//add by toto 2018-05-31
 	public function list_kpi_type(Request $request) {
 		$qinput = array();
 		$query = "
-		SELECT distinct air.kpi_type_id, kt.kpi_type_name
+		SELECT distinct ai.kpi_type_id, kt.kpi_type_name
 		FROM appraisal_item_result air
 		inner join appraisal_item ai on air.item_id=ai.item_id
 		inner join appraisal_structure aps on ai.structure_id = aps.structure_id
-		inner join kpi_type kt on kt.kpi_type_id = air.kpi_type_id
+		inner join kpi_type kt on kt.kpi_type_id = ai.kpi_type_id
 		
 			WHERE 1=1
 			and aps.form_id=1
@@ -282,6 +282,7 @@ class ReportController extends Controller
 		if ($request->appraisal_type_id == 1) {
 			empty($request->appraisal_level) ?: ($query .= " and level_id = ? " AND $qinput[] = $request->appraisal_level);
 			empty($request->org_id) ?: ($query .= " and org_id = ? " AND $qinput[] = $request->org_id);
+			empty($request->period) ?: ($query .= " and period_id = ? " AND $qinput[] = $request->period);
 		} else {
 			empty($request->emp_id) ?: ($query .= " and emp_id = ? " AND $qinput[] = $request->emp_id);
 		}
