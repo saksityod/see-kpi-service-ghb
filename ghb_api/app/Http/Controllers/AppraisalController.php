@@ -1398,9 +1398,9 @@ class AppraisalController extends Controller
 	public function show_action($item_result_id)
 	{
 		$header = DB::select("
-			select a.item_result_id, a.threshold_group_id, b.item_name, c.emp_id, c.emp_code, c.emp_name, d.org_id, d.org_code, d.org_name, a.target_value, a.actual_value, a.forecast_value, e.appraisal_type_id,
-			if(ifnull(a.forecast_value,0) = 0,0,(ifnull(a.actual_value,0)/a.forecast_value)*100) actual_vs_forecast,
-			if(ifnull(a.target_value,0) = 0,0,(ifnull(a.actual_value,0)/a.target_value)*100) actual_vs_target
+			select a.item_result_id, a.threshold_group_id, b.item_name, c.emp_id, c.emp_code, c.emp_name, d.org_id, d.org_code, d.org_name, a.target_value, a.actual_value, a.forecast_value, e.appraisal_type_id, a.percent_forecast actual_vs_forecast, a.percent_achievement actual_vs_target
+			#if(ifnull(a.forecast_value,0) = 0,0,(ifnull(a.actual_value,0)/a.forecast_value)*100) actual_vs_forecast,
+			#if(ifnull(a.target_value,0) = 0,0,(ifnull(a.actual_value,0)/a.target_value)*100) actual_vs_target
 			from appraisal_item_result a
 			left outer join appraisal_item b
 			on a.item_id = b.item_id

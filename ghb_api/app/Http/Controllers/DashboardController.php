@@ -723,8 +723,10 @@ class DashboardController extends Controller
 				$dataListQry = DB::select("
 					SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, e.emp_id org_id, e.emp_code org_code, e.emp_name org_name, air.etl_dttm,
 						air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
-						ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
-						ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+						air.percent_achievement percent_target,
+						air.percent_forecast percent_forecast
+						#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
+						#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
 					FROM appraisal_item_result air
 					INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
 					INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
@@ -745,8 +747,10 @@ class DashboardController extends Controller
 				$dataListQry = DB::select("
 					SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, air.etl_dttm,
 						air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
-						ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
-						ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+						air.percent_achievement percent_target,
+						air.percent_forecast percent_forecast
+						#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
+						#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
 					FROM appraisal_item_result air
 					INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
 					INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
@@ -3002,8 +3006,9 @@ class DashboardController extends Controller
 					air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
 					#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 					air.percent_achievement percent_target,
+					air.percent_forecast percent_forecast
 					#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
-					if(ai.value_type_id = 1,(air.actual_value/air.forecast_value)*100,(((air.forecast_value-air.actual_value)/air.forecast_value)*100)+100) percent_forecast
+					#if(ai.value_type_id = 1,(air.actual_value/air.forecast_value)*100,(((air.forecast_value-air.actual_value)/air.forecast_value)*100)+100) percent_forecast
 				FROM appraisal_item_result air
 				INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
 				INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
@@ -3134,7 +3139,8 @@ class DashboardController extends Controller
 								air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
 								#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 								air.percent_achievement percent_target,
-								ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+								air.percent_forecast percent_forecast
+								#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
 							FROM appraisal_item_result air
 							INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
 							INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
@@ -3165,7 +3171,8 @@ class DashboardController extends Controller
 					air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
 					#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 					air.percent_achievement percent_target,
-					ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+					air.percent_forecast percent_forecast
+					#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
 				FROM appraisal_item_result air
 				INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
 				INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
