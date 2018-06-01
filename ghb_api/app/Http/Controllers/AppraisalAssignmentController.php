@@ -2107,7 +2107,9 @@ class AppraisalAssignmentController extends Controller
 				// DB::table('cds_result')
 				// ->where('level_id', '=', $air[0]->level_id)
 				// ->where('org_id', '=', $air[0]->org_id)->delete();
-				DB::table('appraisal_item_result_doc')->where('item_result_id', '=', $air[0]->item_result_id)->delete();
+				if(!empty($air)) {
+					DB::table('appraisal_item_result_doc')->where('item_result_id', '=', $air[0]->item_result_id)->delete();
+				}
 				// DB::table('cds_result_doc')->where('cds_result_id', '=', $cds[0]->cds_result_id)->delete();
 				$item->delete();
 			} else {
