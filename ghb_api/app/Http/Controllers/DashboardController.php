@@ -1675,11 +1675,11 @@ class DashboardController extends Controller
 			if (!isset($groups[$key])) {
 				$groups[$key] = array(
 					'items' => array('color' => $key,'seriesName'=>$begin_threshold.'-'.$end_threshold, 'bubbleHoverColor' => $key,'data' => array(['x' => $i->target_value, 'y' => $i->actual_value, 'z' => $i->pct, 'name' => $i->name, 'org_id' => $i->org_id, 'level_id' => $i->level_id,
-					"tooltext" => "<div id='nameDiv'>" .$i->name. "</div>{br}Achievement : <b>" . $i->pct . "%</b>{br}Target : <b>" . $i->target_value . "</b>{br}Actual : <b>" . $i->actual_value ."</b>{br}As of: <b>" . $i->etl_dttm . "<b>"]))
+					"tooltext" => "<div id='nameDiv'>" .$i->name. "</div>{br}Achievement : <b>" . $i->pct . "%</b>{br}Target : <b>" . number_format($i->target_value) . "</b>{br}Actual : <b>" . number_format($i->actual_value) ."</b>{br}As of: <b>" . $i->etl_dttm . "<b>"]))
 				);
 			} else {
 				$groups[$key]['items']['data'][] = ['x' => $i->target_value, 'y' => $i->actual_value, 'z' => $i->pct, 'name' => $i->name, 'org_id' => $i->org_id, 'level_id' => $i->level_id,
-				"tooltext" => "<div id='nameDiv'>" .$i->name. "</div>{br}Achievement : <b>" . $i->pct . "%</b>{br}Target : <b>" . $i->target_value . "</b>{br}Actual : <b>" . $i->actual_value ."</b>{br}As of: <b>" . $i->etl_dttm . "<b>"];
+				"tooltext" => "<div id='nameDiv'>" .$i->name. "</div>{br}Achievement : <b>" . $i->pct . "%</b>{br}Target : <b>" . number_format($i->target_value) . "</b>{br}Actual : <b>" . number_format($i->actual_value) ."</b>{br}As of: <b>" . $i->etl_dttm . "<b>"];
 			}
 
 		}
@@ -2192,16 +2192,16 @@ class DashboardController extends Controller
 									"startvalue" => $trendlines_target,
 									"color" => "#1aaf5d",
 									"valueOnRight" => "1",
-									"tooltext" => "Target{br}".$trendlines_target."",
-									"displayvalue" => "{br}{br}".$trendlines_target."",
+									"tooltext" => "Target{br}".number_format($trendlines_target)."",
+									"displayvalue" => "{br}{br}".number_format($trendlines_target)."",
 									 "thickness"=> "3"				
 								],
 								[
 									 "startvalue" => $items[0]->forecast_value,
 									 "color" => "#DC143C",
 									 "valueOnRight" => "1",
-									 "tooltext" => "Forecast{br}".$items[0]->forecast_value."",
-									 "displayvalue" => "{br}{br}".$items[0]->forecast_value."",
+									 "tooltext" => "Forecast{br}".number_format($items[0]->forecast_value)."",
+									 "displayvalue" => "{br}{br}".number_format($items[0]->forecast_value)."",
 									  "thickness"=> "3"							
 								]
 							]
