@@ -2620,7 +2620,7 @@ class DashboardController extends Controller
 		if (empty($request->region_code)) {
 			if (empty($request->item_id)) {
 				$vector = DB::select("
-					select province_code, avg(b.result_score) average
+					select province_code, FORMAT(avg(b.result_score), 2) average
 					#(select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 					#from result_threshold x
 					#left outer join result_threshold_group y on x.result_threshold_group_id = y.result_threshold_group_id
@@ -2691,7 +2691,7 @@ class DashboardController extends Controller
 				}
 			} else {
 				$vector = DB::select("
-					select province_code, if(ai.value_type_id = 1,(sum(a.actual_value)/sum(a.target_value))*100,(((sum(a.target_value)-sum(a.actual_value))/sum(a.target_value))*100)+100) average
+					select province_code, FORMAT(if(ai.value_type_id = 1,(sum(a.actual_value)/sum(a.target_value))*100,(((sum(a.target_value)-sum(a.actual_value))/sum(a.target_value))*100)+100), 2)average
 					#province_code, avg(a.percent_achievement) average
 					#(select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 					#from result_threshold x
