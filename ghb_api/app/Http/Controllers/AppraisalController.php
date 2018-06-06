@@ -72,6 +72,12 @@ class AppraisalController extends Controller
 			on a.level_id = b.level_id
 			where emp_code = ?
 		", array(Auth::id()));
+
+		$all_org = DB::select("
+			SELECT sum(is_show_corporate) count_no
+			from employee
+			where emp_code = ?
+		", array(Auth::id()));
 		
 		if ($all_emp[0]->count_no > 0) {
 			$items = DB::select("
@@ -172,14 +178,33 @@ class AppraisalController extends Controller
 			empty($in_emp) ? $in_emp = "null" : null;
 			
 			//echo $in_emp;
-			$items = DB::select("
-				select distinct al.level_id, al.appraisal_level_name
-				from employee el, appraisal_level al
-				where el.level_id = al.level_id
-				and el.emp_code in ({$in_emp})
-				and al.is_hr = 0
-				order by al.level_id asc
-			");
+			if($all_org[0]->count_no > 0) {
+				$items = DB::select("
+					select *
+					from (
+					select distinct al.level_id, al.appraisal_level_name
+					from employee el, appraisal_level al
+					where el.level_id = al.level_id
+					and el.emp_code in ({$in_emp})
+					and al.is_hr = 0
+					UNION
+					select distinct level_id, appraisal_level_name
+					from appraisal_level
+					where level_id = 2
+					and is_hr = 0
+					)appralsai_level
+					order by level_id asc
+				");
+			} else {
+				$items = DB::select("
+					select distinct al.level_id, al.appraisal_level_name
+					from employee el, appraisal_level al
+					where el.level_id = al.level_id
+					and el.emp_code in ({$in_emp})
+					and al.is_hr = 0
+					order by al.level_id asc
+				");
+			}
 		}
 		
 		return response()->json($items);

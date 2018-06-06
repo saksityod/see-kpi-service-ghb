@@ -71,6 +71,7 @@ class ImportEmployeeController extends Controller
 						$emp->s_amount = $i->salary_amount;
 						$emp->email = $i->email;
 						$emp->emp_type = $i->employee_type;
+						$emp->is_show_corporate = $i->is_show_corporate;
 						$emp->is_active = 1;					
 						$emp->created_by = Auth::id();
 						$emp->updated_by = Auth::id();
@@ -90,6 +91,7 @@ class ImportEmployeeController extends Controller
 						$emp->s_amount = $i->salary_amount;
 						$emp->email = $i->email;
 						$emp->emp_type = $i->employee_type;
+						$emp->is_show_corporate = $i->is_show_corporate;
 						$emp->is_active = 1;					
 						$emp->updated_by = Auth::id();
 						try {
@@ -108,7 +110,7 @@ class ImportEmployeeController extends Controller
 	{	
 		$qinput = array();
 		$query = "
-			select a.emp_id, a.emp_code, a.emp_name, c.org_name, d.appraisal_level_name, b.position_name, a.chief_emp_code, a.emp_type
+			select a.emp_id, a.emp_code, a.emp_name, c.org_name, d.appraisal_level_name, b.position_name, a.chief_emp_code, a.emp_type, a.is_show_corporate
 			From employee a left outer join position b
 			on a.position_id = b.position_id
 			left outer join org c
@@ -256,6 +258,7 @@ class ImportEmployeeController extends Controller
 			//'s_amount' => 'required|numeric|digits_between:1,10',
 			'email' => 'required|email|max:100',	
 			'emp_type' => 'max:50',
+			'is_show_corporate' => 'required|boolean',
 			'is_active' => 'required|boolean'
         ]);
 
@@ -278,6 +281,7 @@ class ImportEmployeeController extends Controller
 			$item->s_amount = $request->s_amount;
 			$item->email = $request->email;
 			$item->emp_type = $request->emp_type;
+			$item->is_show_corporate = $request->is_show_corporate;
 			$item->is_active = $request->is_active;					
 			$item->updated_by = Auth::id();
 			$item->save();

@@ -39,6 +39,12 @@ class OrgController extends Controller
 			on a.level_id = b.level_id
 			where emp_code = ?
 		", array(Auth::id()));
+
+		$all_org = DB::select("
+			SELECT sum(is_show_corporate) count_no
+			from employee
+			where emp_code = ?
+		", array(Auth::id()));
 		
 		empty($request->level_id) ? $level = "" : $level = " and a.level_id = " . $request->level_id . " ";
 		empty($request->org_code) ? $org = "" : $org = " and a.org_code = " . $request->org_code . " ";
@@ -67,6 +73,15 @@ class OrgController extends Controller
 				order by a.org_code asc
 			");
 		} else {
+
+			if($all_org[0]->count_no > 0) {
+				if($request->level_id==2) {
+					$is_show_corporate = "";
+				} else {
+					$is_show_corporate = "and (a.org_code = {$co->org_code} or a.parent_org_code = {$co->org_code})";
+				}
+			}
+		
 			$items = DB::select("
 				select a.org_id, a.org_name, a.org_code, a.org_abbr, a.is_active, b.org_name parent_org_name, a.parent_org_code, a.level_id, c.appraisal_level_name, a.longitude, a.latitude, a.province_code, d.province_name
 				from org a left outer join
@@ -75,7 +90,7 @@ class OrgController extends Controller
 				on a.level_id = c.level_id 
 				left outer join province d on a.province_code = d.province_code
 				where 1=1 " . $level . "
-				and (a.org_code = {$co->org_code} or a.parent_org_code = {$co->org_code})
+				" . $is_show_corporate . "
 				order by a.org_code asc
 			");			
 		}
