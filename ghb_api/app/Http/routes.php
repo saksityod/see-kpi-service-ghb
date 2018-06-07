@@ -312,6 +312,9 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('dashboard/ytd_monthly_variance', 'DashboardController@ytd_monthly_variance');
 	Route::post('dashboard/ytd_monthly_growth', 'DashboardController@ytd_monthly_growth');	
 	Route::post('dashboard/emp_list', 'DashboardController@emp_list');*/
+	Route::get('dashboard/list_appraisal_level', 'AppraisalController@list_appraisal_level');
+	Route::get('dashboard/list_organization', 'OrgController@list_organization');
+
 	Route::get('dashboard/year_list', 'DashboardController@year_list');
 	Route::post('dashboard/period_list', 'DashboardController@period_list');
 	Route::get('dashboard/region_list', 'DashboardController@region_list');
@@ -329,7 +332,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dashboard/gantt', 'DashboardController@gantt');
 	Route::get('dashboard/branch_performance', 'DashboardController@branch_performance');
 	Route::get('dashboard/branch_details', 'DashboardController@branch_details');	
-	Route::get('dashboard/perspective_details', 'DashboardController@perspective_details');	
+	Route::get('dashboard/perspective_details', 'DashboardController@perspective_details');
 	
 	//Dashbaord Emp
 	Route::get('dashboard_emp/year_list', 'DashboardEmpController@year_list');

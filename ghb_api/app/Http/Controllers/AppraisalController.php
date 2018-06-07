@@ -72,6 +72,129 @@ class AppraisalController extends Controller
 			on a.level_id = b.level_id
 			where emp_code = ?
 		", array(Auth::id()));
+		
+		if ($all_emp[0]->count_no > 0) {
+			$items = DB::select("
+				Select level_id, appraisal_level_name
+				From appraisal_level 
+				Where is_active = 1 
+				and is_hr = 0
+				Order by level_id asc			
+			");
+		} else {
+			
+			$re_emp = array();
+			
+			$emp_list = array();
+			
+			$emps = DB::select("
+				select distinct emp_code
+				from employee
+				where chief_emp_code = ?
+			", array(Auth::id()));
+			
+			foreach ($emps as $e) {
+				$emp_list[] = $e->emp_code;
+				$re_emp[] = $e->emp_code;
+			}
+		
+			$emp_list = array_unique($emp_list);
+			
+			// Get array keys
+			$arrayKeys = array_keys($emp_list);
+			// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+			//iterate array
+			$in_emp = '';
+			foreach($emp_list as $k => $v) {
+				if($k == $lastArrayKey) {
+					//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}					
+				
+			do {				
+				empty($in_emp) ? $in_emp = "null" : null;
+
+				$emp_list = array();			
+
+				$emp_items = DB::select("
+					select distinct emp_code
+					from employee
+					where chief_emp_code in ({$in_emp})
+					and chief_emp_code != emp_code
+					and is_active = 1			
+				");
+				
+				foreach ($emp_items as $e) {
+					$emp_list[] = $e->emp_code;
+					$re_emp[] = $e->emp_code;
+				}			
+				
+				$emp_list = array_unique($emp_list);
+				
+				// Get array keys
+				$arrayKeys = array_keys($emp_list);
+				// Fetch last array key
+				$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+				$in_emp = '';
+				foreach($emp_list as $k => $v) {
+					if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+						$in_emp .= "'" . $v . "'";
+					} else {
+						$in_emp .= "'" . $v . "'" . ',';
+					}
+				}		
+			} while (!empty($emp_list));		
+			
+			$re_emp[] = Auth::id();
+			$re_emp = array_unique($re_emp);
+			
+			// Get array keys
+			$arrayKeys = array_keys($re_emp);
+			// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+			//iterate array
+			$in_emp = '';
+			foreach($re_emp as $k => $v) {
+				if($k == $lastArrayKey) {
+					//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}				
+			
+			empty($in_emp) ? $in_emp = "null" : null;
+			
+			//echo $in_emp;
+			$items = DB::select("
+				select distinct al.level_id, al.appraisal_level_name
+				from employee el, appraisal_level al
+				where el.level_id = al.level_id
+				and el.emp_code in ({$in_emp})
+				and al.is_hr = 0
+				order by al.level_id asc
+			");
+			
+		}
+		
+		return response()->json($items);
+    }
+
+    public function list_appraisal_level()
+    {
+		$all_emp = DB::select("
+			SELECT sum(b.is_all_employee) count_no
+			from employee a
+			left outer join appraisal_level b
+			on a.level_id = b.level_id
+			where emp_code = ?
+		", array(Auth::id()));
 
 		$all_org = DB::select("
 			SELECT sum(is_show_corporate) count_no
