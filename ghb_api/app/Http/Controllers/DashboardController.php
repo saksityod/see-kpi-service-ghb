@@ -258,6 +258,7 @@ class DashboardController extends Controller
 		empty($request->district_code) ?: ($org_query .= " and c.parent_org_code = ? " AND $org_input[] = $request->district_code);
 		empty($request->year) ?: ($org_query .= " and ap.appraisal_year = ? " AND $org_input[] = $request->year);
 		empty($request->period) ?: ($org_query .= " and a.period_id = ? " AND $org_input[] = $request->period);
+		$org_query .="order by e.item_name ASC";
 		
 		$org_list = DB::select($org_query, $org_input);	
 		
@@ -2973,6 +2974,7 @@ class DashboardController extends Controller
 					where y.district_flag = 1
 					and x.org_code = c.parent_org_code
 				)
+				order by b.result_score desc, c.org_name asc
 			", array($request->province_code, $request->period_id));
 		} else {
 			$org_list = DB::select("
@@ -2996,6 +2998,7 @@ class DashboardController extends Controller
 					where y.district_flag = 1
 					and x.org_code = c.parent_org_code
 				)
+				order by a.percent_achievement desc, c.org_name asc
 			", array($request->province_code, $request->period_id, $request->item_id));
 		
 		}
