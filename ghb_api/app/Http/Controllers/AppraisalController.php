@@ -83,100 +83,200 @@ class AppraisalController extends Controller
 			");
 		} else {
 			
-			$re_emp = array();
+			// $re_emp = array();
 			
-			$emp_list = array();
+			// $emp_list = array();
 			
-			$emps = DB::select("
-				select distinct emp_code
-				from employee
-				where chief_emp_code = ?
-			", array(Auth::id()));
+			// $emps = DB::select("
+			// 	select distinct emp_code
+			// 	from employee
+			// 	where chief_emp_code = ?
+			// ", array(Auth::id()));
 			
-			foreach ($emps as $e) {
-				$emp_list[] = $e->emp_code;
-				$re_emp[] = $e->emp_code;
-			}
+			// foreach ($emps as $e) {
+			// 	$emp_list[] = $e->emp_code;
+			// 	$re_emp[] = $e->emp_code;
+			// }
 		
-			$emp_list = array_unique($emp_list);
+			// $emp_list = array_unique($emp_list);
 			
-			// Get array keys
+			// // Get array keys
+			// $arrayKeys = array_keys($emp_list);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($emp_list as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }					
+				
+			// do {				
+			// 	empty($in_emp) ? $in_emp = "null" : null;
+
+			// 	$emp_list = array();			
+
+			// 	$emp_items = DB::select("
+			// 		select distinct emp_code
+			// 		from employee
+			// 		where chief_emp_code in ({$in_emp})
+			// 		and chief_emp_code != emp_code
+			// 		and is_active = 1			
+			// 	");
+				
+			// 	foreach ($emp_items as $e) {
+			// 		$emp_list[] = $e->emp_code;
+			// 		$re_emp[] = $e->emp_code;
+			// 	}			
+				
+			// 	$emp_list = array_unique($emp_list);
+				
+			// 	// Get array keys
+			// 	$arrayKeys = array_keys($emp_list);
+			// 	// Fetch last array key
+			// 	$lastArrayKey = array_pop($arrayKeys);
+			// 	//iterate array
+			// 	$in_emp = '';
+			// 	foreach($emp_list as $k => $v) {
+			// 		if($k == $lastArrayKey) {
+			// 			//during array iteration this condition states the last element.
+			// 			$in_emp .= "'" . $v . "'";
+			// 		} else {
+			// 			$in_emp .= "'" . $v . "'" . ',';
+			// 		}
+			// 	}		
+			// } while (!empty($emp_list));		
+			
+			// $re_emp[] = Auth::id();
+			// $re_emp = array_unique($re_emp);
+			
+			// // Get array keys
+			// $arrayKeys = array_keys($re_emp);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($re_emp as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }				
+			
+			// empty($in_emp) ? $in_emp = "null" : null;
+			
+			// //echo $in_emp;
+			// $items = DB::select("
+			// 	select distinct al.level_id, al.appraisal_level_name
+			// 	from employee el, appraisal_level al
+			// 	where el.level_id = al.level_id
+			// 	and el.emp_code in ({$in_emp})
+			// 	and al.is_hr = 0
+			// 	order by al.level_id asc
+			// ");
+
+			$emp = Employee::find(Auth::id());
+			$co = Org::find($emp->org_id);
+
+			$re_emp = array();
+				
+			$emp_list = array();
+
+			$emps = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code = ?
+				", array($co->org_code));
+
+			foreach ($emps as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}
+			
+			$emp_list = array_unique($emp_list);
+
+				// Get array keys
 			$arrayKeys = array_keys($emp_list);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($emp_list as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
-			}					
-				
+			}	
+
 			do {				
 				empty($in_emp) ? $in_emp = "null" : null;
 
 				$emp_list = array();			
 
 				$emp_items = DB::select("
-					select distinct emp_code
-					from employee
-					where chief_emp_code in ({$in_emp})
-					and chief_emp_code != emp_code
+					select distinct org_code
+					from org
+					where parent_org_code in ({$in_emp})
+					and parent_org_code != org_code
 					and is_active = 1			
-				");
-				
+					");
+
 				foreach ($emp_items as $e) {
-					$emp_list[] = $e->emp_code;
-					$re_emp[] = $e->emp_code;
+					$emp_list[] = $e->org_code;
+					$re_emp[] = $e->org_code;
 				}			
-				
+
 				$emp_list = array_unique($emp_list);
-				
-				// Get array keys
+
+					// Get array keys
 				$arrayKeys = array_keys($emp_list);
-				// Fetch last array key
+					// Fetch last array key
 				$lastArrayKey = array_pop($arrayKeys);
-				//iterate array
+					//iterate array
 				$in_emp = '';
 				foreach($emp_list as $k => $v) {
 					if($k == $lastArrayKey) {
-						//during array iteration this condition states the last element.
+							//during array iteration this condition states the last element.
 						$in_emp .= "'" . $v . "'";
 					} else {
 						$in_emp .= "'" . $v . "'" . ',';
 					}
 				}		
 			} while (!empty($emp_list));		
-			
-			$re_emp[] = Auth::id();
+
+			$re_emp[] = $co->org_code;
 			$re_emp = array_unique($re_emp);
-			
-			// Get array keys
+
+				// Get array keys
 			$arrayKeys = array_keys($re_emp);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($re_emp as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
 			}				
-			
+
 			empty($in_emp) ? $in_emp = "null" : null;
-			
-			//echo $in_emp;
+
 			$items = DB::select("
-				select distinct al.level_id, al.appraisal_level_name
-				from employee el, appraisal_level al
-				where el.level_id = al.level_id
-				and el.emp_code in ({$in_emp})
+				select DISTINCT al.level_id, al.appraisal_level_name
+				from org
+				inner join appraisal_level al on al.level_id = org.level_id
+				where org_code in({$in_emp})
 				and al.is_hr = 0
 				order by al.level_id asc
 			");
@@ -212,103 +312,210 @@ class AppraisalController extends Controller
 			");
 		} else {
 			
-			$re_emp = array();
+			// $re_emp = array();
 			
-			$emp_list = array();
+			// $emp_list = array();
 			
-			$emps = DB::select("
-				select distinct emp_code
-				from employee
-				where chief_emp_code = ?
-			", array(Auth::id()));
+			// $emps = DB::select("
+			// 	select distinct emp_code
+			// 	from employee
+			// 	where chief_emp_code = ?
+			// ", array(Auth::id()));
 			
-			foreach ($emps as $e) {
-				$emp_list[] = $e->emp_code;
-				$re_emp[] = $e->emp_code;
-			}
+			// foreach ($emps as $e) {
+			// 	$emp_list[] = $e->emp_code;
+			// 	$re_emp[] = $e->emp_code;
+			// }
 		
-			$emp_list = array_unique($emp_list);
+			// $emp_list = array_unique($emp_list);
 			
-			// Get array keys
+			// // Get array keys
+			// $arrayKeys = array_keys($emp_list);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($emp_list as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }					
+				
+			// do {				
+			// 	empty($in_emp) ? $in_emp = "null" : null;
+
+			// 	$emp_list = array();			
+
+			// 	$emp_items = DB::select("
+			// 		select distinct emp_code
+			// 		from employee
+			// 		where chief_emp_code in ({$in_emp})
+			// 		and chief_emp_code != emp_code
+			// 		and is_active = 1			
+			// 	");
+				
+			// 	foreach ($emp_items as $e) {
+			// 		$emp_list[] = $e->emp_code;
+			// 		$re_emp[] = $e->emp_code;
+			// 	}			
+				
+			// 	$emp_list = array_unique($emp_list);
+				
+			// 	// Get array keys
+			// 	$arrayKeys = array_keys($emp_list);
+			// 	// Fetch last array key
+			// 	$lastArrayKey = array_pop($arrayKeys);
+			// 	//iterate array
+			// 	$in_emp = '';
+			// 	foreach($emp_list as $k => $v) {
+			// 		if($k == $lastArrayKey) {
+			// 			//during array iteration this condition states the last element.
+			// 			$in_emp .= "'" . $v . "'";
+			// 		} else {
+			// 			$in_emp .= "'" . $v . "'" . ',';
+			// 		}
+			// 	}		
+			// } while (!empty($emp_list));		
+			
+			// $re_emp[] = Auth::id();
+			// $re_emp = array_unique($re_emp);
+			
+			// // Get array keys
+			// $arrayKeys = array_keys($re_emp);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($re_emp as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }				
+			
+			// empty($in_emp) ? $in_emp = "null" : null;
+
+			$emp = Employee::find(Auth::id());
+			$co = Org::find($emp->org_id);
+
+			$re_emp = array();
+
+			$emp_list = array();
+
+			$emps = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code = ?
+				", array($co->org_code));
+
+			foreach ($emps as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}
+
+			$emp_list = array_unique($emp_list);
+
+					// Get array keys
 			$arrayKeys = array_keys($emp_list);
-			// Fetch last array key
+					// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+					//iterate array
 			$in_emp = '';
 			foreach($emp_list as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+							//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
-			}					
-				
+			}	
+
 			do {				
 				empty($in_emp) ? $in_emp = "null" : null;
 
 				$emp_list = array();			
 
 				$emp_items = DB::select("
-					select distinct emp_code
-					from employee
-					where chief_emp_code in ({$in_emp})
-					and chief_emp_code != emp_code
+					select distinct org_code
+					from org
+					where parent_org_code in ({$in_emp})
+					and parent_org_code != org_code
 					and is_active = 1			
-				");
-				
+					");
+
 				foreach ($emp_items as $e) {
-					$emp_list[] = $e->emp_code;
-					$re_emp[] = $e->emp_code;
+					$emp_list[] = $e->org_code;
+					$re_emp[] = $e->org_code;
 				}			
-				
+
 				$emp_list = array_unique($emp_list);
-				
-				// Get array keys
+
+						// Get array keys
 				$arrayKeys = array_keys($emp_list);
-				// Fetch last array key
+						// Fetch last array key
 				$lastArrayKey = array_pop($arrayKeys);
-				//iterate array
+						//iterate array
 				$in_emp = '';
 				foreach($emp_list as $k => $v) {
 					if($k == $lastArrayKey) {
-						//during array iteration this condition states the last element.
+								//during array iteration this condition states the last element.
 						$in_emp .= "'" . $v . "'";
 					} else {
 						$in_emp .= "'" . $v . "'" . ',';
 					}
 				}		
 			} while (!empty($emp_list));		
-			
-			$re_emp[] = Auth::id();
+
+			$re_emp[] = $co->org_code;
 			$re_emp = array_unique($re_emp);
-			
-			// Get array keys
+
+					// Get array keys
 			$arrayKeys = array_keys($re_emp);
-			// Fetch last array key
+					// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+					//iterate array
 			$in_emp = '';
 			foreach($re_emp as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+							//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
 			}				
-			
+
 			empty($in_emp) ? $in_emp = "null" : null;
 			
 			//echo $in_emp;
 			if($all_org[0]->count_no > 0) {
+				// $items = DB::select("
+				// 	select *
+				// 	from (
+				// 	select distinct al.level_id, al.appraisal_level_name
+				// 	from employee el, appraisal_level al
+				// 	where el.level_id = al.level_id
+				// 	and el.emp_code in ({$in_emp})
+				// 	and al.is_hr = 0
+				// 	UNION
+				// 	select distinct level_id, appraisal_level_name
+				// 	from appraisal_level
+				// 	where level_id = 2
+				// 	and is_hr = 0
+				// 	)appralsai_level
+				// 	order by level_id asc
+				// ");
 				$items = DB::select("
 					select *
 					from (
-					select distinct al.level_id, al.appraisal_level_name
-					from employee el, appraisal_level al
-					where el.level_id = al.level_id
-					and el.emp_code in ({$in_emp})
+					select DISTINCT al.level_id, al.appraisal_level_name
+					from org
+					inner join appraisal_level al on al.level_id = org.level_id
+					where org_code in({$in_emp})
 					and al.is_hr = 0
 					UNION
 					select distinct level_id, appraisal_level_name
@@ -319,11 +526,20 @@ class AppraisalController extends Controller
 					order by level_id asc
 				");
 			} else {
+				// $items = DB::select("
+				// 	select distinct al.level_id, al.appraisal_level_name
+				// 	from employee el, appraisal_level al
+				// 	where el.level_id = al.level_id
+				// 	and el.emp_code in ({$in_emp})
+				// 	and al.is_hr = 0
+				// 	order by al.level_id asc
+				// ");
+
 				$items = DB::select("
-					select distinct al.level_id, al.appraisal_level_name
-					from employee el, appraisal_level al
-					where el.level_id = al.level_id
-					and el.emp_code in ({$in_emp})
+					select DISTINCT al.level_id, al.appraisal_level_name
+					from org
+					inner join appraisal_level al on al.level_id = org.level_id
+					where org_code in({$in_emp})
 					and al.is_hr = 0
 					order by al.level_id asc
 				");
@@ -358,86 +574,177 @@ class AppraisalController extends Controller
 			$items = DB::select($query.$qfooter,$qinput);
 		} else {
 
-			$re_emp = array();
+			// $re_emp = array();
 			
-			$emp_list = array();
+			// $emp_list = array();
 			
-			$emps = DB::select("
-				select distinct emp_code
-				from employee
-				where chief_emp_code = ?
-			", array(Auth::id()));
+			// $emps = DB::select("
+			// 	select distinct emp_code
+			// 	from employee
+			// 	where chief_emp_code = ?
+			// ", array(Auth::id()));
 			
-			foreach ($emps as $e) {
-				$emp_list[] = $e->emp_code;
-				$re_emp[] = $e->emp_code;
-			}
+			// foreach ($emps as $e) {
+			// 	$emp_list[] = $e->emp_code;
+			// 	$re_emp[] = $e->emp_code;
+			// }
 		
-			$emp_list = array_unique($emp_list);
+			// $emp_list = array_unique($emp_list);
 			
-			// Get array keys
+			// // Get array keys
+			// $arrayKeys = array_keys($emp_list);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($emp_list as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }					
+				
+			// do {				
+			// 	empty($in_emp) ? $in_emp = "null" : null;
+
+			// 	$emp_list = array();			
+
+			// 	$emp_items = DB::select("
+			// 		select distinct emp_code
+			// 		from employee
+			// 		where chief_emp_code in ({$in_emp})
+			// 		and is_active = 1			
+			// 		and chief_emp_code != emp_code
+			// 	");
+				
+			// 	foreach ($emp_items as $e) {
+			// 		$emp_list[] = $e->emp_code;
+			// 		$re_emp[] = $e->emp_code;
+			// 	}			
+				
+			// 	$emp_list = array_unique($emp_list);
+				
+			// 	// Get array keys
+			// 	$arrayKeys = array_keys($emp_list);
+			// 	// Fetch last array key
+			// 	$lastArrayKey = array_pop($arrayKeys);
+			// 	//iterate array
+			// 	$in_emp = '';
+			// 	foreach($emp_list as $k => $v) {
+			// 		if($k == $lastArrayKey) {
+			// 			//during array iteration this condition states the last element.
+			// 			$in_emp .= "'" . $v . "'";
+			// 		} else {
+			// 			$in_emp .= "'" . $v . "'" . ',';
+			// 		}
+			// 	}		
+			// } while (!empty($emp_list));		
+			
+			// $re_emp[] = Auth::id();
+			// $re_emp = array_unique($re_emp);
+			
+			// // Get array keys
+			// $arrayKeys = array_keys($re_emp);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($re_emp as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }				
+
+			// empty($in_emp) ? $in_emp = "null" : null;
+
+			$emp = Employee::find(Auth::id());
+			$co = Org::find($emp->org_id);
+
+			$re_emp = array();
+				
+			$emp_list = array();
+
+			$emps = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code = ?
+				", array($co->org_code));
+
+			foreach ($emps as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}
+			
+			$emp_list = array_unique($emp_list);
+
+				// Get array keys
 			$arrayKeys = array_keys($emp_list);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($emp_list as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
-			}					
-				
+			}	
+
 			do {				
 				empty($in_emp) ? $in_emp = "null" : null;
 
 				$emp_list = array();			
 
 				$emp_items = DB::select("
-					select distinct emp_code
-					from employee
-					where chief_emp_code in ({$in_emp})
+					select distinct org_code
+					from org
+					where parent_org_code in ({$in_emp})
+					and parent_org_code != org_code
 					and is_active = 1			
-					and chief_emp_code != emp_code
-				");
-				
+					");
+
 				foreach ($emp_items as $e) {
-					$emp_list[] = $e->emp_code;
-					$re_emp[] = $e->emp_code;
+					$emp_list[] = $e->org_code;
+					$re_emp[] = $e->org_code;
 				}			
-				
+
 				$emp_list = array_unique($emp_list);
-				
-				// Get array keys
+
+					// Get array keys
 				$arrayKeys = array_keys($emp_list);
-				// Fetch last array key
+					// Fetch last array key
 				$lastArrayKey = array_pop($arrayKeys);
-				//iterate array
+					//iterate array
 				$in_emp = '';
 				foreach($emp_list as $k => $v) {
 					if($k == $lastArrayKey) {
-						//during array iteration this condition states the last element.
+							//during array iteration this condition states the last element.
 						$in_emp .= "'" . $v . "'";
 					} else {
 						$in_emp .= "'" . $v . "'" . ',';
 					}
 				}		
 			} while (!empty($emp_list));		
-			
-			$re_emp[] = Auth::id();
+
+			$re_emp[] = $co->org_code;
 			$re_emp = array_unique($re_emp);
-			
-			// Get array keys
+
+				// Get array keys
 			$arrayKeys = array_keys($re_emp);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($re_emp as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
@@ -447,11 +754,19 @@ class AppraisalController extends Controller
 			empty($in_emp) ? $in_emp = "null" : null;
 			
 			$qinput = array();
+			// $query = "
+			// 	Select distinct b.org_id, b.org_code, b.org_name
+			// 	From employee a left outer join org b on a.org_id = b.org_id
+			// 	Where b.org_name like ?
+			// 	and a.emp_code in ({$in_emp})
+				
+			// ";
+
 			$query = "
 				Select distinct b.org_id, b.org_code, b.org_name
-				From employee a left outer join org b on a.org_id = b.org_id
+				From org b
 				Where b.org_name like ?
-				and a.emp_code in ({$in_emp})
+				and b.org_code in ({$in_emp})
 				
 			";
 			
@@ -490,86 +805,177 @@ class AppraisalController extends Controller
 			$items = DB::select($query.$qfooter,$qinput);
 		} else {
 
-			$re_emp = array();
+			// $re_emp = array();
 			
-			$emp_list = array();
+			// $emp_list = array();
 			
-			$emps = DB::select("
-				select distinct emp_code
-				from employee
-				where chief_emp_code = ?
-			", array(Auth::id()));
+			// $emps = DB::select("
+			// 	select distinct emp_code
+			// 	from employee
+			// 	where chief_emp_code = ?
+			// ", array(Auth::id()));
 			
-			foreach ($emps as $e) {
-				$emp_list[] = $e->emp_code;
-				$re_emp[] = $e->emp_code;
-			}
+			// foreach ($emps as $e) {
+			// 	$emp_list[] = $e->emp_code;
+			// 	$re_emp[] = $e->emp_code;
+			// }
 		
-			$emp_list = array_unique($emp_list);
+			// $emp_list = array_unique($emp_list);
 			
-			// Get array keys
+			// // Get array keys
+			// $arrayKeys = array_keys($emp_list);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($emp_list as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }					
+				
+			// do {				
+			// 	empty($in_emp) ? $in_emp = "null" : null;
+
+			// 	$emp_list = array();			
+
+			// 	$emp_items = DB::select("
+			// 		select distinct emp_code
+			// 		from employee
+			// 		where chief_emp_code in ({$in_emp})
+			// 		and is_active = 1			
+			// 		and chief_emp_code != emp_code
+			// 	");
+				
+			// 	foreach ($emp_items as $e) {
+			// 		$emp_list[] = $e->emp_code;
+			// 		$re_emp[] = $e->emp_code;
+			// 	}			
+				
+			// 	$emp_list = array_unique($emp_list);
+				
+			// 	// Get array keys
+			// 	$arrayKeys = array_keys($emp_list);
+			// 	// Fetch last array key
+			// 	$lastArrayKey = array_pop($arrayKeys);
+			// 	//iterate array
+			// 	$in_emp = '';
+			// 	foreach($emp_list as $k => $v) {
+			// 		if($k == $lastArrayKey) {
+			// 			//during array iteration this condition states the last element.
+			// 			$in_emp .= "'" . $v . "'";
+			// 		} else {
+			// 			$in_emp .= "'" . $v . "'" . ',';
+			// 		}
+			// 	}		
+			// } while (!empty($emp_list));		
+			
+			// $re_emp[] = Auth::id();
+			// $re_emp = array_unique($re_emp);
+			
+			// // Get array keys
+			// $arrayKeys = array_keys($re_emp);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($re_emp as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }				
+
+			// empty($in_emp) ? $in_emp = "null" : null;
+			
+			$emp = Employee::find(Auth::id());
+			$co = Org::find($emp->org_id);
+
+			$re_emp = array();
+				
+			$emp_list = array();
+
+			$emps = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code = ?
+				", array($co->org_code));
+
+			foreach ($emps as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}
+			
+			$emp_list = array_unique($emp_list);
+
+				// Get array keys
 			$arrayKeys = array_keys($emp_list);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($emp_list as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
-			}					
-				
+			}	
+
 			do {				
 				empty($in_emp) ? $in_emp = "null" : null;
 
 				$emp_list = array();			
 
 				$emp_items = DB::select("
-					select distinct emp_code
-					from employee
-					where chief_emp_code in ({$in_emp})
+					select distinct org_code
+					from org
+					where parent_org_code in ({$in_emp})
+					and parent_org_code != org_code
 					and is_active = 1			
-					and chief_emp_code != emp_code
-				");
-				
+					");
+
 				foreach ($emp_items as $e) {
-					$emp_list[] = $e->emp_code;
-					$re_emp[] = $e->emp_code;
+					$emp_list[] = $e->org_code;
+					$re_emp[] = $e->org_code;
 				}			
-				
+
 				$emp_list = array_unique($emp_list);
-				
-				// Get array keys
+
+					// Get array keys
 				$arrayKeys = array_keys($emp_list);
-				// Fetch last array key
+					// Fetch last array key
 				$lastArrayKey = array_pop($arrayKeys);
-				//iterate array
+					//iterate array
 				$in_emp = '';
 				foreach($emp_list as $k => $v) {
 					if($k == $lastArrayKey) {
-						//during array iteration this condition states the last element.
+							//during array iteration this condition states the last element.
 						$in_emp .= "'" . $v . "'";
 					} else {
 						$in_emp .= "'" . $v . "'" . ',';
 					}
 				}		
 			} while (!empty($emp_list));		
-			
-			$re_emp[] = Auth::id();
+
+			$re_emp[] = $co->org_code;
 			$re_emp = array_unique($re_emp);
-			
-			// Get array keys
+
+				// Get array keys
 			$arrayKeys = array_keys($re_emp);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($re_emp as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
@@ -577,13 +983,23 @@ class AppraisalController extends Controller
 			}				
 
 			empty($in_emp) ? $in_emp = "null" : null;
-			
+
 			$qinput = array();
+			// $query = "
+			// 	Select distinct b.position_id, b.position_code, b.position_name
+			// 	From employee a left outer join position b on a.position_id = b.position_id
+			// 	Where b.position_name like ?
+			// 	and a.emp_code in ({$in_emp})
+				
+			// ";
+
 			$query = "
 				Select distinct b.position_id, b.position_code, b.position_name
-				From employee a left outer join position b on a.position_id = b.position_id
+				From employee a
+				left outer join position b on a.position_id = b.position_id
+				left outer join org on org.org_id = a.org_id
 				Where b.position_name like ?
-				and a.emp_code in ({$in_emp})
+				and org.org_code in ({$in_emp})
 				
 			";
 			
@@ -624,105 +1040,205 @@ class AppraisalController extends Controller
 			$items = DB::select($query.$qfooter,$qinput);
 		} else {
 
-			$re_emp = array();
+			// $re_emp = array();
 			
-			$emp_list = array();
+			// $emp_list = array();
 			
-			$emps = DB::select("
-				select distinct emp_code
-				from employee
-				where chief_emp_code = ?
-			", array(Auth::id()));
+			// $emps = DB::select("
+			// 	select distinct emp_code
+			// 	from employee
+			// 	where chief_emp_code = ?
+			// ", array(Auth::id()));
 			
-			foreach ($emps as $e) {
-				$emp_list[] = $e->emp_code;
-				$re_emp[] = $e->emp_code;
-			}
+			// foreach ($emps as $e) {
+			// 	$emp_list[] = $e->emp_code;
+			// 	$re_emp[] = $e->emp_code;
+			// }
 		
-			$emp_list = array_unique($emp_list);
+			// $emp_list = array_unique($emp_list);
 			
-			// Get array keys
+			// // Get array keys
+			// $arrayKeys = array_keys($emp_list);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($emp_list as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }					
+				
+			// do {				
+			// 	empty($in_emp) ? $in_emp = "null" : null;
+
+			// 	$emp_list = array();			
+
+			// 	$emp_items = DB::select("
+			// 		select distinct emp_code
+			// 		from employee
+			// 		where chief_emp_code in ({$in_emp})
+			// 		and chief_emp_code != emp_code
+			// 		and is_active = 1			
+			// 	");
+				
+			// 	foreach ($emp_items as $e) {
+			// 		$emp_list[] = $e->emp_code;
+			// 		$re_emp[] = $e->emp_code;
+			// 	}			
+				
+			// 	$emp_list = array_unique($emp_list);
+				
+			// 	// Get array keys
+			// 	$arrayKeys = array_keys($emp_list);
+			// 	// Fetch last array key
+			// 	$lastArrayKey = array_pop($arrayKeys);
+			// 	//iterate array
+			// 	$in_emp = '';
+			// 	foreach($emp_list as $k => $v) {
+			// 		if($k == $lastArrayKey) {
+			// 			//during array iteration this condition states the last element.
+			// 			$in_emp .= "'" . $v . "'";
+			// 		} else {
+			// 			$in_emp .= "'" . $v . "'" . ',';
+			// 		}
+			// 	}		
+			// } while (!empty($emp_list));		
+			
+			// $re_emp[] = Auth::id();
+			// $re_emp = array_unique($re_emp);
+			
+			// // Get array keys
+			// $arrayKeys = array_keys($re_emp);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($re_emp as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }				
+
+			// empty($in_emp) ? $in_emp = "null" : null;	
+
+			$emp = Employee::find(Auth::id());
+			$co = Org::find($emp->org_id);
+
+			$re_emp = array();
+				
+			$emp_list = array();
+
+			$emps = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code = ?
+				", array($co->org_code));
+
+			foreach ($emps as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}
+			
+			$emp_list = array_unique($emp_list);
+
+				// Get array keys
 			$arrayKeys = array_keys($emp_list);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($emp_list as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
-			}					
-				
+			}	
+
 			do {				
 				empty($in_emp) ? $in_emp = "null" : null;
 
 				$emp_list = array();			
 
 				$emp_items = DB::select("
-					select distinct emp_code
-					from employee
-					where chief_emp_code in ({$in_emp})
-					and chief_emp_code != emp_code
+					select distinct org_code
+					from org
+					where parent_org_code in ({$in_emp})
+					and parent_org_code != org_code
 					and is_active = 1			
-				");
-				
+					");
+
 				foreach ($emp_items as $e) {
-					$emp_list[] = $e->emp_code;
-					$re_emp[] = $e->emp_code;
+					$emp_list[] = $e->org_code;
+					$re_emp[] = $e->org_code;
 				}			
-				
+
 				$emp_list = array_unique($emp_list);
-				
-				// Get array keys
+
+					// Get array keys
 				$arrayKeys = array_keys($emp_list);
-				// Fetch last array key
+					// Fetch last array key
 				$lastArrayKey = array_pop($arrayKeys);
-				//iterate array
+					//iterate array
 				$in_emp = '';
 				foreach($emp_list as $k => $v) {
 					if($k == $lastArrayKey) {
-						//during array iteration this condition states the last element.
+							//during array iteration this condition states the last element.
 						$in_emp .= "'" . $v . "'";
 					} else {
 						$in_emp .= "'" . $v . "'" . ',';
 					}
 				}		
 			} while (!empty($emp_list));		
-			
-			$re_emp[] = Auth::id();
+
+			$re_emp[] = $co->org_code;
 			$re_emp = array_unique($re_emp);
-			
-			// Get array keys
+
+				// Get array keys
 			$arrayKeys = array_keys($re_emp);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($re_emp as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
 			}				
 
-			empty($in_emp) ? $in_emp = "null" : null;	
+			empty($in_emp) ? $in_emp = "null" : null;
+
 			$qinput = array();
+			// $query = "
+			// 	Select emp_id, emp_code, emp_name
+			// 	From employee
+			// 	Where emp_name like ?
+			// 	and emp_code in ({$in_emp})
+			// ";
+
 			$query = "
-				Select emp_id, emp_code, emp_name
-				From employee
-				Where emp_name like ?
-				and emp_code in ({$in_emp})
+				Select e.emp_id, e.emp_code, e.emp_name
+				From employee e
+				inner join org on org.org_id = e.org_id
+				Where e.emp_name like ?
+				and org.org_code in ({$in_emp})
 			";
 			
-			$qfooter = " Order by emp_name limit 10 ";
+			$qfooter = " Order by e.emp_name limit 10 ";
 			$qinput[] = '%'.$request->emp_name.'%';
-			empty($request->org_id) ?: ($query .= " and org_id = ? " AND $qinput[] = $request->org_id);
-			empty($request->position_id) ?: ($query .= " and position_id = ? " AND $qinput[] = $request->position_id);
+			empty($request->org_id) ?: ($query .= " and e.org_id = ? " AND $qinput[] = $request->org_id);
+			empty($request->position_id) ?: ($query .= " and e.position_id = ? " AND $qinput[] = $request->position_id);
 			
 			$items = DB::select($query.$qfooter,$qinput);			
 		}
@@ -782,97 +1298,188 @@ class AppraisalController extends Controller
 			
 		} else {
 
-			$re_emp = array();
+			// $re_emp = array();
 			
-			$emp_list = array();
+			// $emp_list = array();
 			
-			$emps = DB::select("
-				select distinct emp_code
-				from employee
-				where chief_emp_code = ?
-			", array(Auth::id()));
+			// $emps = DB::select("
+			// 	select distinct emp_code
+			// 	from employee
+			// 	where chief_emp_code = ?
+			// ", array(Auth::id()));
 			
-			foreach ($emps as $e) {
-				$emp_list[] = $e->emp_code;
-				$re_emp[] = $e->emp_code;
-			}
+			// foreach ($emps as $e) {
+			// 	$emp_list[] = $e->emp_code;
+			// 	$re_emp[] = $e->emp_code;
+			// }
 		
-			$emp_list = array_unique($emp_list);
+			// $emp_list = array_unique($emp_list);
 			
-			// Get array keys
+			// // Get array keys
+			// $arrayKeys = array_keys($emp_list);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($emp_list as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }					
+				
+			// do {				
+			// 	empty($in_emp) ? $in_emp = "null" : null;
+
+			// 	$emp_list = array();			
+
+			// 	$emp_items = DB::select("
+			// 		select distinct emp_code
+			// 		from employee
+			// 		where chief_emp_code in ({$in_emp})
+			// 		and is_active = 1			
+			// 		and chief_emp_code != emp_code
+			// 	");
+				
+			// 	foreach ($emp_items as $e) {
+			// 		$emp_list[] = $e->emp_code;
+			// 		$re_emp[] = $e->emp_code;
+			// 	}			
+				
+			// 	$emp_list = array_unique($emp_list);
+				
+			// 	// Get array keys
+			// 	$arrayKeys = array_keys($emp_list);
+			// 	// Fetch last array key
+			// 	$lastArrayKey = array_pop($arrayKeys);
+			// 	//iterate array
+			// 	$in_emp = '';
+			// 	foreach($emp_list as $k => $v) {
+			// 		if($k == $lastArrayKey) {
+			// 			//during array iteration this condition states the last element.
+			// 			$in_emp .= "'" . $v . "'";
+			// 		} else {
+			// 			$in_emp .= "'" . $v . "'" . ',';
+			// 		}
+			// 	}		
+			// } while (!empty($emp_list));		
+			
+			// $re_emp[] = Auth::id();
+			// $re_emp = array_unique($re_emp);
+			
+			// // Get array keys
+			// $arrayKeys = array_keys($re_emp);
+			// // Fetch last array key
+			// $lastArrayKey = array_pop($arrayKeys);
+			// //iterate array
+			// $in_emp = '';
+			// foreach($re_emp as $k => $v) {
+			// 	if($k == $lastArrayKey) {
+			// 		//during array iteration this condition states the last element.
+			// 		$in_emp .= "'" . $v . "'";
+			// 	} else {
+			// 		$in_emp .= "'" . $v . "'" . ',';
+			// 	}
+			// }				
+
+			// empty($in_emp) ? $in_emp = "null" : null;			
+
+			$emp = Employee::find(Auth::id());
+			$co = Org::find($emp->org_id);
+
+			$re_emp = array();
+				
+			$emp_list = array();
+
+			$emps = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code = ?
+				", array($co->org_code));
+
+			foreach ($emps as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}
+			
+			$emp_list = array_unique($emp_list);
+
+				// Get array keys
 			$arrayKeys = array_keys($emp_list);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($emp_list as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
-			}					
-				
+			}	
+
 			do {				
 				empty($in_emp) ? $in_emp = "null" : null;
 
 				$emp_list = array();			
 
 				$emp_items = DB::select("
-					select distinct emp_code
-					from employee
-					where chief_emp_code in ({$in_emp})
+					select distinct org_code
+					from org
+					where parent_org_code in ({$in_emp})
+					and parent_org_code != org_code
 					and is_active = 1			
-					and chief_emp_code != emp_code
-				");
-				
+					");
+
 				foreach ($emp_items as $e) {
-					$emp_list[] = $e->emp_code;
-					$re_emp[] = $e->emp_code;
+					$emp_list[] = $e->org_code;
+					$re_emp[] = $e->org_code;
 				}			
-				
+
 				$emp_list = array_unique($emp_list);
-				
-				// Get array keys
+
+					// Get array keys
 				$arrayKeys = array_keys($emp_list);
-				// Fetch last array key
+					// Fetch last array key
 				$lastArrayKey = array_pop($arrayKeys);
-				//iterate array
+					//iterate array
 				$in_emp = '';
 				foreach($emp_list as $k => $v) {
 					if($k == $lastArrayKey) {
-						//during array iteration this condition states the last element.
+							//during array iteration this condition states the last element.
 						$in_emp .= "'" . $v . "'";
 					} else {
 						$in_emp .= "'" . $v . "'" . ',';
 					}
 				}		
 			} while (!empty($emp_list));		
-			
-			$re_emp[] = Auth::id();
+
+			$re_emp[] = $co->org_code;
 			$re_emp = array_unique($re_emp);
-			
-			// Get array keys
+
+				// Get array keys
 			$arrayKeys = array_keys($re_emp);
-			// Fetch last array key
+				// Fetch last array key
 			$lastArrayKey = array_pop($arrayKeys);
-			//iterate array
+				//iterate array
 			$in_emp = '';
 			foreach($re_emp as $k => $v) {
 				if($k == $lastArrayKey) {
-					//during array iteration this condition states the last element.
+						//during array iteration this condition states the last element.
 					$in_emp .= "'" . $v . "'";
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
 			}				
 
-			empty($in_emp) ? $in_emp = "null" : null;			
+			empty($in_emp) ? $in_emp = "null" : null;
 			
 			if ($request->appraisal_type_id == 2) {
 				$query = "
-					select a.emp_result_id, b.emp_code, b.emp_name, d.appraisal_level_name, e.appraisal_type_id, e.appraisal_type_name, p.position_name, o.org_code, o.org_name, po.org_name parent_org_name, f.to_action, a.stage_id, g.period_id, concat(g.appraisal_period_desc,' Start Date: ',g.start_date,' End Date: ',g.end_date) appraisal_period_desc
+					selects a.emp_result_id, b.emp_code, b.emp_name, d.appraisal_level_name, e.appraisal_type_id, e.appraisal_type_name, p.position_name, o.org_code, o.org_name, po.org_name parent_org_name, f.to_action, a.stage_id, g.period_id, concat(g.appraisal_period_desc,' Start Date: ',g.start_date,' End Date: ',g.end_date) appraisal_period_desc
 					from emp_result a
 					left outer join employee b
 					on a.emp_id = b.emp_id
@@ -891,7 +1498,8 @@ class AppraisalController extends Controller
 					left outer join org po
 					on o.parent_org_code = po.org_code
 					where d.is_hr = 0
-					and b.emp_code in ({$in_emp})
+					#and b.emp_code in ({$in_emp})
+					and o.org_code in ({$in_emp})
 				";		
 					
 				empty($request->appraisal_year) ?: ($query .= " and g.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
@@ -911,8 +1519,10 @@ class AppraisalController extends Controller
 				$items = DB::select($query. " order by period_id,emp_code,org_code  asc ", $qinput);	
 				
 			} else {
-				$emp = Employee::find(Auth::id());
-				$emp_org = Org::find($emp->org_id);
+				// $emp = Employee::find(Auth::id());
+				// $emp_org = Org::find($emp->org_id);
+				/*and (o.org_code = {$emp_org->org_code} or o.parent_org_code = {$emp_org->org_code})*/
+
 				$query = "
 					select a.emp_result_id, b.emp_code, b.emp_name, d.appraisal_level_name, e.appraisal_type_id, e.appraisal_type_name, p.position_name, o.org_code, o.org_name, po.org_name parent_org_name, f.to_action, a.stage_id, g.period_id, concat(g.appraisal_period_desc,' Start Date: ',g.start_date,' End Date: ',g.end_date) appraisal_period_desc
 					from emp_result a
@@ -933,7 +1543,7 @@ class AppraisalController extends Controller
 					left outer join org po
 					on o.parent_org_code = po.org_code
 					where d.is_hr = 0
-					and (o.org_code = {$emp_org->org_code} or o.parent_org_code = {$emp_org->org_code})
+					and o.org_code in ({$in_emp})
 				";		
 					
 				empty($request->appraisal_year) ?: ($query .= " and g.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
@@ -941,8 +1551,8 @@ class AppraisalController extends Controller
 				empty($request->level_id) ?: ($query .= " and a.level_id = ? " AND $qinput[] = $request->level_id);
 				empty($request->appraisal_type_id) ?: ($query .= " and a.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);
 				empty($request->org_id) ?: ($query .= " and a.org_id = ? " AND $qinput[] = $request->org_id);
-				empty($request->position_id) ?: ($query .= " and a.position_id = ? " AND $qinput[] = $request->position_id);
-				empty($request->emp_id) ?: ($query .= " And a.emp_id = ? " AND $qinput[] = $request->emp_id);
+				//empty($request->position_id) ?: ($query .= " and a.position_id = ? " AND $qinput[] = $request->position_id);
+				//empty($request->emp_id) ?: ($query .= " And a.emp_id = ? " AND $qinput[] = $request->emp_id);
 				
 				$items = DB::select($query. " order by period_id,org_code  asc ", $qinput);			
 			

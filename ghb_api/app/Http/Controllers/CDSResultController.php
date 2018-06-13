@@ -664,12 +664,115 @@ class CDSResultController extends Controller
 		
 	public function auto_position_name(Request $request)
 	{
+		$emp = Employee::find(Auth::id());
+		$co = Org::find($emp->org_id);
+
+		$re_emp = array();
+
+		$emp_list = array();
+
+		$emps = DB::select("
+			select distinct org_code
+			from org
+			where parent_org_code = ?
+			", array($co->org_code));
+
+		foreach ($emps as $e) {
+			$emp_list[] = $e->org_code;
+			$re_emp[] = $e->org_code;
+		}
+
+		$emp_list = array_unique($emp_list);
+
+				// Get array keys
+		$arrayKeys = array_keys($emp_list);
+				// Fetch last array key
+		$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+		$in_emp = '';
+		foreach($emp_list as $k => $v) {
+			if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+				$in_emp .= "'" . $v . "'";
+			} else {
+				$in_emp .= "'" . $v . "'" . ',';
+			}
+		}	
+
+		do {				
+			empty($in_emp) ? $in_emp = "null" : null;
+
+			$emp_list = array();			
+
+			$emp_items = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code in ({$in_emp})
+				and parent_org_code != org_code
+				and is_active = 1			
+				");
+
+			foreach ($emp_items as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}			
+
+			$emp_list = array_unique($emp_list);
+
+					// Get array keys
+			$arrayKeys = array_keys($emp_list);
+					// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+					//iterate array
+			$in_emp = '';
+			foreach($emp_list as $k => $v) {
+				if($k == $lastArrayKey) {
+							//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}		
+		} while (!empty($emp_list));		
+
+		$re_emp[] = $co->org_code;
+		$re_emp = array_unique($re_emp);
+
+				// Get array keys
+		$arrayKeys = array_keys($re_emp);
+				// Fetch last array key
+		$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+		$in_emp = '';
+		foreach($re_emp as $k => $v) {
+			if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+				$in_emp .= "'" . $v . "'";
+			} else {
+				$in_emp .= "'" . $v . "'" . ',';
+			}
+		}				
+
+		empty($in_emp) ? $in_emp = "null" : null;
+
+		// $items = DB::select("
+		// 	Select distinct position_id, position_name
+		// 	From position
+		// 	Where position_name like ? and is_active = 1
+		// 	Order by position_name		
+		// ", array('%'.$request->position_name.'%'));
+
 		$items = DB::select("
-			Select distinct position_id, position_name
-			From position
-			Where position_name like ? and is_active = 1
-			Order by position_name		
+			Select distinct p.position_id, p.position_name
+			From p.position
+			inner join employee e on e.position_id = p.position_id
+			inner join org on org.org_id = e.org_id 
+			Where p.position_name like ?
+			and p.is_active = 1
+			and org.org_code in ({$in_emp})
+			Order by p.position_name		
 		", array('%'.$request->position_name.'%'));
+
 		return response()->json($items);
 	}
 	
@@ -691,6 +794,96 @@ class CDSResultController extends Controller
 			where emp_code = ?
 		", array(Auth::id()));
 
+		$co = Org::find($emp->org_id);
+
+		$re_emp = array();
+
+		$emp_list = array();
+
+		$emps = DB::select("
+			select distinct org_code
+			from org
+			where parent_org_code = ?
+			", array($co->org_code));
+
+		foreach ($emps as $e) {
+			$emp_list[] = $e->org_code;
+			$re_emp[] = $e->org_code;
+		}
+
+		$emp_list = array_unique($emp_list);
+
+				// Get array keys
+		$arrayKeys = array_keys($emp_list);
+				// Fetch last array key
+		$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+		$in_emp = '';
+		foreach($emp_list as $k => $v) {
+			if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+				$in_emp .= "'" . $v . "'";
+			} else {
+				$in_emp .= "'" . $v . "'" . ',';
+			}
+		}	
+
+		do {				
+			empty($in_emp) ? $in_emp = "null" : null;
+
+			$emp_list = array();			
+
+			$emp_items = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code in ({$in_emp})
+				and parent_org_code != org_code
+				and is_active = 1			
+				");
+
+			foreach ($emp_items as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}			
+
+			$emp_list = array_unique($emp_list);
+
+					// Get array keys
+			$arrayKeys = array_keys($emp_list);
+					// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+					//iterate array
+			$in_emp = '';
+			foreach($emp_list as $k => $v) {
+				if($k == $lastArrayKey) {
+							//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}		
+		} while (!empty($emp_list));		
+
+		$re_emp[] = $co->org_code;
+		$re_emp = array_unique($re_emp);
+
+				// Get array keys
+		$arrayKeys = array_keys($re_emp);
+				// Fetch last array key
+		$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+		$in_emp = '';
+		foreach($re_emp as $k => $v) {
+			if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+				$in_emp .= "'" . $v . "'";
+			} else {
+				$in_emp .= "'" . $v . "'" . ',';
+			}
+		}				
+
+		empty($in_emp) ? $in_emp = "null" : null;
+
 		empty($request->org_id) ? $org = "" : $org = " and org_id = " . $request->org_id . " ";
 		
 		if ($all_emp[0]->count_no > 0) {
@@ -703,15 +896,26 @@ class CDSResultController extends Controller
 				Order by emp_name
 			", array('%'.$request->emp_name.'%'));
 		} else {
+			// $items = DB::select("
+			// 	Select emp_id, emp_code, emp_name
+			// 	From employee
+			// 	Where (chief_emp_code = ? or emp_code = ?)
+			// 	And emp_name like ?
+			// " . $org . "				
+			// 	and is_active = 1
+			// 	Order by emp_name
+			// ", array($emp->emp_code, $emp->emp_code,'%'.$request->emp_name.'%'));
+
 			$items = DB::select("
-				Select emp_id, emp_code, emp_name
-				From employee
-				Where (chief_emp_code = ? or emp_code = ?)
-				And emp_name like ?
+				Select e.emp_id, e.emp_code, e.emp_name
+				From employee e
+				inner join org on org.org_id = e.org_id
+				Where org.org_code in ({$in_emp})
+				And e.emp_name like ?
 			" . $org . "				
-				and is_active = 1
-				Order by emp_name
-			", array($emp->emp_code, $emp->emp_code,'%'.$request->emp_name.'%'));
+				and e.is_active = 1
+				Order by e.emp_name
+			", array('%'.$request->emp_name.'%'));
 		}		
 		return response()->json($items);
 	}
@@ -721,7 +925,98 @@ class CDSResultController extends Controller
 		$emp = Employee::find(Auth::id());
 		$level = AppraisalLevel::find($emp->level_id);
 		$is_hr = $level->is_hr;
-		$org = Org::find($emp->org_id);
+		//$org = Org::find($emp->org_id);
+
+		//$emp = Employee::find(Auth::id());
+		$co = Org::find($emp->org_id);
+
+		$re_emp = array();
+
+		$emp_list = array();
+
+		$emps = DB::select("
+			select distinct org_code
+			from org
+			where parent_org_code = ?
+			", array($co->org_code));
+
+		foreach ($emps as $e) {
+			$emp_list[] = $e->org_code;
+			$re_emp[] = $e->org_code;
+		}
+
+		$emp_list = array_unique($emp_list);
+
+				// Get array keys
+		$arrayKeys = array_keys($emp_list);
+				// Fetch last array key
+		$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+		$in_emp = '';
+		foreach($emp_list as $k => $v) {
+			if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+				$in_emp .= "'" . $v . "'";
+			} else {
+				$in_emp .= "'" . $v . "'" . ',';
+			}
+		}	
+
+		do {				
+			empty($in_emp) ? $in_emp = "null" : null;
+
+			$emp_list = array();			
+
+			$emp_items = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code in ({$in_emp})
+				and parent_org_code != org_code
+				and is_active = 1			
+				");
+
+			foreach ($emp_items as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}			
+
+			$emp_list = array_unique($emp_list);
+
+					// Get array keys
+			$arrayKeys = array_keys($emp_list);
+					// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+					//iterate array
+			$in_emp = '';
+			foreach($emp_list as $k => $v) {
+				if($k == $lastArrayKey) {
+							//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}		
+		} while (!empty($emp_list));		
+
+		$re_emp[] = $co->org_code;
+		$re_emp = array_unique($re_emp);
+
+				// Get array keys
+		$arrayKeys = array_keys($re_emp);
+				// Fetch last array key
+		$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+		$in_emp = '';
+		foreach($re_emp as $k => $v) {
+			if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+				$in_emp .= "'" . $v . "'";
+			} else {
+				$in_emp .= "'" . $v . "'" . ',';
+			}
+		}				
+
+		empty($in_emp) ? $in_emp = "null" : null;
 		
 		
 		$all_emp = DB::select("
@@ -738,7 +1033,8 @@ class CDSResultController extends Controller
 			$is_all_sql_org = "";
 		} else {
 			$is_all_sql = " and (e.emp_code = '{$emp->emp_code}' or e.chief_emp_code = '{$emp->emp_code}') ";
-			$is_all_sql_org = " and (org.org_code = '{$org->org_code}' or org.parent_org_code = '{$org->org_code}') ";
+			//$is_all_sql_org = " and (org.org_code = '{$org->org_code}' or org.parent_org_code = '{$org->org_code}') ";
+			$is_all_sql_org = " and org.org_code in ({$in_emp})";
 		}
 		
 		if ($is_hr == 0) {
