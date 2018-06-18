@@ -332,18 +332,22 @@ class DashboardController extends Controller
 		$PeriodId = (empty($request->period)) ? " " : " and air.period_id = " . $request->period;
 		$EmpIdStr = (empty($request->emp_id)) ? " " : " AND air.emp_id = {$request->emp_id}";
 		$KPI_type = (empty($request->kpi_type_id) || $request->kpi_type_id=='All') ? " " : " AND ai.kpi_type_id = {$request->kpi_type_id}";
+		$year = (empty($request->year)) ? " " : " AND cr.year = {$request->year}";
 
 		$query = "
 			SELECT ai.item_id, ai.item_name
 			FROM appraisal_item_result air
 			INNER JOIN appraisal_item ai on air.item_id=ai.item_id
 			INNER JOIN appraisal_structure aps on ai.structure_id = aps.structure_id
+			INNER JOIN kpi_cds_mapping kcm on kcm.item_id = air.item_id
+			INNER JOIN cds_result cr on cr.cds_id = kcm.cds_id
 			WHERE aps.form_id = 1
 			AND air.level_id = {$levelId}
 			AND air.org_id = {$OrgId}
 			".$PeriodId."
 			".$EmpIdStr."
 			".$KPI_type."
+			".$year."
 			GROUP BY air.item_id
 			ORDER BY air.item_id";
 
