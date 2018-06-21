@@ -2282,12 +2282,13 @@ class DashboardController extends Controller
 				$counter++;
 			}
 		} else {
-		
+
 			if ($request->appraisal_type_id == 2) {
 				$emp = Employee::where('emp_id',$request->emp_id)->first();
 				$period = AppraisalPeriod::find($request->period_id);
+				empty($request->position_id) ? $position_query = " " : $position_query = " and a.position_id = " . $request->position_id . " ";
 				$org_list = DB::select("
-					select e.org_id, d.emp_id, i.emp_name org_name, d.item_result_id, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(a.etl_dttm) etl_dttm
+					select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm
 					from monthly_appraisal_item_result a
 					left outer join appraisal_period b
 					on a.period_id = b.period_id
@@ -2296,6 +2297,7 @@ class DashboardController extends Controller
 					left outer join appraisal_item_result d
 					on a.period_id = d.period_id
 					and a.item_id = d.item_id
+					and a.emp_result_id = d.emp_result_id
 					left outer join org e
 					on a.org_id = e.org_id
 					left outer join emp_result f
@@ -2311,18 +2313,15 @@ class DashboardController extends Controller
 					where c.frequency_month_value = 1
 					and b.period_no <= ?
 					and a.item_id = ?
-					and b.appraisal_year = ?		
+					and b.appraisal_year = ?
 					and f.appraisal_type_id = ?
-					and (i.emp_code = ? or i.chief_emp_code = ?)
-					group by e.org_id, d.emp_id, i.emp_name, d.item_result_id, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
-				",array($period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $emp->emp_code, $emp->emp_code));
-			
-			} else {
-
-				$org = Org::find($request->org_id);
-				$period = AppraisalPeriod::find($request->period_id);
-				$org_list = DB::select("
-					select e.org_id, d.emp_id, e.org_name, d.item_result_id, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(a.etl_dttm) etl_dttm
+					and i.emp_code = ?
+					and a.level_id = ?
+					and a.org_id = ?
+					" . $position_query . "
+					group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+					union all
+					select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm
 					from monthly_appraisal_item_result a
 					left outer join appraisal_period b
 					on a.period_id = b.period_id
@@ -2331,6 +2330,44 @@ class DashboardController extends Controller
 					left outer join appraisal_item_result d
 					on a.period_id = d.period_id
 					and a.item_id = d.item_id
+					and a.emp_result_id = d.emp_result_id
+					left outer join emp_result f
+					on d.emp_result_id = f.emp_result_id
+					left outer join appraisal_item g
+					on a.item_id = g.item_id
+					left outer join perspective h
+					on g.perspective_id = h.perspective_id
+					left outer join employee i
+					on d.emp_id = i.emp_id
+					and d.org_id = i.org_id
+					left outer join org e
+					on i.org_id = e.org_id					
+					left outer join uom u
+					on g.uom_id = u.uom_id
+					where c.frequency_month_value = 1
+					and b.period_no <= ?
+					and a.item_id = ?
+					and b.appraisal_year = ?
+					and f.appraisal_type_id = ?
+					and i.chief_emp_code = ?
+					group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name					
+				",array($period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $emp->emp_code, $request->level_id, $request->org_id,$period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $emp->emp_code));
+
+			} else {
+
+				$org = Org::find($request->org_id);
+				$period = AppraisalPeriod::find($request->period_id);
+				$org_list = DB::select("
+					select e.org_id, d.emp_id, e.org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm
+					from monthly_appraisal_item_result a
+					left outer join appraisal_period b
+					on a.period_id = b.period_id
+					left outer join appraisal_frequency c
+					on b.appraisal_frequency_id = c.frequency_id
+					left outer join appraisal_item_result d
+					on a.period_id = d.period_id
+					and a.item_id = d.item_id
+					and a.emp_result_id = d.emp_result_id
 					left outer join org e
 					on a.org_id = e.org_id
 					left outer join emp_result f
@@ -2344,19 +2381,19 @@ class DashboardController extends Controller
 					where c.frequency_month_value = 1
 					and b.period_no <= ?
 					and a.item_id = ?
-					and b.appraisal_year = ?		
+					and b.appraisal_year = ?
 					and f.appraisal_type_id = ?
 					and (e.org_code = ? or e.parent_org_code = ?)
-					group by e.org_id, d.emp_id, e.org_name, d.item_result_id, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+					group by e.org_id, d.emp_id, e.org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
 				",array($period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $org->org_code, $org->org_code));
 			}
-			
+
 			foreach ($org_list as $o) {
 				$qinput = [];
-				
+
 				if ($request->appraisal_type_id == 2) {
 					$query = "
-						select a.emp_id, a.org_id, a.item_id, a.appraisal_month_no, a.appraisal_month_name, a.actual_value, d.forecast_value ,a.target_value, a.period_id, d.item_result_id
+						select a.emp_id, a.org_id, a.item_id, a.appraisal_month_no, a.appraisal_month_name, a.actual_value, d.forecast_value ,a.target_value, a.period_id, d.item_result_id, d.percent_achievement
 						from monthly_appraisal_item_result a
 						left outer join appraisal_period b
 						on a.period_id = b.period_id
@@ -2365,23 +2402,32 @@ class DashboardController extends Controller
 						left outer join appraisal_item_result d
 						on a.period_id = d.period_id
 						and a.item_id = d.item_id
+						and a.emp_result_id = d.emp_result_id
 						left outer join emp_result e
 						on d.emp_result_id = e.emp_result_id
 						where c.frequency_month_value = 1
 						and b.period_no <= ?
 						and a.item_id = ?
-						and b.appraisal_year = ?		
+						and b.appraisal_year = ?
 						and e.appraisal_type_id = ?
 						and a.emp_id = ?
+						and a.org_id = ?
 					";
 					$qinput[] = $period->period_no;
 					$qinput[] = $request->item_id;
 					$qinput[] = $request->year_id;
 					$qinput[] = $request->appraisal_type_id;
-					$qinput[] = $o->emp_id;				
+					$qinput[] = $o->emp_id;
+					$qinput[] = $o->org_id;
+					// $qinput[] = $request->level_id;
+					// $qinput[] = $request->org_id;
 					
+					// empty($request->position_id) ?: ($query .= " and a.position_id = ? " AND $qinput[] = $request->position_id);
+				
+				// empty($request->position_id) ? $position_query = " " : $position_query = " and a.position_id = ". $request->position_id ." ";
+				
 				$dual_chart = DB::select("
-					select a.target_value, a.actual_value, a.forecast_value
+					select a.target_value, a.actual_value, a.forecast_value, a.percent_achievement
 					from appraisal_item_result a
 					left outer join emp_result b
 					on a.emp_result_id = b.emp_result_id
@@ -2389,12 +2435,12 @@ class DashboardController extends Controller
 					and b.appraisal_type_id = ?
 					and a.period_id = ?
 					and a.item_id = ?
-				", array($request->emp_id, $request->appraisal_type_id, $request->period_id, $request->item_id));
-				
+				", array($o->emp_id, $request->appraisal_type_id, $request->period_id, $request->item_id));
+
 				} else {
-			
+
 					$query = "
-						select a.org_id, a.item_id, a.appraisal_month_no, a.appraisal_month_name, a.actual_value, d.forecast_value ,a.target_value, a.period_id, d.item_result_id
+						select a.org_id, a.item_id, a.appraisal_month_no, a.appraisal_month_name, a.actual_value, d.forecast_value ,a.target_value, a.period_id, d.item_result_id, d.percent_achievement
 						from monthly_appraisal_item_result a
 						left outer join appraisal_period b
 						on a.period_id = b.period_id
@@ -2403,12 +2449,13 @@ class DashboardController extends Controller
 						left outer join appraisal_item_result d
 						on a.period_id = d.period_id
 						and a.item_id = d.item_id
+						and a.emp_result_id = d.emp_result_id
 						left outer join emp_result e
 						on d.emp_result_id = e.emp_result_id
 						where c.frequency_month_value = 1
 						and b.period_no <= ?
 						and a.item_id = ?
-						and b.appraisal_year = ?		
+						and b.appraisal_year = ?
 						and e.appraisal_type_id = ?
 						and a.org_id = ?
 					";
@@ -2417,9 +2464,9 @@ class DashboardController extends Controller
 					$qinput[] = $request->year_id;
 					$qinput[] = $request->appraisal_type_id;
 					$qinput[] = $o->org_id;
-					
+
 					$dual_chart = DB::select("
-						select a.target_value, a.actual_value, a.forecast_value
+						select a.target_value, a.actual_value, a.forecast_value, a.percent_achievement
 						from appraisal_item_result a
 						left outer join emp_result b
 						on a.emp_result_id = b.emp_result_id
@@ -2427,37 +2474,37 @@ class DashboardController extends Controller
 						and b.appraisal_type_id = ?
 						and a.period_id = ?
 						and a.item_id = ?
-					", array($request->org_id, $request->appraisal_type_id, $request->period_id, $request->item_id));					
+					", array($o->org_id, $request->appraisal_type_id, $request->period_id, $request->item_id));
 				}
-				
 
-				
+
+
 				$qfooter = " order by a.org_id asc, a.appraisal_month_no asc ";
 
-				$items = DB::select($query.$qfooter,$qinput);		
+				$items = DB::select($query.$qfooter,$qinput);
 
 				$color = DB::select("
 					SELECT begin_threshold min_val, end_threshold max_val, color_code color
 					FROM result_threshold
 					where result_threshold_group_id = ?
-					order by begin_threshold asc				
+					order by begin_threshold asc
 				", array($o->result_threshold_group_id));
-				
+
 				//print_r($o);
 
 				//print_r($dual_chart);
 
-		/*		
+		/*
     	if(empty($dual_chart)){
     		$o->dual_chart = [
 					'data' => [
 					"target" => 0,
 					"forecast" => 0,
-					"actual_value" => null				
+					"actual_value" => null
 					],
 					'color_range' => $color
-				];			
-				
+				];
+
 
     	}else{
 
@@ -2465,41 +2512,54 @@ class DashboardController extends Controller
 					'data' => [
 					"target" => $dual_chart[0]->target_value,
 					"forecast" => $dual_chart[0]->forecast_value,
-					"actual_value" => $dual_chart[0]->actual_value				
+					"actual_value" => $dual_chart[0]->actual_value
 					],
 					'color_range' => $color
-				];			
-				
+				];
+
 
     	}
     	*/
 
+				if (empty($dual_chart)) {
+					$o->dual_chart = [
+						'data' => [
+						"target" => 0,
+						"forecast" => 0,
+						"actual_value" => 0,
+						"percent_achievement" => 0
+						],
+						'color_range' => $color					
+					];
+				} else {
+					$o->dual_chart = [
+						'data' => [
+						"target" => $dual_chart[0]->target_value,
+						"forecast" => $dual_chart[0]->forecast_value,
+						"actual_value" => $dual_chart[0]->actual_value,
+						"percent_achievement" => $dual_chart[0]->percent_achievement
+						],
+						'color_range' => $color
+					];
+				}
 
-				$o->dual_chart = [
-					'data' => [
-					"target" => $dual_chart[0]->target_value,
-					"forecast" => $dual_chart[0]->forecast_value,
-					"actual_value" => $dual_chart[0]->actual_value				
-					],
-					'color_range' => $color
-				];		
 
 
-				
+
 				$actual_data = array();
 				$forecast_data = array();
 				$target_data = array();
 				$category = array();
 				$action_groups = array();
-				
+
 				$action_order = 0;
-				
+
 				foreach ($items as $i) {
 					$actual_data[] = ['value' => $i->actual_value];
 					$forecast_data[] = ['value' => $i->forecast_value];
 					$target_data[] = ['value' => $i->target_value];
 					$category[] = ['label' => $i->appraisal_month_name];
-					
+
 					$action_plans = DB::select("
 						select 1
 						from action_plan a
@@ -2507,7 +2567,7 @@ class DashboardController extends Controller
 						on a.item_result_id = b.item_result_id
 						where b.item_result_id = ?
 					", array($i->item_result_id));
-					
+
 					if (!empty($action_plans)) {
 						$action_item = [
 							[
@@ -2533,7 +2593,7 @@ class DashboardController extends Controller
 							   "x" => '$dataset.0.set.'.$action_order.'.x',
 							   "y" => '$dataset.0.set.'.$action_order.'.starty-18',
 							   "radius" => "11",
-							],		
+							],
 							[
 							   "id" => $i->item_result_id.'-'.$i->appraisal_month_name."-Label",
 							   "type" => "Text",
@@ -2546,45 +2606,48 @@ class DashboardController extends Controller
 							   "y" => '$dataset.0.set.'.$action_order.'.starty - 23'
 							]
 						];
-						
+
 						$action_groups[] = [
 							'id' => $i->item_result_id.'-'.$i->appraisal_month_name,
 							'items' => $action_item
-						];	
+						];
 					}
 					$action_order++;
 
 				}
-				
+
 				$o->categories = [['category' => $category]];
 				$o->dataset = [
 					[
 						"seriesName" => "Actual",
 						"showValues" => "0",
-						"data" => $actual_data				
+						"data" => $actual_data
 					],
 					[
 						"seriesName" => "Forecast",
 						"renderAs" => "line",
-						"data" => $forecast_data			
+						"anchorRadius"=> "4",
+						"data" => $forecast_data
 					],
 					[
 						"seriesName" => "Target",
-						"renderAs" => "area",
-						"anchorRadius"=> "0",
-						"anchorBorderThickness"=> "0",
-						"alpha" => "30",
-						"data" => $target_data		
+						"renderAs" => "line",
+						"anchorSides"=> "4",
+						"anchorRadius"=> "4",
+						#"anchorRadius"=> "0",
+						#"anchorBorderThickness"=> "0",
+						#"alpha" => "30",
+						"data" => $target_data
 					]
 				];
 
-				
+
 				$o->annotations = [
 					"drawImmediately" => "1",
                     "showbelow" => "1",
 					"groups" => $action_groups
-				];				
-				
+				];
+
 				$o->chart_type = 'monthly';
 				$result['group'.$counter] = $o;
 				$counter++;
