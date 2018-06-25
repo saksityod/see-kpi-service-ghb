@@ -548,6 +548,7 @@ class OrgController extends Controller
 						$org->is_active = 1;
 						$org->latitude = $i->latitude;
 						$org->longitude = $i->longitude;
+						$org->org_email = $i->org_email;
 						$org->created_by = Auth::id();
 						$org->updated_by = Auth::id();
 						try {

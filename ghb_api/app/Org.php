@@ -20,6 +20,6 @@ class Org extends Model
 	//public $timestamps = false;
 	protected $guarded = array();
 	
-	protected $fillable = array('org_id','org_code','org_name','org_abbr','parent_org_code','level_id','latitude','longitude','province_code','is_active');
+	protected $fillable = array('org_id','org_code','org_name','org_abbr','parent_org_code','level_id','latitude','longitude','org_email','province_code','is_active');
 	protected $hidden = ['created_by', 'updated_by', 'created_dttm', 'updated_dttm'];
 }

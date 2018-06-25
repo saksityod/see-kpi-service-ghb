@@ -7,6 +7,7 @@ use App\BenchmarkData;
 use Auth;
 use DB;
 use Excel;
+use Validator;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 //use Illuminate\Pagination\LengthAwarePaginator;
@@ -17,7 +18,7 @@ class BenchmarkDataController extends Controller
 
 	public function __construct()
 	{
-		//$this->middleware('jwt.auth');
+		$this->middleware('jwt.auth', ['except' => ['download_benchmark']]);
 	}
 
 	public function select_list_search(Request $request)
@@ -471,29 +472,61 @@ class BenchmarkDataController extends Controller
 	public function import_benchmark(Request $request)
 	{
 		//header('Access-Control-Allow-Origin: *');
-		$data = json_decode($request['datas'], true);
+		// $data = json_decode($request['datas'], true);
 
-		if($data)
-		{
-			DB::table('benchmark_data')->delete();
-			foreach($data as $datas)
-			{
+		// if($data)
+		// {
+		// 	DB::table('benchmark_data')->delete();
+		// 	foreach($data as $datas)
+		// 	{
+		// 		$insert = new BenchmarkData;
+		// 		$insert->year = $datas['year'];
+		// 		$insert->quarter = $datas['quarter'];
+		// 		$insert->kpi_name = $datas['kpi_name'];
+		// 		$insert->company_code = $datas['company_code'];
+		// 		$insert->value = $datas['value'];
+		// 		$insert->created_by = 'admin';
+		// 		$insert->created_dttm = date('Y-m-d H:i:s');
+		// 		$insert->save();
+		// 	}
+		// 	$benchmark = DB::select("
+		// 		SELECT *
+		// 		FROM benchmark_data
+		// 	");
+		// 	return response()->json($benchmark);
+		// }
+		$errors = array();
+		foreach ($request->file() as $f) {
+			$items = Excel::load($f, function($reader){})->get();	
+			foreach ($items as $i) {
+
+				$validator = Validator::make($i->toArray(), [
+							'year' => 'required',
+							'quarter' => 'required',
+							'kpi_name' => 'required',
+							'company_code' => 'required',
+							'value' => 'required',
+				]);
+
+				if ($validator->fails()) {
+					return response()->json(['status' => 400, 'errors' => $validator->errors()]);
+				}
+
+				DB::table('benchmark_data')->delete();
+
 				$insert = new BenchmarkData;
-				$insert->year = $datas['year'];
-				$insert->quarter = $datas['quarter'];
-				$insert->kpi_name = $datas['kpi_name'];
-				$insert->company_code = $datas['company_code'];
-				$insert->value = $datas['value'];
-				$insert->created_by = 'admin';
+				$insert->year = $i['year'];
+				$insert->quarter = $i['quarter'];
+				$insert->kpi_name = $i['kpi_name'];
+				$insert->company_code = $i['company_code'];
+				$insert->value = $i['value'];
+				$insert->created_by = Auth::id();
 				$insert->created_dttm = date('Y-m-d H:i:s');
-				$insert->save();
+				$insert->save();			
 			}
-			$benchmark = DB::select("
-				SELECT *
-				FROM benchmark_data
-			");
-			return response()->json($benchmark);
 		}
+		
+		return response()->json(['status' => 200, 'errors' => $errors]);
 	}
 
 	public function download_benchmark($dCheck)
