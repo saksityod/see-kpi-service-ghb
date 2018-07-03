@@ -155,7 +155,12 @@ class JobLogController extends Controller
 				return response()->json(['status' => 404, 'data' => 'Unable to execute '.$item->path_batch_file]);	
 			} else {
 				pclose($handle);
-				return response()->json(['status' => 200]);
+				sleep(15);
+				if($item->status=='Loading') {
+					return response()->json(['status' => 200]);
+				} else {
+					return response()->json(['status' => 404, 'data' => 'ETL is not runing.']);
+				}
 			}
 		} else {
 			return response()->json(['status' => 404, 'data' => 'Path Bath File not found.']);
