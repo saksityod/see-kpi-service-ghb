@@ -381,6 +381,11 @@ Route::group(['middleware' => 'cors'], function()
 
 	Route::get('report/del_sql','ReportController@del_sql');
 
+	Route::get('job_log', 'JobLogController@index');
+	Route::get('job_log/{job_log_id}', 'JobLogController@show');
+	Route::patch('job_log/{job_log_id}', 'JobLogController@update');
+	Route::get('job_log/run/{job_log_id}', 'JobLogController@run');
+
 	
 	
 	Route::get('404', ['as' => 'notfound', function () {
