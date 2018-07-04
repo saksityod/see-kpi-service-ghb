@@ -55,11 +55,14 @@ class JobLogController extends Controller
 
 		$errors_validator = [];
 
+		$param_start_date = date('Y-m-d', strtotime($request->param_start_date. ' -1 day' ));
 		$validator = Validator::make($request->all(), [
 			'param_start_date' => 'required|date_format:"Y-m-d"',
-			'param_end_date' => 'required|date_format:"Y-m-d"',
+			'param_end_date' => 'required|date_format:"Y-m-d"|after:'. $param_start_date,
 			'destination_address' => 'email',
 			'sender_address' => 'email'
+		],[
+			'param_end_date.after' => 'The param end date must be a date after or equal param start date.'
 		]);
 
 		if($validator->fails()) {
@@ -150,17 +153,28 @@ class JobLogController extends Controller
 		}
 
 		if (file_exists($item->path_batch_file)) {
+
+			$check_item = DB::select("
+				select status from job_log where status = 'Loading'
+			");
+
+			if(!empty($check_item)) {
+				return response()->json(['status' => 404, 'data' => 'Cannot Running because some ETL is runing.']);
+			}
+
 			$handle = popen("start /B ". $item->path_batch_file, "r");
 			if ($handle === FALSE) {
 				return response()->json(['status' => 404, 'data' => 'Unable to execute '.$item->path_batch_file]);	
 			} else {
 				pclose($handle);
-				sleep(15);
-				if($item->status=='Loading') {
-					return response()->json(['status' => 200]);
-				} else {
-					return response()->json(['status' => 404, 'data' => 'ETL is not runing.']);
+				for ($i=0; $i <= 100 ; $i++) {
+					sleep(5);
+					$item2 = JobLog::findOrFail($job_log_id);
+					if($item2->status=='Loading') {
+						return response()->json(['status' => 200]);
+					}
 				}
+				return response()->json(['status' => 404, 'data' => 'ETL is not runing.']);
 			}
 		} else {
 			return response()->json(['status' => 404, 'data' => 'Path Bath File not found.']);
