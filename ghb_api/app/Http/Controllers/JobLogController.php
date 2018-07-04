@@ -161,15 +161,17 @@ class JobLogController extends Controller
 			if(!empty($check_item)) {
 				return response()->json(['status' => 404, 'data' => 'Cannot Running because some ETL is runing.']);
 			}
-
-			$handle = popen("start /B ". $item->path_batch_file, "r");
+			
+			//$handle = popen("start /B ". "\"".$item->path_batch_file."\"", "r");
+			$handle = popen("start /B cmd /S /C ". $item->path_batch_file, "r");
+			
 			if ($handle === FALSE) {
 				return response()->json(['status' => 404, 'data' => 'Unable to execute '.$item->path_batch_file]);	
 			} else {
 				pclose($handle);
 				for ($i=0; $i <= 100 ; $i++) {
 					sleep(5);
-					$item2 = JobLog::findOrFail($job_log_id);
+					$item2 = JobLog::find($job_log_id);
 					if($item2->status=='Loading') {
 						return response()->json(['status' => 200]);
 					}
