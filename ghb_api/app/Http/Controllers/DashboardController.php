@@ -2852,6 +2852,7 @@ class DashboardController extends Controller
 					) e on c.parent_org_code = e.org_code
 					where appraisal_type_id = 1
 					and b.period_id = ?
+					order by b.result_score desc, b.org_id
 				";
 			} else {
 				$org_query = "
@@ -2872,6 +2873,7 @@ class DashboardController extends Controller
 					) e on c.parent_org_code = e.org_code
 					where appraisal_type_id = 1
 					and a.period_id = ?
+					order by a.percent_achievement desc, a.org_id
 				";			
 			}
 			
@@ -2905,7 +2907,7 @@ class DashboardController extends Controller
 				";
 				
 				$qinput[] = $request->period_id;
-				$qinput[] = $o->org_id;		
+				$qinput[] = $o->org_id;
 				
 				$qfooter = " ORDER BY p.perspective_name, air.item_name, air.item_result_id, org.org_code ";
 							
