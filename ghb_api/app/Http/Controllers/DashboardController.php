@@ -2852,8 +2852,8 @@ class DashboardController extends Controller
 					) e on c.parent_org_code = e.org_code
 					where appraisal_type_id = 1
 					and b.period_id = ?
-					order by b.result_score desc, b.org_id
 				";
+				$org_footer = "order by b.result_score desc, b.org_id";
 			} else {
 				$org_query = "
 					select distinct a.org_id, c.org_name, c.longitude, c.latitude, b.result_threshold_group_id, a.percent_achievement pct
@@ -2873,8 +2873,8 @@ class DashboardController extends Controller
 					) e on c.parent_org_code = e.org_code
 					where appraisal_type_id = 1
 					and a.period_id = ?
-					order by a.percent_achievement desc, a.org_id
 				";			
+				$org_footer = "order by a.percent_achievement desc, a.org_id";
 			}
 			
 			$org_input[] = $request->region_code;
@@ -2883,7 +2883,7 @@ class DashboardController extends Controller
 			empty($request->item_id) ?: ($org_query .= " and a.item_id = ? " AND $org_input[] = $request->item_id);
 			empty($request->district_code) ?: ($org_query .= " and c.parent_org_code = ? " AND $org_input[] = $request->district_code);	
 			
-			$org_list = DB::select($org_query, $org_input);
+			$org_list = DB::select($org_query.$org_footer, $org_input);
 			
 			foreach ($org_list as $o) {
 				$qinput = array();
