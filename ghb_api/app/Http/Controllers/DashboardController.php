@@ -595,13 +595,27 @@ class DashboardController extends Controller
 			
 			$re_org = array();
 			$org_list = array();
+			// $orgs = DB::select("
+			// 	SELECT distinct  ai.item_id
+			// 	FROM appraisal_item ai 
+			// 	left join appraisal_item_result air on ai.item_id=air.item_id
+			// 	left join org o on air.org_id=o.org_id
+			// 	where o.org_code=?
+			// ", array($org->org_code));
 			$orgs = DB::select("
-				SELECT distinct  ai.item_id
-				FROM appraisal_item ai 
-				left join appraisal_item_result air on ai.item_id=air.item_id
-				left join org o on air.org_id=o.org_id
-				where o.org_code=?
-			", array($org->org_code));
+				SELECT distinct ai.item_id
+				FROM appraisal_item_result air
+				INNER JOIN appraisal_item ai on air.item_id=ai.item_id
+				INNER JOIN appraisal_structure aps on ai.structure_id = aps.structure_id
+				INNER JOIN kpi_cds_mapping kcm on kcm.item_id = air.item_id
+				INNER JOIN cds_result cr on cr.cds_id = kcm.cds_id
+				INNER JOIN org on org.org_id = air.org_id
+				WHERE aps.form_id = 1
+				AND air.level_id = ?
+				AND org.org_code = ?
+				and air.period_id = ?
+				AND cr.year = ?
+			", array($request->level_id, $org->org_code, $request->period_id, $request->year_id));
 			foreach ($orgs as $e) {
 				$org_list[] = $e->item_id;
 				$re_org[] = $e->item_id;
