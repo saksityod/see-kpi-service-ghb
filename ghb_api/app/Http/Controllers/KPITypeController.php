@@ -29,6 +29,7 @@ class KPITypeController extends Controller
 		$items = DB::select("
 			select kpi_type_id, kpi_type_name, is_active
 			from kpi_type
+			where is_active = 1
 			order by kpi_type_id asc
 		");
 		return response()->json($items);
