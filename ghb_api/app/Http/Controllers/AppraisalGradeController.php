@@ -49,14 +49,14 @@ class AppraisalGradeController extends Controller
 		
 		if ($config->raise_type == 1) {
 			$query = "
-				select a.grade_id, a.appraisal_level_id, b.appraisal_level_name, a.grade, a.begin_score, a.end_score, a.salary_raise_amount, a.is_active
+				select a.grade_id, a.appraisal_level_id, b.appraisal_level_name, a.grade, a.begin_score, a.end_score, ifnull(a.salary_raise_amount, '') salary_raise_amount, a.is_active
 				from appraisal_grade a
 				left outer join appraisal_level b
 				on a.appraisal_level_id = b.level_id
 			";
 		} else {
 			$query = "
-				select a.grade_id, a.appraisal_level_id, b.appraisal_level_name, a.grade, a.begin_score, a.end_score, a.salary_raise_percent salary_raise_amount, a.is_active
+				select a.grade_id, a.appraisal_level_id, b.appraisal_level_name, a.grade, a.begin_score, a.end_score, ifnull(a.salary_raise_percent, '') salary_raise_amount, a.is_active
 				from appraisal_grade a
 				left outer join appraisal_level b
 				on a.appraisal_level_id = b.level_id
@@ -149,7 +149,18 @@ class AppraisalGradeController extends Controller
 	public function show($grade_id)
 	{
 		try {
-			$item = AppraisalGrade::findOrFail($grade_id);
+			$config = SystemConfiguration::firstOrFail();
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
+		}
+
+		try {
+			if($config->raise_type==1) {
+				$item = AppraisalGrade::findOrFail($grade_id);
+			} else {
+				$item = AppraisalGrade::findOrFail($grade_id);
+				$item->salary_raise_amount = $item->salary_raise_percent;
+			}
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Appraisal Grade not found.']);
 		}
