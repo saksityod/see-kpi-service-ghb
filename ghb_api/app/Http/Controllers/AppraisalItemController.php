@@ -73,9 +73,8 @@ class AppraisalItemController extends Controller
 		empty($request->level_id) ?: ($query .= " and exists ( select 1 from appraisal_item_level lv left outer join appraisal_level al on lv.level_id = al.level_id where lv.item_id = i.item_id and al.is_hr = 0 and lv.level_id = ? ) " AND $qinput[] = $request->level_id);
 		empty($request->structure_id) ?: ($query .= " And i.structure_id = ? " AND $qinput[] = $request->structure_id);
 		empty($request->kpi_type_id) ?: ($query .= " And i.kpi_type_id = ? " AND $qinput[] = $request->kpi_type_id);
-		if ($request->structure_id == 1) {
+		if ($request->structure_id == 1 || empty($request->structure_id)) {
 			empty($request->perspective_id) ?: ($query .= " And i.perspective_id = ? " AND $qinput[] = $request->perspective_id);
-		} else {
 		}
 		empty($request->item_id) ?: ($query .= " And i.item_id = ? " AND $qinput[] = $request->item_id);
 		empty($request->org_id) ?: ($query .= " and exists ( select 1 from appraisal_item_org lv where lv.item_id = i.item_id and lv.org_id = ? ) " AND $qinput[] = $request->org_id);		
