@@ -741,7 +741,7 @@ class DashboardController extends Controller
 			if ($request->appraisal_type_id == 2) { //emp
 				$dataListQry = DB::select("
 					SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, e.emp_id org_id, e.emp_code org_code, e.emp_name org_name, air.etl_dttm,
-						air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
+						air.target_value, air.forecast_value, air.actual_value,
 						air.percent_achievement percent_target,
 						air.percent_forecast percent_forecast
 						#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
@@ -765,7 +765,7 @@ class DashboardController extends Controller
 			} else { //org
 				$dataListQry = DB::select("
 					SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, air.etl_dttm,
-						air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
+						air.target_value, air.forecast_value, air.actual_value,
 						air.percent_achievement percent_target,
 						air.percent_forecast percent_forecast
 						#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
@@ -1981,7 +1981,7 @@ class DashboardController extends Controller
 				
 				if ($request->appraisal_type_id == 2) {
 					$query = "
-						SELECT a.org_id, e.emp_name org_name, a.appraisal_month_name, a.appraisal_month_no, a.target_value monthly_target, b.target_value yearly_target, b.forecast_value, b.actual_value,b.percent_achievement, a.actual_value sum_actual_value
+						SELECT a.org_id, d.org_name, a.appraisal_month_name, a.appraisal_month_no, a.target_value monthly_target, ifnull(b.target_value, '&nbsp;') yearly_target, ifnull(b.forecast_value, '&nbsp;') forecast_value, ifnull(b.actual_value, '&nbsp;') actual_value, ifnull(b.percent_achievement, 0) percent_achievement, a.actual_value sum_actual_value
 						#(
 						# select sum(actual_value)
 						# from monthly_appraisal_item_result
@@ -2012,7 +2012,7 @@ class DashboardController extends Controller
 					
 				} else {
 					$query = "
-						SELECT a.org_id, d.org_name, a.appraisal_month_name, a.appraisal_month_no, a.target_value monthly_target, b.target_value yearly_target, b.forecast_value, b.actual_value,b.percent_achievement, a.actual_value sum_actual_value
+						SELECT a.org_id, d.org_name, a.appraisal_month_name, a.appraisal_month_no, a.target_value monthly_target, ifnull(b.target_value, '&nbsp;') yearly_target, ifnull(b.forecast_value, '&nbsp;') forecast_value, ifnull(b.actual_value, '&nbsp;') actual_value, ifnull(b.percent_achievement, 0) percent_achievement, a.actual_value sum_actual_value
 						#(
 						# select sum(actual_value)
 						# from monthly_appraisal_item_result
@@ -2186,7 +2186,8 @@ class DashboardController extends Controller
 				
 				//is_show_variance == 1 ไม่ต้องเช็ค
 				 // empty($items) ? $trendlines_target = 0 : $trendlines_target = $items[0]->yearly_target;			
-
+				$forecast_numeric = is_numeric($items[0]->forecast_value) ? number_format($items[0]->forecast_value) : '';
+				$trendlines_numeric = is_numeric($trendlines_target) ? number_format($trendlines_target) : '';
 				
 				$o->bar_chart = [
 					// 'data' => [
@@ -2208,19 +2209,19 @@ class DashboardController extends Controller
 						[
 							"line" => [
 								[
-									"startvalue" => $trendlines_target,
+									"startvalue" => $trendlines_numeric,
 									"color" => "#1aaf5d",
 									"valueOnRight" => "1",
-									"tooltext" => "Target{br}".number_format($trendlines_target)."",
-									"displayvalue" => "{br}{br}".number_format($trendlines_target)."",
+									"tooltext" => "Target{br}".$trendlines_numeric."",
+									"displayvalue" => "{br}{br}".$trendlines_numeric."",
 									 "thickness"=> "3"				
 								],
 								[
-									 "startvalue" => $items[0]->forecast_value,
+									 "startvalue" => $forecast_numeric,
 									 "color" => "#DC143C",
 									 "valueOnRight" => "1",
-									 "tooltext" => "Forecast{br}".number_format($items[0]->forecast_value)."",
-									 "displayvalue" => "{br}{br}".number_format($items[0]->forecast_value)."",
+									 "tooltext" => "Forecast{br}".$forecast_numeric."",
+									 "displayvalue" => "{br}{br}".$forecast_numeric."",
 									  "thickness"=> "3"							
 								]
 							]
@@ -2903,7 +2904,7 @@ class DashboardController extends Controller
 				$qinput = array();
 				$query = "
 					SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, er.result_threshold_group_id, air.etl_dttm,
-						air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
+						air.target_value, air.forecast_value, air.actual_value,
 						#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 						air.percent_achievement percent_target,
 						#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
@@ -3089,7 +3090,7 @@ class DashboardController extends Controller
 			$qinput = array();
 			$query = "
 				SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, er.result_threshold_group_id, air.etl_dttm,
-					air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
+					air.target_value, air.forecast_value, air.actual_value,
 					#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 					air.percent_achievement percent_target,
 					air.percent_forecast percent_forecast
@@ -3222,7 +3223,7 @@ class DashboardController extends Controller
 
 					$query = "
 							SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, er.result_threshold_group_id, air.etl_dttm,
-								air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
+								air.target_value, air.forecast_value, air.actual_value,
 								#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 								air.percent_achievement percent_target,
 								air.percent_forecast percent_forecast
@@ -3254,7 +3255,7 @@ class DashboardController extends Controller
 
 			$query = "
 				SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, er.result_threshold_group_id, air.etl_dttm,
-					air.target_value, air.forecast_value, ifnull(air.actual_value, 0) actual_value,
+					air.target_value, air.forecast_value, air.actual_value,
 					#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 					air.percent_achievement percent_target,
 					air.percent_forecast percent_forecast
