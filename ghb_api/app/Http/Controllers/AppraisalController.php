@@ -1629,7 +1629,7 @@ class AppraisalController extends Controller
 		
 		$items = DB::select("
 			select DISTINCT b.item_name,uom.uom_name, b.structure_id, c.structure_name, d.form_id, d.app_url, c.nof_target_score, a.*, e.perspective_name, a.weigh_score, f.weigh_score total_weigh_score, a.weight_percent, g.weight_percent total_weight_percent, al.no_weight,
-			if(ifnull(a.target_value,0) = 0,0,(ifnull(a.actual_value,0)/a.target_value)*100) achievement, a.percent_achievement, h.result_threshold_group_id
+			if(ifnull(a.target_value,0) = 0,0,(ifnull(a.actual_value,0)/a.target_value)*100) achievement, a.percent_achievement, h.result_threshold_group_id, (select count(1) from appraisal_item_result_doc where a.item_result_id = item_result_id) files_amount
 			from appraisal_item_result a
 			left outer join appraisal_item b
 			on a.item_id = b.item_id	
