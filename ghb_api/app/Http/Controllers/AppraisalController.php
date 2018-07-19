@@ -2358,7 +2358,7 @@ class AppraisalController extends Controller
 			foreach ($request->file() as $f) {
 				$filename = iconv('UTF-8','windows-874',$f->getClientOriginalName());
 				//$f->move($path,$filename);
-				$f->move($path,$f->getClientOriginalName());
+				$f->move($path,$filename);
 				//echo $filename;
 				
 				$item = AttachFile::firstOrNew(array('doc_path' => 'attach_files/' . $item_result_id . '/' . $f->getClientOriginalName()));
