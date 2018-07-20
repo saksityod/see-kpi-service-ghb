@@ -193,6 +193,7 @@ Route::group(['middleware' => 'cors'], function()
 	
 	// KPI Type //
 	Route::get('kpi_type', 'KPITypeController@index');
+	Route::get('kpi_type/list_kpi_type', 'KPITypeController@list_kpi_type');
 	Route::post('kpi_type', 'KPITypeController@store');
 	Route::get('kpi_type/{kpi_type_id}', 'KPITypeController@show');
 	Route::patch('kpi_type/{kpi_type_id}', 'KPITypeController@update');
