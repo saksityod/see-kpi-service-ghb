@@ -169,7 +169,7 @@ class JobLogController extends Controller
 				return response()->json(['status' => 404, 'data' => 'Unable to execute '.$item->path_batch_file]);	
 			} else {
 				pclose($handle);
-				for ($i=0; $i <= 100 ; $i++) {
+				for ($i=0; $i <= 36 ; $i++) {
 					sleep(5);
 					$item2 = JobLog::find($job_log_id);
 					if($item2->status=='Loading') {
