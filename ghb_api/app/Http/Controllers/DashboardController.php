@@ -2189,6 +2189,9 @@ class DashboardController extends Controller
 				$forecast_numeric = is_numeric($items[0]->forecast_value) ? number_format($items[0]->forecast_value) : '';
 				$trendlines_numeric = is_numeric($trendlines_target) ? number_format($trendlines_target) : '';
 				
+				$forecast_check_numeric = is_numeric($items[0]->forecast_value) ? $items[0]->forecast_value : '';
+				$trendlines_check_numeric = is_numeric($trendlines_target) ? $trendlines_target : '';
+
 				$o->bar_chart = [
 					// 'data' => [
 						// 'actual' => $actual,
@@ -2209,7 +2212,7 @@ class DashboardController extends Controller
 						[
 							"line" => [
 								[
-									"startvalue" => $trendlines_numeric,
+									"startvalue" => $trendlines_check_numeric,
 									"color" => "#1aaf5d",
 									"valueOnRight" => "1",
 									"tooltext" => "Target{br}".$trendlines_numeric."",
@@ -2217,7 +2220,7 @@ class DashboardController extends Controller
 									 "thickness"=> "3"				
 								],
 								[
-									 "startvalue" => $forecast_numeric,
+									 "startvalue" => $forecast_check_numeric,
 									 "color" => "#DC143C",
 									 "valueOnRight" => "1",
 									 "tooltext" => "Forecast{br}".$forecast_numeric."",
