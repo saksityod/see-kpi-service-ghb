@@ -1948,7 +1948,7 @@ class DashboardController extends Controller
 					and (g.emp_code = ? or g.chief_emp_code = ?)
 					and c.period_id = ?
 					group by a.org_id, a.emp_id, g.emp_name ,org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, e.is_show_variance
-					order by a.org_id asc, a.appraisal_month_no asc			
+					order by b.percent_achievement desc, a.org_id asc, a.appraisal_month_no asc			
 				", array($request->item_id,$request->appraisal_type_id,$emp->emp_code, $emp->emp_code, $request->period_id));
 			} else {
 				$org_list = DB::select("
@@ -1972,7 +1972,7 @@ class DashboardController extends Controller
 					and (d.org_code = ? or d.parent_org_code = ?)
 					and c.period_id = ?
 					group by a.org_id, a.emp_id, d.org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, e.is_show_variance
-					order by a.org_id asc, a.appraisal_month_no asc			
+					order by b.percent_achievement desc, a.org_id asc, a.appraisal_month_no asc			
 				", array($request->item_id,$request->appraisal_type_id,$org->org_code, $org->org_code, $request->period_id));			
 			}
 			
@@ -2216,16 +2216,16 @@ class DashboardController extends Controller
 									"color" => "#1aaf5d",
 									"valueOnRight" => "1",
 									"tooltext" => "Target{br}".$trendlines_numeric."",
-									"displayvalue" => "{br}{br}".$trendlines_numeric."",
-									 "thickness"=> "3"				
+									"displayvalue" => ".",
+									"thickness"=> "3"				
 								],
 								[
-									 "startvalue" => $forecast_check_numeric,
-									 "color" => "#DC143C",
-									 "valueOnRight" => "1",
-									 "tooltext" => "Forecast{br}".$forecast_numeric."",
-									 "displayvalue" => "{br}{br}".$forecast_numeric."",
-									  "thickness"=> "3"							
+									"startvalue" => $forecast_check_numeric,
+									"color" => "#DC143C",
+									"valueOnRight" => "1",
+									"tooltext" => "Forecast{br}".$forecast_numeric."",
+									"displayvalue" => ".",
+									"thickness"=> "3"							
 								]
 							]
 						]
@@ -2306,69 +2306,73 @@ class DashboardController extends Controller
 				$period = AppraisalPeriod::find($request->period_id);
 				empty($request->position_id) ? $position_query = " " : $position_query = " and a.position_id = " . $request->position_id . " ";
 				$org_list = DB::select("
-					select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm
-					from monthly_appraisal_item_result a
-					left outer join appraisal_period b
-					on a.period_id = b.period_id
-					left outer join appraisal_frequency c
-					on b.appraisal_frequency_id = c.frequency_id
-					left outer join appraisal_item_result d
-					on a.period_id = d.period_id
-					and a.item_id = d.item_id
-					and a.emp_result_id = d.emp_result_id
-					left outer join org e
-					on a.org_id = e.org_id
-					left outer join emp_result f
-					on d.emp_result_id = f.emp_result_id
-					left outer join appraisal_item g
-					on a.item_id = g.item_id
-					left outer join perspective h
-					on g.perspective_id = h.perspective_id
-					left outer join employee i
-					on d.emp_id = i.emp_id
-					left outer join uom u
-					on g.uom_id = u.uom_id
-					where c.frequency_month_value = 1
-					and b.period_no <= ?
-					and a.item_id = ?
-					and b.appraisal_year = ?
-					and f.appraisal_type_id = ?
-					and i.emp_code = ?
-					and a.level_id = ?
-					and a.org_id = ?
-					" . $position_query . "
-					group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
-					union all
-					select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm
-					from monthly_appraisal_item_result a
-					left outer join appraisal_period b
-					on a.period_id = b.period_id
-					left outer join appraisal_frequency c
-					on b.appraisal_frequency_id = c.frequency_id
-					left outer join appraisal_item_result d
-					on a.period_id = d.period_id
-					and a.item_id = d.item_id
-					and a.emp_result_id = d.emp_result_id
-					left outer join emp_result f
-					on d.emp_result_id = f.emp_result_id
-					left outer join appraisal_item g
-					on a.item_id = g.item_id
-					left outer join perspective h
-					on g.perspective_id = h.perspective_id
-					left outer join employee i
-					on d.emp_id = i.emp_id
-					and d.org_id = i.org_id
-					left outer join org e
-					on i.org_id = e.org_id					
-					left outer join uom u
-					on g.uom_id = u.uom_id
-					where c.frequency_month_value = 1
-					and b.period_no <= ?
-					and a.item_id = ?
-					and b.appraisal_year = ?
-					and f.appraisal_type_id = ?
-					and i.chief_emp_code = ?
-					group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name					
+					select * from
+					(
+						select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
+						from monthly_appraisal_item_result a
+						left outer join appraisal_period b
+						on a.period_id = b.period_id
+						left outer join appraisal_frequency c
+						on b.appraisal_frequency_id = c.frequency_id
+						left outer join appraisal_item_result d
+						on a.period_id = d.period_id
+						and a.item_id = d.item_id
+						and a.emp_result_id = d.emp_result_id
+						left outer join org e
+						on a.org_id = e.org_id
+						left outer join emp_result f
+						on d.emp_result_id = f.emp_result_id
+						left outer join appraisal_item g
+						on a.item_id = g.item_id
+						left outer join perspective h
+						on g.perspective_id = h.perspective_id
+						left outer join employee i
+						on d.emp_id = i.emp_id
+						left outer join uom u
+						on g.uom_id = u.uom_id
+						where c.frequency_month_value = 1
+						and b.period_no <= ?
+						and a.item_id = ?
+						and b.appraisal_year = ?
+						and f.appraisal_type_id = ?
+						and i.emp_code = ?
+						and a.level_id = ?
+						and a.org_id = ?
+						" . $position_query . "
+						group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+						union all
+						select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
+						from monthly_appraisal_item_result a
+						left outer join appraisal_period b
+						on a.period_id = b.period_id
+						left outer join appraisal_frequency c
+						on b.appraisal_frequency_id = c.frequency_id
+						left outer join appraisal_item_result d
+						on a.period_id = d.period_id
+						and a.item_id = d.item_id
+						and a.emp_result_id = d.emp_result_id
+						left outer join emp_result f
+						on d.emp_result_id = f.emp_result_id
+						left outer join appraisal_item g
+						on a.item_id = g.item_id
+						left outer join perspective h
+						on g.perspective_id = h.perspective_id
+						left outer join employee i
+						on d.emp_id = i.emp_id
+						and d.org_id = i.org_id
+						left outer join org e
+						on i.org_id = e.org_id					
+						left outer join uom u
+						on g.uom_id = u.uom_id
+						where c.frequency_month_value = 1
+						and b.period_no <= ?
+						and a.item_id = ?
+						and b.appraisal_year = ?
+						and f.appraisal_type_id = ?
+						and i.chief_emp_code = ?
+						group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+					)d1
+					order by percent_achievement desc
 				",array($period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $emp->emp_code, $request->level_id, $request->org_id,$period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $emp->emp_code));
 
 			} else {
@@ -2403,6 +2407,7 @@ class DashboardController extends Controller
 					and f.appraisal_type_id = ?
 					and (e.org_code = ? or e.parent_org_code = ?)
 					group by e.org_id, d.emp_id, e.org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+					order by d.percent_achievement desc
 				",array($period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $org->org_code, $org->org_code));
 			}
 
