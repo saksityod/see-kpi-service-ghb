@@ -112,7 +112,9 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('appraisal_assignment/new_assign_to', 'AppraisalAssignmentController@new_assign_to');
 	Route::get('appraisal_assignment/new_action_to', 'AppraisalAssignmentController@new_action_to');
 	Route::get('appraisal_assignment/edit_assign_to', 'AppraisalAssignmentController@edit_assign_to');
-	Route::get('appraisal_assignment/edit_action_to', 'AppraisalAssignmentController@edit_action_to');	
+	Route::get('appraisal_assignment/edit_action_to', 'AppraisalAssignmentController@edit_action_to');
+	Route::get('appraisal_assignment/status_list', 'AppraisalAssignmentController@status_list');
+	Route::patch('appraisal_assignment/update_action', 'AppraisalAssignmentController@update_action');	
 	Route::get('appraisal_assignment/{emp_result_id}', 'AppraisalAssignmentController@show');	
 	Route::patch('appraisal_assignment/{emp_result_id}', 'AppraisalAssignmentController@update');	
 	Route::delete('appraisal_assignment/{emp_result_id}', 'AppraisalAssignmentController@destroy');	
