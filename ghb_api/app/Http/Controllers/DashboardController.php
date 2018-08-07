@@ -2675,6 +2675,10 @@ class DashboardController extends Controller
 				$result['group'.$counter] = $o;
 				$counter++;
 			}
+
+			usort($result, function($a, $b) {
+			    return $b->dual_chart['data']['percent_achievement'] - $a->dual_chart['data']['percent_achievement'];
+			});
 		}
 		
 		return response()->json($result);
