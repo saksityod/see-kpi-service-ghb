@@ -465,6 +465,8 @@ class AppraisalAssignmentController extends Controller
 
 			if ($request->appraisal_type_id == 2) {
 				$items = DB::select("
+					select 'All' to_action, 'All' status
+					union all
 					select 'Unassigned' to_action, 'Unassigned' status
 					union all
 					select distinct CONCAT(ast.to_action,'-',ast.from_action) to_action, CONCAT(ast.to_action,' (',ast.from_action,')') status
@@ -498,6 +500,8 @@ class AppraisalAssignmentController extends Controller
 			} else {
 				
 				$items = DB::select("
+					select 'All' to_action, 'All' status
+					union all
 					select 'Unassigned' to_action, 'Unassigned' status
 					union all
 					select distinct CONCAT(ast.to_action,'-',ast.from_action) to_action, CONCAT(ast.to_action,' (',ast.from_action,')') status
@@ -557,6 +561,8 @@ class AppraisalAssignmentController extends Controller
 					".$position_id."
 					union all
 					select 'Unassigned' to_action, 'Unassigned' status
+					union all
+					select 'All' to_action, 'All' status
 				");
 				
 			} else {
@@ -588,6 +594,8 @@ class AppraisalAssignmentController extends Controller
 					".$appraisal_type_id."
 					union all
 					select 'Unassigned' to_action, 'Unassigned' status
+					union all
+					select 'All' to_action, 'All' status
 				");	
 			
 			}
@@ -609,14 +617,88 @@ class AppraisalAssignmentController extends Controller
 
 		$qinput = array();
 		$query_unassign = "";
-	    if($request->status!='Unassigned') {
+	    if($request->status!='Unassigned' && $request->status!='All') {
 	    	$appraisalStatus = explode("-",$request->status);
 	    }
 
 		if ($all_emp[0]->count_no > 0) {
 
 			if ($request->appraisal_type_id == 2) {
-				if($request->status=='Unassigned') {
+				if($request->status=='All') {
+					$query_unassign .= "
+						Select distinct null as emp_result_id,  'Unassigned' as status, emp_id, emp_code, emp_name, o.org_id, o.org_code, o.org_name, p.position_name, 'Individual' as appraisal_type_name, 2 appraisal_type_id, 0 period_id, 'Unassigned' appraisal_period_desc, 0 is_group_action, null stage_id
+						From employee e
+						left outer join org o
+						on e.org_id = o.org_id
+						left outer join position p
+						on e.position_id = p.position_id
+						Where e.is_active = 1
+					";
+					empty($request->position_id) ?: ($query_unassign .= " and e.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and e.org_id = ? " AND $qinput[] = $request->org_id);
+					empty($request->emp_code) ?: ($query_unassign .= " and emp_code = ? " AND $qinput[] = $request->emp_code);
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " And e.level_id = ? " AND $qinput[] = $request->appraisal_level_id);			
+					
+					$query_unassign .= "
+						and emp_code not in 
+						(SELECT emp_code
+							FROM   (SELECT e.emp_code,
+										   p.appraisal_year,
+										   p.appraisal_frequency_id,
+										   er.appraisal_type_id,
+										   Count(1) assigned_total,
+										   z.period_total
+									FROM   emp_result er,
+										   employee e,
+										   appraisal_period p,
+										   (SELECT appraisal_year,
+												   appraisal_frequency_id,
+												   Count(1) period_total
+											FROM   appraisal_period
+						";
+					empty($request->period_id) ?: ($query_unassign .= " where period_id = ? " AND $qinput[] = $request->period_id);
+					$query_unassign .= "
+											GROUP  BY appraisal_year,
+													  appraisal_frequency_id) z
+									WHERE  er.emp_id = e.emp_id
+										   AND er.period_id = p.period_id
+										   AND p.appraisal_year = z.appraisal_year
+										   AND p.appraisal_frequency_id = z.appraisal_frequency_id
+					";
+					empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
+					empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " and e.level_id = ? " AND $qinput[] = $request->appraisal_level_id);
+					empty($request->appraisal_type_id) ?: ($query_unassign .= " and er.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);
+					empty($request->appraisal_year) ?: ($query_unassign .= " and p.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
+					empty($request->frequency_id) ?: ($query_unassign .= " and p.appraisal_frequency_id = ? " AND $qinput[] = $request->frequency_id);
+					empty($request->period_id) ?: ($query_unassign .= " and p.period_id = ? " AND $qinput[] = $request->period_id);
+					
+					$query_unassign .= " GROUP  BY e.emp_code,
+											  p.appraisal_year,
+											  p.appraisal_frequency_id, er.appraisal_type_id) assigned
+							WHERE  assigned_total >= period_total  ) union all ";
+					
+					$query_unassign .= "
+						select distinct er.emp_result_id, er.status, e.emp_id, e.emp_code, e.emp_name, o.org_id, o.org_code, o.org_name, po.position_name, t.appraisal_type_name, t.appraisal_type_id, p.period_id, concat(p.appraisal_period_desc,' Start Date: ',p.start_date,' End Date: ',p.end_date) appraisal_period_desc, 0 is_group_action, er.stage_id
+						From emp_result er, employee e, appraisal_type t, appraisal_item_result ir, appraisal_item I, appraisal_period p, org o, position po
+						Where er.emp_id = e.emp_id and er.appraisal_type_id = t.appraisal_type_id
+						And er.emp_result_id = ir.emp_result_id 
+						and ir.item_id = I.item_id		
+						and er.period_id = p.period_id
+						and e.org_id = o.org_id
+						and e.position_id = po.position_id
+					";
+					empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
+					empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " And e.level_id = ? " AND $qinput[] = $request->appraisal_level_id);
+					empty($request->appraisal_type_id) ?: ($query_unassign .= " and er.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);	
+					empty($request->appraisal_year) ?: ($query_unassign .= " and p.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
+					empty($request->frequency_id) ?: ($query_unassign .= " and p.appraisal_frequency_id = ? " AND $qinput[] = $request->frequency_id);
+					empty($request->period_id) ?: ($query_unassign .= " and p.period_id = ? " AND $qinput[] = $request->period_id);
+
+				} else if($request->status=='Unassigned') {
 					$query_unassign .= "
 						Select distinct null as emp_result_id,  'Unassigned' as status, emp_id, emp_code, emp_name, o.org_id, o.org_code, o.org_name, p.position_name, 'Individual' as appraisal_type_name, 2 appraisal_type_id, 0 period_id, 'Unassigned' appraisal_period_desc, al.is_group_action
 						From employee e
@@ -700,8 +782,75 @@ class AppraisalAssignmentController extends Controller
 				}
 			
 			} else {
-				
-				if($request->status=='Unassigned') {
+				if($request->status=='All') {
+					$query_unassign .="
+						Select distinct null as emp_result_id,  'Unassigned' as status, null emp_id, null emp_code, null emp_name, o.org_id, o.org_code, o.org_name, null position_name, 'Organization' as appraisal_type_name, 1 appraisal_type_id, 0 period_id, 'Unassigned' appraisal_period_desc, 0 is_group_action, null stage_id
+						From org o
+						Where o.is_active = 1
+					";
+					//empty($request->position_id) ?: ($query_unassign .= " and e.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and o.org_id = ? " AND $qinput[] = $request->org_id);
+					//empty($request->emp_code) ?: ($query_unassign .= " and emp_code = ? " AND $qinput[] = $request->emp_code);
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " And o.level_id = ? " AND $qinput[] = $request->appraisal_level_id);			
+					
+					$query_unassign .= "
+						and org_id not in 
+						(SELECT org_id
+							FROM   (SELECT o.org_id,
+										   p.appraisal_year,
+										   p.appraisal_frequency_id,
+										   er.appraisal_type_id,
+										   Count(1) assigned_total,
+										   z.period_total
+									FROM   emp_result er,
+										   org o,
+										   appraisal_period p,
+										   (SELECT appraisal_year,
+												   appraisal_frequency_id,
+												   Count(1) period_total
+											FROM   appraisal_period
+						";
+					empty($request->period_id) ?: ($query_unassign .= " where period_id = ? " AND $qinput[] = $request->period_id);
+					$query_unassign .= "
+											GROUP  BY appraisal_year,
+													  appraisal_frequency_id) z
+									WHERE  er.org_id = o.org_id
+										   AND er.period_id = p.period_id
+										   AND p.appraisal_year = z.appraisal_year
+										   AND p.appraisal_frequency_id = z.appraisal_frequency_id
+					";
+					//empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
+					//empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " and o.level_id = ? " AND $qinput[] = $request->appraisal_level_id);
+					empty($request->appraisal_type_id) ?: ($query_unassign .= " and er.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);
+					empty($request->appraisal_year) ?: ($query_unassign .= " and p.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
+					empty($request->frequency_id) ?: ($query_unassign .= " and p.appraisal_frequency_id = ? " AND $qinput[] = $request->frequency_id);
+					empty($request->period_id) ?: ($query_unassign .= " and p.period_id = ? " AND $qinput[] = $request->period_id);
+					
+					$query_unassign .= " GROUP  BY o.org_id,
+											  p.appraisal_year,
+											  p.appraisal_frequency_id, er.appraisal_type_id) assigned
+							WHERE  assigned_total >= period_total  ) union all ";
+					
+					$query_unassign .= "
+						select distinct er.emp_result_id, er.status, null emp_id, null emp_code,  null emp_name, o.org_id, o.org_code, o.org_name, null position_name, t.appraisal_type_name, t.appraisal_type_id, p.period_id, concat(p.appraisal_period_desc,' Start Date: ',p.start_date,' End Date: ',p.end_date) appraisal_period_desc, 0 is_group_action, er.stage_id
+						From emp_result er, org o, appraisal_type t, appraisal_item_result ir, appraisal_item I, appraisal_period p
+						Where er.org_id = o.org_id and er.appraisal_type_id = t.appraisal_type_id
+						And er.emp_result_id = ir.emp_result_id 
+						and ir.item_id = I.item_id		
+						and er.period_id = p.period_id
+					";
+					//empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
+					//empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " And er.level_id = ? " AND $qinput[] = $request->appraisal_level_id);
+					empty($request->appraisal_type_id) ?: ($query_unassign .= " and er.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);	
+					empty($request->appraisal_year) ?: ($query_unassign .= " and p.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
+					empty($request->frequency_id) ?: ($query_unassign .= " and p.appraisal_frequency_id = ? " AND $qinput[] = $request->frequency_id);
+					empty($request->period_id) ?: ($query_unassign .= " and p.period_id = ? " AND $qinput[] = $request->period_id);
+
+				} else if($request->status=='Unassigned') {
 					$query_unassign .= "
 						Select distinct null as emp_result_id,  'Unassigned' as status, null emp_id, null emp_code, null emp_name, o.org_id, o.org_code, o.org_name, null position_name, 'Organization' as appraisal_type_name, 1 appraisal_type_id, 0 period_id, 'Unassigned' appraisal_period_desc, al.is_group_action
 						From org o
@@ -781,7 +930,89 @@ class AppraisalAssignmentController extends Controller
 		} else {
 		
 			if ($request->appraisal_type_id == 2) {
-				if($request->status=='Unassigned') {
+				if($request->status=='All') {
+					$query_unassign .= "
+						Select distinct null as emp_result_id,  'Unassigned' as status, e.emp_id, emp_code, emp_name, o.org_id, o.org_code, o.org_name, p.position_name, 'Individual' as appraisal_type_name, 2 appraisal_type_id, 0 period_id, 'Unassigned' appraisal_period_desc, 0 is_group_action, null stage_id
+						From employee e left outer join	org o 
+						on e.org_id = o.org_id
+						left outer join position p
+						on e.position_id = p.position_id
+						Where e.is_active = 1
+						and chief_emp_code = ?
+					";
+					$qinput[] = Auth::id();
+					empty($request->position_id) ?: ($query_unassign .= " and e.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and e.org_id = ? " AND $qinput[] = $request->org_id);
+					empty($request->emp_code) ?: ($query_unassign .= " and emp_code = ? " AND $qinput[] = $request->emp_code);
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " and e.level_id = ? " AND $qinput[] = $request->appraisal_level_id);			
+					
+					$query_unassign .= "
+						and emp_code not in 
+						(SELECT emp_code
+							FROM   (SELECT e.emp_code,
+										   p.appraisal_year,
+										   p.appraisal_frequency_id,
+										   er.appraisal_type_id,
+										   Count(1) assigned_total,
+										   z.period_total
+									FROM   emp_result er,
+										   employee e,
+										   appraisal_period p,
+										   (SELECT appraisal_year,
+												   appraisal_frequency_id,
+												   Count(1) period_total
+											FROM   appraisal_period
+					";
+					empty($request->period_id) ?: ($query_unassign .= " where period_id = ? " AND $qinput[] = $request->period_id);
+					$query_unassign .= "
+											GROUP  BY appraisal_year,
+													  appraisal_frequency_id) z
+									WHERE  er.emp_id = e.emp_id
+										   AND er.period_id = p.period_id
+										   AND p.appraisal_year = z.appraisal_year
+										   AND p.appraisal_frequency_id = z.appraisal_frequency_id
+										   AND e.chief_emp_code = ?
+					";
+					$qinput[] = Auth::id();
+					empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
+					empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " and e.level_id = ? " AND $qinput[] = $request->appraisal_level_id);
+					empty($request->appraisal_type_id) ?: ($query_unassign .= " and er.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);	
+					//empty($request->period_id) ?: ($query_unassign .= " and er.period_id = ? " AND $qinput[] = $request->period_id);
+					empty($request->appraisal_year) ?: ($query_unassign .= " and p.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
+					empty($request->frequency_id) ?: ($query_unassign .= " and p.appraisal_frequency_id = ? " AND $qinput[] = $request->frequency_id);
+					empty($request->period_id) ?: ($query_unassign .= " and p.period_id = ? " AND $qinput[] = $request->period_id);			
+					
+					$query_unassign .= " GROUP  BY e.emp_code,
+											  p.appraisal_year,
+											  p.appraisal_frequency_id,er.appraisal_type_id) assigned
+							WHERE  assigned_total = period_total ) union all ";
+					
+					$query_unassign .= "
+						select distinct er.emp_result_id, er.status, e.emp_id, e.emp_code, e.emp_name, o.org_id, o.org_code, o.org_name, po.position_name, t.appraisal_type_name, t.appraisal_type_id, p.period_id, concat(p.appraisal_period_desc,' Start Date: ',p.start_date,' End Date: ',p.end_date) appraisal_period_desc, 0 is_group_action, er.stage_id
+						From emp_result er, employee e, appraisal_type t, appraisal_item_result ir, appraisal_item I, appraisal_period p, org o, position po
+						Where er.emp_id = e.emp_id and er.appraisal_type_id = t.appraisal_type_id
+						And er.emp_result_id = ir.emp_result_id 
+						and ir.item_id = I.item_id	
+						and er.period_id = p.period_id
+						and e.org_id = o.org_id
+						and e.position_id = po.position_id
+						and e.chief_emp_code = ? 
+					";
+					$qinput[] = Auth::id();
+					
+					empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
+					empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " and e.level_id = ? " AND $qinput[] = $request->appraisal_level_id);
+					empty($request->appraisal_type_id) ?: ($query_unassign .= " and er.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);	
+					//empty($request->period_id) ?: ($query_unassign .= " and er.period_id = ? " AND $qinput[] = $request->period_id);	
+					empty($request->appraisal_year) ?: ($query_unassign .= " and p.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
+					empty($request->frequency_id) ?: ($query_unassign .= " and p.appraisal_frequency_id = ? " AND $qinput[] = $request->frequency_id);
+					empty($request->period_id) ?: ($query_unassign .= " and p.period_id = ? " AND $qinput[] = $request->period_id);
+
+				} else if($request->status=='Unassigned') {
 					$query_unassign .= "
 						Select distinct null as emp_result_id,  'Unassigned' as status, e.emp_id, emp_code, emp_name, o.org_id, o.org_code, o.org_name, p.position_name, 'Individual' as appraisal_type_name, 2 appraisal_type_id, 0 period_id, 'Unassigned' appraisal_period_desc, al.is_group_action
 						From employee e 
@@ -875,8 +1106,84 @@ class AppraisalAssignmentController extends Controller
 			} else {
 				$emp = Employee::find(Auth::id());
 				$emp_org = Org::find($emp->org_id);
+				if($request->status=='All') {
+					$query_unassign .= "
+						Select distinct null as emp_result_id,  'Unassigned' as status, null emp_id, null emp_code, null emp_name, o.org_id, o.org_code, o.org_name, null position_name, 'Organization' as appraisal_type_name, 1 appraisal_type_id, 0 period_id, 'Unassigned' appraisal_period_desc, 0 is_group_action, null stage_id
+						From org o
+						Where o.is_active = 1
+						and (o.org_code = ? or o.parent_org_code = ?)
+					";
+					$qinput[] = $emp_org->org_code;
+					$qinput[] = $emp_org->org_code;
+					//empty($request->position_id) ?: ($query_unassign .= " and e.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and o.org_id = ? " AND $qinput[] = $request->org_id);
+					//empty($request->emp_code) ?: ($query_unassign .= " and emp_code = ? " AND $qinput[] = $request->emp_code);
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " And o.level_id = ? " AND $qinput[] = $request->appraisal_level_id);			
+					
+					$query_unassign .= "
+						and org_id not in 
+						(SELECT org_id
+							FROM   (SELECT o.org_id,
+										   p.appraisal_year,
+										   p.appraisal_frequency_id,
+										   er.appraisal_type_id,
+										   Count(1) assigned_total,
+										   z.period_total
+									FROM   emp_result er,
+										   org o,
+										   appraisal_period p,
+										   (SELECT appraisal_year,
+												   appraisal_frequency_id,
+												   Count(1) period_total
+											FROM   appraisal_period
+						";
+					empty($request->period_id) ?: ($query_unassign .= " where period_id = ? " AND $qinput[] = $request->period_id);
+					$query_unassign .= "
+											GROUP  BY appraisal_year,
+													  appraisal_frequency_id) z
+									WHERE  er.org_id = o.org_id
+										   AND er.period_id = p.period_id
+										   AND p.appraisal_year = z.appraisal_year
+										   AND p.appraisal_frequency_id = z.appraisal_frequency_id
+										   and (o.org_code = ? or o.parent_org_code = ?)
+					";
+					$qinput[] = $emp_org->org_code;
+					$qinput[] = $emp_org->org_code;
+					//empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
+					//empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " and o.level_id = ? " AND $qinput[] = $request->appraisal_level_id);
+					empty($request->appraisal_type_id) ?: ($query_unassign .= " and er.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);
+					empty($request->appraisal_year) ?: ($query_unassign .= " and p.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
+					empty($request->frequency_id) ?: ($query_unassign .= " and p.appraisal_frequency_id = ? " AND $qinput[] = $request->frequency_id);
+					empty($request->period_id) ?: ($query_unassign .= " and p.period_id = ? " AND $qinput[] = $request->period_id);
+					
+					$query_unassign .= " GROUP  BY o.org_id,
+											  p.appraisal_year,
+											  p.appraisal_frequency_id, er.appraisal_type_id) assigned
+							WHERE  assigned_total >= period_total  ) union all ";
+					
+					$query_unassign .= "
+						select distinct er.emp_result_id, er.status, null emp_id, null emp_code,  null emp_name, o.org_id, o.org_code, o.org_name, null position_name, t.appraisal_type_name, t.appraisal_type_id, p.period_id, concat(p.appraisal_period_desc,' Start Date: ',p.start_date,' End Date: ',p.end_date) appraisal_period_desc, 0 is_group_action, er.stage_id
+						From emp_result er, org o, appraisal_type t, appraisal_item_result ir, appraisal_item I, appraisal_period p
+						Where er.org_id = o.org_id and er.appraisal_type_id = t.appraisal_type_id
+						And er.emp_result_id = ir.emp_result_id 
+						and ir.item_id = I.item_id		
+						and er.period_id = p.period_id
+						and (o.org_code = ? or o.parent_org_code = ?)
+					";
+					$qinput[] = $emp_org->org_code;
+					$qinput[] = $emp_org->org_code;
+					//empty($request->position_id) ?: ($query_unassign .= " and er.position_id = ? " AND $qinput[] = $request->position_id);
+					empty($request->org_id) ?: ($query_unassign .= " and er.org_id = ? " AND $qinput[] = $request->org_id);
+					//empty($request->emp_code) ?: ($query_unassign .= " and e.emp_code = ? " AND $qinput[] = $request->emp_code);	
+					empty($request->appraisal_level_id) ?: ($query_unassign .= " And er.level_id = ? " AND $qinput[] = $request->appraisal_level_id);
+					empty($request->appraisal_type_id) ?: ($query_unassign .= " and er.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);	
+					empty($request->appraisal_year) ?: ($query_unassign .= " and p.appraisal_year = ? " AND $qinput[] = $request->appraisal_year);
+					empty($request->frequency_id) ?: ($query_unassign .= " and p.appraisal_frequency_id = ? " AND $qinput[] = $request->frequency_id);
+					empty($request->period_id) ?: ($query_unassign .= " and p.period_id = ? " AND $qinput[] = $request->period_id);
 
-				if($request->status=='Unassigned') {
+				} else if($request->status=='Unassigned') {
 					$query_unassign .= "
 						Select distinct null as emp_result_id,  'Unassigned' as status, null emp_id, null emp_code, null emp_name, o.org_id, o.org_code, o.org_name, null position_name, 'Organization' as appraisal_type_name, 1 appraisal_type_id, 0 period_id, 'Unassigned' appraisal_period_desc, al.is_group_action
 						From org o

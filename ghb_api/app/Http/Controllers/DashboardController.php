@@ -2677,7 +2677,7 @@ class DashboardController extends Controller
 			}
 
 			usort($result, function($a, $b) {
-			    return $b->dual_chart['data']['percent_achievement'] - $a->dual_chart['data']['percent_achievement'];
+			    return $b->dual_chart['data']['percent_achievement'] > $a->dual_chart['data']['percent_achievement'] ? 1 : -1;
 			});
 		}
 		
