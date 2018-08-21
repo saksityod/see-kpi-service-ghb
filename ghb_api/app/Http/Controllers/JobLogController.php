@@ -77,7 +77,7 @@ class JobLogController extends Controller
 				if($key == $last_key) {
 					$cc_list .= "".$cc['cc']."";
 				} else {
-					$cc_list .= "".$cc['cc'].",";
+					$cc_list .= "".$cc['cc'].", ";
 				}
 
 				if($key == 0) {
@@ -104,7 +104,7 @@ class JobLogController extends Controller
 				if($key == $last_key) {
 					$bcc_list .= "".$bcc['bcc']."";
 				} else {
-					$bcc_list .= "".$bcc['bcc'].",";
+					$bcc_list .= "".$bcc['bcc'].", ";
 				}
 
 				if($key == 0) {
