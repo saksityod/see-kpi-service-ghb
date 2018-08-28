@@ -496,9 +496,12 @@ class BenchmarkDataController extends Controller
 		// 	return response()->json($benchmark);
 		// }
 		$errors = array();
+		$errors_validator = array();
+        DB::beginTransaction();
 		foreach ($request->file() as $f) {
-			$items = Excel::load($f, function($reader){})->get();	
-			foreach ($items as $i) {
+			$items = Excel::load($f, function($reader){})->get();
+			DB::table('benchmark_data')->delete();
+			foreach ($items as $index => $i) {
 
 				$validator = Validator::make($i->toArray(), [
 							'year' => 'required',
@@ -508,25 +511,37 @@ class BenchmarkDataController extends Controller
 							'value' => 'required',
 				]);
 
-				if ($validator->fails()) {
-					return response()->json(['status' => 400, 'errors' => $validator->errors()]);
-				}
+				if($validator->fails()) {
+		            $errors_validator[] = ['row' => $index + 2, 'errors' => $validator->errors()];
+		            return response()->json(['status' => 400, 'errors' => $errors_validator]);
+		        } else {
 
-				DB::table('benchmark_data')->delete();
-
-				$insert = new BenchmarkData;
-				$insert->year = $i['year'];
-				$insert->quarter = $i['quarter'];
-				$insert->kpi_name = $i['kpi_name'];
-				$insert->company_code = $i['company_code'];
-				$insert->value = $i['value'];
-				$insert->created_by = Auth::id();
-				$insert->created_dttm = date('Y-m-d H:i:s');
-				$insert->save();			
+					$insert = new BenchmarkData;
+					$insert->year = $i['year'];
+					$insert->quarter = $i['quarter'];
+					$insert->kpi_name = $i['kpi_name'];
+					$insert->company_code = $i['company_code'];
+					$insert->value = $i['value'];
+					$insert->created_by = Auth::id();
+					$insert->created_dttm = date('Y-m-d H:i:s');
+					 try {
+	                    $insert->save();
+	                } catch (Exception $e) {
+	                    $errors[] = ['year' => $i['year'], 'quarter' => $i['quarter'], 'kpi_name' => $i['kpi_name'], 'errors' => $e];
+	                }
+	            }		
 			}
 		}
-		
-		return response()->json(['status' => 200, 'errors' => $errors]);
+
+		if(empty($errors)) {
+			DB::commit();
+			$status = 200;
+		} else {
+			DB::rollback();
+			$status = 400;
+		}
+
+        return response()->json(['status' => $status, 'errors' => $errors]);
 	}
 
 	public function download_benchmark($dCheck)
