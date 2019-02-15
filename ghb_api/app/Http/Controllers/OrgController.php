@@ -63,7 +63,7 @@ class OrgController extends Controller
 				left outer join appraisal_level c
 				on a.level_id = c.level_id 
 				left outer join province d on a.province_code = d.province_code
-				where 1=1 " . $level . $org . "
+				where 1=1 " . $level . $org . " and a.is_active = 1
 				order by a.org_code asc
 			");
 		} else {
@@ -243,7 +243,7 @@ class OrgController extends Controller
 				left outer join appraisal_level c on a.level_id = c.level_id 
 				left outer join province d on a.province_code = d.province_code
 				where a.org_code in ({$in_emp})
-				".$level."
+				".$level." and a.is_active = 1
 				order by a.org_id asc
 			");
 		}

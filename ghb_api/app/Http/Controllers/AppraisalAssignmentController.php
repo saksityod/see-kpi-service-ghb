@@ -487,6 +487,9 @@ class AppraisalAssignmentController extends Controller
 					and e.org_id = o.org_id
 					and e.position_id = po.position_id
 					and er.stage_id = ast.stage_id
+					and o.is_active = 1
+					and e.is_active = 1
+					and I.is_active = 1
 					".$org_level."
 					".$org_id."
 					".$period_id."
@@ -518,6 +521,8 @@ class AppraisalAssignmentController extends Controller
 					and ir.item_id = I.item_id		
 					and er.period_id = p.period_id
 					and er.stage_id = ast.stage_id
+					and o.is_active = 1
+					and I.is_active = 1
 					".$org_level."
 					".$org_id."
 					".$appraisal_year."
@@ -551,6 +556,9 @@ class AppraisalAssignmentController extends Controller
 					and e.position_id = po.position_id
 					and er.stage_id = ast.stage_id
 					and e.chief_emp_code = '".Auth::id()."'
+					and o.is_active = 1
+					and e.is_active = 1
+					and I.is_active = 1
 					".$org_level."
 					".$org_id."
 					".$period_id."
@@ -586,6 +594,8 @@ class AppraisalAssignmentController extends Controller
 					and er.period_id = p.period_id
 					and er.stage_id = ast.stage_id
 					and (o.org_code = '{$emp_org->org_code}' or o.parent_org_code = '{$emp_org->org_code}')
+					and o.is_active = 1
+					and I.is_active = 1
 					".$org_level."
 					".$org_id."
 					".$period_id."
