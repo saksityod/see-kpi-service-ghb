@@ -250,6 +250,161 @@ class OrgController extends Controller
 		return response()->json($items);
 	}
 
+	public function org_master(Request $request)
+	{		
+		$emp = Employee::find(Auth::id());
+		$co = Org::find($emp->org_id);
+		
+		$all_emp = DB::select("
+			SELECT sum(b.is_all_employee) count_no
+			from employee a
+			left outer join appraisal_level b
+			on a.level_id = b.level_id
+			where emp_code = ?
+		", array(Auth::id()));
+		
+		empty($request->level_id) ? $level = "" : $level = " and a.level_id = " . $request->level_id . " ";
+		empty($request->org_code) ? $org = "" : $org = " and a.org_code = " . $request->org_code . " ";
+		
+		if ($all_emp[0]->count_no > 0) {
+			$items = DB::select("
+				select a.org_id,
+						a.org_name,
+						a.org_code,
+						a.org_abbr,
+						a.is_active,
+						b.org_name parent_org_name,
+						a.parent_org_code,
+						a.level_id,
+						c.appraisal_level_name,
+						case when a.longitude = 0 then '' else a.longitude end  longitude,
+						case when a.latitude = 0 then '' else a.latitude end  latitude,
+						a.province_code,
+						d.province_name
+				from org a left outer join
+				org b on b.org_code = a.parent_org_code
+				left outer join appraisal_level c
+				on a.level_id = c.level_id 
+				left outer join province d on a.province_code = d.province_code
+				where 1=1 " . $level . $org . " 
+				order by a.org_code asc
+			");
+		} else {
+
+			$re_emp = array();
+			
+			$emp_list = array();
+			
+			$emps = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code = ?
+			", array($co->org_code));
+			
+			foreach ($emps as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}
+		
+			$emp_list = array_unique($emp_list);
+			
+			// Get array keys
+			$arrayKeys = array_keys($emp_list);
+			// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+			//iterate array
+			$in_emp = '';
+			foreach($emp_list as $k => $v) {
+				if($k == $lastArrayKey) {
+					//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}	
+				
+			do {				
+				empty($in_emp) ? $in_emp = "null" : null;
+
+				$emp_list = array();			
+
+				$emp_items = DB::select("
+					select distinct org_code
+					from org
+					where parent_org_code in ({$in_emp})
+					and parent_org_code != org_code
+					and is_active = 1			
+				");
+				
+				foreach ($emp_items as $e) {
+					$emp_list[] = $e->org_code;
+					$re_emp[] = $e->org_code;
+				}			
+				
+				$emp_list = array_unique($emp_list);
+				
+				// Get array keys
+				$arrayKeys = array_keys($emp_list);
+				// Fetch last array key
+				$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+				$in_emp = '';
+				foreach($emp_list as $k => $v) {
+					if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+						$in_emp .= "'" . $v . "'";
+					} else {
+						$in_emp .= "'" . $v . "'" . ',';
+					}
+				}		
+			} while (!empty($emp_list));		
+			
+			$re_emp[] = $co->org_code;
+			$re_emp = array_unique($re_emp);
+			
+			// Get array keys
+			$arrayKeys = array_keys($re_emp);
+			// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+			//iterate array
+			$in_emp = '';
+			foreach($re_emp as $k => $v) {
+				if($k == $lastArrayKey) {
+					//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}				
+			
+			empty($in_emp) ? $in_emp = "null" : null;
+
+			//echo $in_emp;
+			$items = DB::select("
+				select a.org_id,
+				a.org_name,
+				a.org_code,
+				a.org_abbr,
+				a.is_active,
+				b.org_name parent_org_name,
+				a.parent_org_code,
+				a.level_id,
+				c.appraisal_level_name,
+				a.longitude, a.latitude,
+				a.province_code,
+				d.province_name
+				from org a
+				left outer join org b on b.org_code = a.parent_org_code
+				left outer join appraisal_level c on a.level_id = c.level_id 
+				left outer join province d on a.province_code = d.province_code
+				where a.org_code in ({$in_emp})
+				".$level."
+				order by a.org_id asc
+			");
+		}
+		return response()->json($items);
+	}
+
 	public function list_organization(Request $request)
 	{		
 		
@@ -293,7 +448,7 @@ class OrgController extends Controller
 				left outer join appraisal_level c
 				on a.level_id = c.level_id 
 				left outer join province d on a.province_code = d.province_code
-				where 1=1 " . $level . $org . "
+				where 1=1 " . $level . $org . " and a.is_active = 1
 				order by a.org_code asc
 			");
 		} else {
@@ -397,7 +552,7 @@ class OrgController extends Controller
 						left outer join appraisal_level c
 						on a.level_id = c.level_id 
 						left outer join province d on a.province_code = d.province_code
-						where 1=1 " . $level . "
+						where 1=1 " . $level . " and a.is_active = 1
 						#and (a.org_code = {$co->org_code} or a.parent_org_code = {$co->org_code})
 						and a.org_code in ({$in_emp})
 						UNION
@@ -407,7 +562,7 @@ class OrgController extends Controller
 						left outer join appraisal_level c
 						on a.level_id = c.level_id 
 						left outer join province d on a.province_code = d.province_code
-						where 1=1
+						where 1=1 and a.is_active = 1
 						and a.level_id = 2
 						)d1
 						order by org_code asc
@@ -420,7 +575,7 @@ class OrgController extends Controller
 						left outer join appraisal_level c
 						on a.level_id = c.level_id 
 						left outer join province d on a.province_code = d.province_code
-						where 1=1 " . $level . "
+						where 1=1 " . $level . " and a.is_active = 1
 						order by a.org_code asc
 					");
 				} else {
@@ -431,7 +586,7 @@ class OrgController extends Controller
 						left outer join appraisal_level c
 						on a.level_id = c.level_id 
 						left outer join province d on a.province_code = d.province_code
-						where 1=1 " . $level . "
+						where 1=1 " . $level . " and a.is_active = 1
 						#and (a.org_code = {$co->org_code} or a.parent_org_code = {$co->org_code})
 						and a.org_code in ({$in_emp})
 						order by a.org_code asc
@@ -445,7 +600,7 @@ class OrgController extends Controller
 					left outer join appraisal_level c
 					on a.level_id = c.level_id 
 					left outer join province d on a.province_code = d.province_code
-					where 1=1 " . $level . "
+					where 1=1 " . $level . " and a.is_active = 1
 					#and (a.org_code = {$co->org_code} or a.parent_org_code = {$co->org_code})
 					and a.org_code in ({$in_emp})
 					order by a.org_code asc

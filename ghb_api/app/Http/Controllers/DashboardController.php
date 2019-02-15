@@ -70,9 +70,9 @@ class DashboardController extends Controller
 			from org a
 			left outer join appraisal_level b
 			on a.level_id = b.level_id
-			where b.district_flag = 1
+			where b.district_flag = 1 and a.is_active = 1
 			) b
-			where a.org_code = b.parent_org_code		
+			where a.org_code = b.parent_org_code	and a.is_active = 1
 		");
 		return response()->json($items);
 	}
@@ -86,6 +86,7 @@ class DashboardController extends Controller
 			on a.level_id = b.level_id
 			where b.district_flag = 1		
 			and a.parent_org_code = ?
+			and a.is_active = 1
 		", array($request->org_code));
 		return response()->json($items);
 	}
@@ -344,6 +345,7 @@ class DashboardController extends Controller
 			WHERE aps.form_id = 1
 			AND air.level_id = {$levelId}
 			AND air.org_id = {$OrgId}
+			AND ai.is_active = 1
 			".$PeriodId."
 			".$EmpIdStr."
 			".$KPI_type."
