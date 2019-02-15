@@ -345,7 +345,6 @@ class DashboardController extends Controller
 			WHERE aps.form_id = 1
 			AND air.level_id = {$levelId}
 			AND air.org_id = {$OrgId}
-			AND ai.is_active = 1
 			".$PeriodId."
 			".$EmpIdStr."
 			".$KPI_type."
