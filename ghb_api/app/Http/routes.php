@@ -207,13 +207,13 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('org/parent_list', 'OrgController@parent_list');
 	Route::get('org/province_list', 'OrgController@province_list');
 	Route::get('org/al_list', 'OrgController@al_list');
-	Route::post('org', 'OrgController@store');
-	Route::post('org/import', 'OrgController@import');
+	Route::post('org/master', 'OrgController@store');
+	Route::post('org/master/import', 'OrgController@import');
 	Route::patch('org/role', 'OrgController@batch_role');
 	Route::post('org/auto_org_name', 'OrgController@auto_org_name');
-	Route::get('org/{org_id}', 'OrgController@show');
-	Route::patch('org/{org_id}', 'OrgController@update');
-	Route::delete('org/{org_id}', 'OrgController@destroy');			
+	Route::get('org/master/{org_id}', 'OrgController@show');
+	Route::patch('org/master/{org_id}', 'OrgController@update');
+	Route::delete('org/master/{org_id}', 'OrgController@destroy');			
 	
 	// Appraisal Structure //
 	Route::get('appraisal_structure', 'AppraisalStructureController@index');
