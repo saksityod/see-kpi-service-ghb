@@ -216,11 +216,24 @@ class DashboardController extends Controller
 
 	public function org_list(Request $request){
 		$items = DB::select("
-			SELECT org_id, org_name
-			FROM org
-			WHERE is_active = 1
-			AND level_id = ?
-			ORDER BY org_id
+		SELECT DISTINCT
+			a.org_id,
+			a.org_name 
+		FROM
+			emp_result emp
+			INNER JOIN org a ON emp.org_id = a.org_id 
+		WHERE
+			a.level_id = ?
+		ORDER BY
+			a.org_code ASC
+			
+		/* backup query
+		SELECT org_id, org_name
+		FROM org
+		WHERE is_active = 1
+		AND level_id = ?
+		ORDER BY org_id
+		*/
 		", array($request->appraisal_level));
 		return response()->json($items);
 	}

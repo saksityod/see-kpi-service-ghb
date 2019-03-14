@@ -203,6 +203,7 @@ Route::group(['middleware' => 'cors'], function()
 
 	// Org //
 	Route::get('org', 'OrgController@index');
+	Route::get('org/master/org_list_transection', 'OrgController@org_list_transection');
 	Route::get('org/master', 'OrgController@org_master');
 	Route::get('org/parent_list', 'OrgController@parent_list');
 	Route::get('org/province_list', 'OrgController@province_list');
