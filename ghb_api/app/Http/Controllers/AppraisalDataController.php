@@ -32,7 +32,7 @@ class AppraisalDataController extends Controller
 			From appraisal_structure s, form_type t
 			Where s.form_id = t.form_id
 			And t.form_name = 'Deduct Score'
-			And s.is_active = 1 order by structure_id
+			And s.is_active = 1 order by s.structure_name asc
 		");
 		return response()->json($items);
 	}
@@ -54,7 +54,7 @@ class AppraisalDataController extends Controller
 			select level_id, appraisal_level_name
 			from appraisal_level
 			where is_active = 1
-			order by level_id
+			order by appraisal_level_name asc
 		");
 		return response()->json($items);
     }
@@ -79,7 +79,7 @@ class AppraisalDataController extends Controller
 			Where item_name like ?
 		";
 		
-		$qfooter = " Order by item_name limit 10 ";
+		$qfooter = " Order by item_name asc limit 10 ";
 		$qinput[] = '%'.$request->item_name.'%';
 		empty($request->structure_id) ?: ($query .= " and structure_id = ? " AND $qinput[] = $request->structure_id);
 		empty($request->level_id) ?: ($query .= " and b.level_id = ? " AND $qinput[] = $request->level_id);
@@ -94,7 +94,7 @@ class AppraisalDataController extends Controller
 			Select distinct e.emp_id, e.emp_name
 			From employee e
 			where e.emp_name like ? and e.is_active = 1
-			Order by e.emp_name	limit 10
+			Order by e.emp_name	asc limit 10
 		", array('%'.$request->emp_name.'%'));
 		return response()->json($items);
 	}

@@ -92,6 +92,7 @@ class BenchmarkDataController extends Controller
 				FROM benchmark_data
 				WHERE year = '$s_yr'
 				GROUP BY kpi_name
+				ORDER BY kpi_name asc
 			");
 
 			$resultArray['kpi'] = $benchmark;
