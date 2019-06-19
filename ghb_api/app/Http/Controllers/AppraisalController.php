@@ -79,7 +79,7 @@ class AppraisalController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by level_id asc			
+				Order by appraisal_level_name asc			
 			");
 		} else {
 			
@@ -278,7 +278,7 @@ class AppraisalController extends Controller
 				inner join appraisal_level al on al.level_id = org.level_id
 				where org_code in({$in_emp})
 				and al.is_hr = 0
-				order by al.level_id asc
+				order by al.appraisal_level_name asc
 			");
 			
 		}
@@ -308,10 +308,10 @@ class AppraisalController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by level_id asc			
+				Order by appraisal_level_name asc		
 			");
 		} else {
-			
+
 			// $re_emp = array();
 			
 			// $emp_list = array();
@@ -490,8 +490,7 @@ class AppraisalController extends Controller
 			}				
 
 			empty($in_emp) ? $in_emp = "null" : null;
-			
-			//echo $in_emp;
+
 			if($all_org[0]->count_no > 0) {
 				// $items = DB::select("
 				// 	select *
@@ -523,7 +522,7 @@ class AppraisalController extends Controller
 					where level_id = 2
 					and is_hr = 0
 					)appralsai_level
-					order by level_id asc
+					order by al.appraisal_level_name
 				");
 			} else {
 				// $items = DB::select("
@@ -541,7 +540,7 @@ class AppraisalController extends Controller
 					inner join appraisal_level al on al.level_id = org.level_id
 					where org_code in({$in_emp})
 					and al.is_hr = 0
-					order by al.level_id asc
+					order by al.appraisal_level_name
 				");
 			}
 		}
@@ -799,7 +798,7 @@ class AppraisalController extends Controller
 				Where position_name like ?
 			";
 			
-			$qfooter = " Order by position_name limit 10";
+			$qfooter = " Order by position_code asc limit 10";
 			$qinput[] = '%'.$request->position_name.'%';
 			
 			$items = DB::select($query.$qfooter,$qinput);
@@ -1003,7 +1002,7 @@ class AppraisalController extends Controller
 				
 			";
 			
-			$qfooter = " Order by b.position_name limit 10";
+			$qfooter = " Order by b.position_code asc limit 10";
 			$qinput[] = '%'.$request->position_name.'%';
 			
 			$items = DB::select($query.$qfooter,$qinput);			
@@ -1032,7 +1031,7 @@ class AppraisalController extends Controller
 				Where emp_name like ?
 			";
 			
-			$qfooter = " Order by emp_name limit 10 ";
+			$qfooter = " Order by emp_code asc limit 10 ";
 			$qinput[] = '%'.$request->emp_name.'%';
 			empty($request->org_id) ?: ($query .= " and org_id = ? " AND $qinput[] = $request->section_code);
 			empty($request->position_id) ?: ($query .= " and position_id = ? " AND $qinput[] = $request->position_code);
@@ -1235,7 +1234,7 @@ class AppraisalController extends Controller
 				and org.org_code in ({$in_emp})
 			";
 			
-			$qfooter = " Order by e.emp_name limit 10 ";
+			$qfooter = " Order by e.emp_code asc limit 10 ";
 			$qinput[] = '%'.$request->emp_name.'%';
 			empty($request->org_id) ?: ($query .= " and e.org_id = ? " AND $qinput[] = $request->org_id);
 			empty($request->position_id) ?: ($query .= " and e.position_id = ? " AND $qinput[] = $request->position_id);

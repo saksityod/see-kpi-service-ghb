@@ -764,13 +764,13 @@ class CDSResultController extends Controller
 
 		$items = DB::select("
 			Select distinct p.position_id, p.position_name
-			From p.position
+			From position p
 			inner join employee e on e.position_id = p.position_id
 			inner join org on org.org_id = e.org_id 
 			Where p.position_name like ?
 			and p.is_active = 1
 			and org.org_code in ({$in_emp})
-			Order by p.position_name		
+			Order by p.position_name asc		
 		", array('%'.$request->position_name.'%'));
 
 		return response()->json($items);
@@ -893,7 +893,7 @@ class CDSResultController extends Controller
 				Where emp_name like ?
 				and is_active = 1
 			" . $org . "
-				Order by emp_name
+				Order by emp_name asc
 			", array('%'.$request->emp_name.'%'));
 		} else {
 			// $items = DB::select("
@@ -914,7 +914,7 @@ class CDSResultController extends Controller
 				And e.emp_name like ?
 			" . $org . "				
 				and e.is_active = 1
-				Order by e.emp_name
+				Order by e.emp_name asc
 			", array('%'.$request->emp_name.'%'));
 		}		
 		return response()->json($items);
