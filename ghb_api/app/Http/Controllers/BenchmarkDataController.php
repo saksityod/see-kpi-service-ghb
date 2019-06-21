@@ -273,6 +273,7 @@ class BenchmarkDataController extends Controller
 				}
 			}
 
+			$tempCategory = [];
 			$nll = 0;
 			foreach($benchmark as $benchmarks)
 			{
@@ -303,7 +304,31 @@ class BenchmarkDataController extends Controller
 				$nll ++;
 			}
 
-			return response()->json($resultArray);
+			$resultForMixed = $resultArray;
+			foreach($resultArray['category'] as $value) {
+				$value['link'] = str_replace('s_chart_q', 's_chart_month', $value['link']);
+				$tempCategory[] = $value;
+			}
+
+			$tempStackDataset = [];
+			$tempLineDataset = [];
+			foreach ($resultForMixed['dataset'] as $value) {
+				$stack = $value;
+				$line = $value;
+				$stack['initiallyHidden'] = "1";
+				$line['initiallyHidden'] = "1";
+				if ($value['seriesname'] === 'ธอส.') {
+					$stack['initiallyHidden'] = "0";
+				}
+				$line['renderas'] = "line";
+				$tempStackDataset[] = $stack;
+				$tempLineDataset[] = $line;
+			}
+
+			$resultForMixed['category'] = $tempCategory;
+			$resultForMixed['dataset'] = array_merge($tempStackDataset, $tempLineDataset);
+
+			return response()->json(compact('resultArray', 'resultForMixed'));
 		}
 	}
 
@@ -327,7 +352,8 @@ class BenchmarkDataController extends Controller
 		WHERE quarter = '{$s_qt}'
 		AND year BETWEEN {$s_yr3} AND {$s_yr}
 		AND kpi_name = '{$s_kpi}'
-		ORDER BY quarter ASC, FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), year ASC";
+		ORDER BY quarter ASC, FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), 
+				 year ASC";
 
   		$sqlResults = DB::select($sqlStr);
 
@@ -367,134 +393,9 @@ class BenchmarkDataController extends Controller
 
       return response()->json($jsonResponse);
     }
-	// {
-	// 	header('Access-Control-Allow-Origin: *');
-	// 	$data = json_decode($request['datas'], true);
-	// 	//if($data['s_check']=='Acdsad2iow48'){
-	// 		$s_q = $data['s_q'];
-	// 		$resultArray = [];
-	// 		$resultArray['quarter'] = $s_q;
-	// 		$paramYear = "";
-	// 		$paramKpi = "";
-
-	// 		// $benchmark = DB::select("
-	// 		// 	SELECT quarter,company_code
-	// 		// 	FROM benchmark_data
-	// 		// 	WHERE quarter = '$s_q'
-	// 		// 	GROUP BY company_code
-	// 		// 	ORDER BY quarter ASC, FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), value ASC
-	// 		// ");
-			
-	// 		// $benchmark2 = DB::select("
-	// 		// 	SELECT quarter,
-	// 		// 			value,
-	// 		// 			company_code,
-	// 		// 			year
-	// 		// 	FROM benchmark_data
-	// 		// 	WHERE quarter = '$s_q'
-	// 		// 	ORDER BY quarter ASC, FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), value ASC
-	// 		// 	LIMIT 0,3
-	// 		// ");
-	// 		// $benchmark2 = DB::select("
-	// 		// 	SELECT quarter,
-	// 		// 		value,
-	// 		// 		company_code,
-	// 		// 		year
-	// 		// 	FROM benchmark_data
-	// 		// 	WHERE quarter = '{$s_q}'
-	// 		// 	AND year BETWEEN 2559-3 AND 2559
-	// 		// 	AND kpi_name = 'Cost Of Fund Gap Ratio'
-	// 		// 	ORDER BY quarter ASC, FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), year ASC
-	// 		// ");
-
-	// 		// $nll = 0;
-	// 		// foreach($benchmark as $benchmarks)
-	// 		// {
-	// 		// 	$resultArray['category'][$nll]['label'] = $benchmarks->company_code;
-	// 		// 	$nll ++;
-	// 		// }
-
-	// 		// $benchmark11 = DB::select("
-	// 		// 	SELECT benchmark_id
-	// 		// 	FROM benchmark_data
-	// 		// 	WHERE quarter = '$s_q'
-	// 		// 	GROUP BY year
-	// 		// ");
-
-	// 		// $count_cv = 0;
-	// 		// foreach ($benchmark11 as $benchmark11s) {
-	// 		// 	$count_cv ++;
-	// 		// }
-
-	// 		// $nc = 0;
-	// 		// foreach($benchmark2 as $benchmark2s)
-	// 		// {
-	// 		// 	if($nc<$count_cv)
-	// 		// 	{
-	// 		// 		$resultArray['dataset'][]['seriesname'] = "".$benchmark2s->year."";
-	// 		// 		// $benchmark3 = DB::select("
-	// 		// 		// 	SELECT value
-	// 		// 		// 	FROM benchmark_data
-	// 		// 		// 	WHERE year = '$benchmark2s->year'
-	// 		// 		// 	AND quarter = '$benchmark2s->quarter'
-	// 		// 		// 	ORDER BY quarter ASC, FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), value ASC
-	// 		// 		// ");
-	// 		// 		$benchmark3 = DB::select("
-	// 		// 			SELECT value
-	// 		// 			FROM benchmark_data
-	// 		// 			WHERE year = '2558'
-	// 		// 			AND quarter = 'Q1'
-	// 		// 			AND kpi_name = 'Cost Of Fund Gap Ratio'
-	// 		// 			ORDER BY FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), value ASC
-	// 		// 		");
-
-	// 		// 	    $bc = 1;
-	// 		// 		foreach($benchmark3 as $benchmark3s)
-	// 		// 		{
-	// 		// 			if($bc==1)
-	// 		// 			{
-	// 		// 				$resultArray['dataset'][$nc]['data'][]['value'] = $benchmark3s->value;
-	// 		// 			}
-	// 		// 			else
-	// 		// 			{
-	// 		// 				$resultArray['dataset'][$nc]['data'][]['value'] = $benchmark3s->value;
-	// 		// 			}
-	// 		// 			$bc ++;
-	// 		// 		}
-	// 		// 		$nc ++;
-	// 		// 	}
-	// 		// }
-
-	// 		return response()->json($resultArray);
-	// 	//}
-	// }
 
 	public function import_benchmark(Request $request)
 	{
-		//header('Access-Control-Allow-Origin: *');
-		// $data = json_decode($request['datas'], true);
-
-		// if($data)
-		// {
-		// 	DB::table('benchmark_data')->delete();
-		// 	foreach($data as $datas)
-		// 	{
-		// 		$insert = new BenchmarkData;
-		// 		$insert->year = $datas['year'];
-		// 		$insert->quarter = $datas['quarter'];
-		// 		$insert->kpi_name = $datas['kpi_name'];
-		// 		$insert->company_code = $datas['company_code'];
-		// 		$insert->value = $datas['value'];
-		// 		$insert->created_by = 'admin';
-		// 		$insert->created_dttm = date('Y-m-d H:i:s');
-		// 		$insert->save();
-		// 	}
-		// 	$benchmark = DB::select("
-		// 		SELECT *
-		// 		FROM benchmark_data
-		// 	");
-		// 	return response()->json($benchmark);
-		// }
 		$errors = array();
 		$errors_validator = array();
         DB::beginTransaction();
@@ -502,10 +403,10 @@ class BenchmarkDataController extends Controller
 			$items = Excel::load($f, function($reader){})->get();
 			DB::table('benchmark_data')->delete();
 			foreach ($items as $index => $i) {
-
 				$validator = Validator::make($i->toArray(), [
 							'year' => 'required',
 							'quarter' => 'required',
+							'month' => 'required',
 							'kpi_name' => 'required',
 							'company_code' => 'required',
 							'value' => 'required',
@@ -519,6 +420,7 @@ class BenchmarkDataController extends Controller
 					$insert = new BenchmarkData;
 					$insert->year = $i['year'];
 					$insert->quarter = $i['quarter'];
+					$insert->month = $i['month'];
 					$insert->kpi_name = $i['kpi_name'];
 					$insert->company_code = $i['company_code'];
 					$insert->value = $i['value'];
@@ -527,7 +429,7 @@ class BenchmarkDataController extends Controller
 					 try {
 	                    $insert->save();
 	                } catch (Exception $e) {
-	                    $errors[] = ['year' => $i['year'], 'quarter' => $i['quarter'], 'kpi_name' => $i['kpi_name'], 'errors' => $e];
+	                    $errors[] = ['year' => $i['year'], 'quarter' => $i['quarter'], 'month'=>$i['month'], 'kpi_name' => $i['kpi_name'], 'errors' => $e];
 	                }
 	            }		
 			}
@@ -546,11 +448,10 @@ class BenchmarkDataController extends Controller
 
 	public function download_benchmark($dCheck)
 	{
-		//header('Access-Control-Allow-Origin: *');
 		if($dCheck=='Swc4w8dQ88Wcd8')
 		{
 			$benchmark = DB::select("
-				SELECT year,quarter,kpi_name,company_code,value
+				SELECT year,quarter,month,kpi_name,company_code,value
 				FROM benchmark_data
 			");
 
@@ -563,7 +464,7 @@ class BenchmarkDataController extends Controller
 				{
 					$excel->sheet('Benchmark', function($sheet) use ($resultArray)
 				    {
-						$headings = array('year', 'quarter', 'kpi_name', 'company_code', 'value');
+						$headings = array('year', 'quarter', 'month', 'kpi_name', 'company_code', 'value');
 						$sheet->prependRow(1, $headings);
 				    });
 				})->download('xls');
@@ -580,6 +481,68 @@ class BenchmarkDataController extends Controller
 			}
 		}
 	}
-}
 
-?>
+	public function search_chart_month(Request $request){
+		$data = json_decode($request['datas'], true);
+		$jsonResponse = [];
+  
+		$s_yr = $data['s_yr'];
+		$s_kpi = $data['s_kpi'];
+		$s_qt = $data['s_q'];
+  
+		// Get data
+		$sqlStr = "
+		  SELECT
+			  company_code series,
+			  month category,
+			  value
+		  FROM benchmark_data
+		  WHERE quarter = '{$s_qt}'
+		  AND year = '{$s_yr}'
+		  AND kpi_name = '{$s_kpi}'
+		  ORDER BY FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), 
+		  		   FIELD(month, 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec', '')";
+  
+		$sqlResults = DB::select($sqlStr);
+  
+		$i_qt = (int) substr($s_qt, 1, 1);
+		$months = array('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec');
+		$start = 0 + (($i_qt - 1) * 3);
+
+		// Generate categories
+		$category = [];
+		// $category = array_slice($months, $start, 2);
+		foreach (array_slice($months, $start, 3) as $month) {
+		  if (!in_array($month, array_column($category, "label"))) {
+			array_push($category, ["label" => $month]);
+		  }
+		}
+		$jsonResponse["categories"][] = ["category" => $category];
+  
+  
+		// Generate series of dataset
+		$seriesData = [];
+		foreach ($sqlResults as $series) {
+		  if (!in_array($series->series, array_column($seriesData, "seriesname"))) {
+  
+			// Generate value of series array
+			$dataData = [];
+			foreach ($sqlResults as $data) {
+			  if ($series->series == $data->series) {
+				array_push($dataData, ["value" => $data->value]);
+			  }
+			}
+  
+			// Push series and data to object array
+			array_push($seriesData, ["seriesname" => "$series->series", "data" => $dataData]);
+  
+		  }
+		}
+		$jsonResponse["dataset"] = $seriesData;
+  
+		$jsonResponse["quarter"] = $s_qt;
+  
+  
+		return response()->json($jsonResponse);
+	  }
+}

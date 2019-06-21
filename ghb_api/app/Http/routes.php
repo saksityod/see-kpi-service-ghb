@@ -381,6 +381,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('benchmark_data/search_kpi/', 'BenchmarkDataController@search_kpi');
 	Route::get('benchmark_data/search_chart/', 'BenchmarkDataController@search_chart');
 	Route::get('benchmark_data/search_chart_quarter/', 'BenchmarkDataController@search_chart_quarter');
+	Route::get('benchmark_data/search_chart_month/', 'BenchmarkDataController@search_chart_month');
 
 	Route::Resource('generate', 'JasperController@generate');
 
@@ -401,6 +402,3 @@ Route::group(['middleware' => 'cors'], function()
 		return response()->json(['status' => '405']);
 	}]);	
 });
-
-
-
