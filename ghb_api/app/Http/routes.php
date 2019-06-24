@@ -366,9 +366,12 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('report/auto_employee_name','ReportController@auto_employee_name');
 	
 	// Import Assignment //
+	Route::get('import_assignment/level_list', 'ImportAssignmentController@level_list');
 	Route::get('import_assignment/org_list', 'ImportAssignmentController@org_list');
-	Route::get('import_assignment/item_list','ImportAssignmentController@item_list');
-	Route::get('import_assignment/export','ImportAssignmentController@export_template');
+	Route::post('import_assignment/item_list','ImportAssignmentController@item_list');
+	Route::post('import_assignment/export_organization','ImportAssignmentController@export_template_organization');
+	Route::post('import_assignment/export_individual','ImportAssignmentController@export_template_individual');
+	Route::post('import_assignment/import','ImportAssignmentController@import_template');
 	
 	// benchmark data //
 	Route::get('benchmark_data/select_list_search/', 'BenchmarkDataController@select_list_search');
@@ -381,6 +384,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('benchmark_data/search_kpi/', 'BenchmarkDataController@search_kpi');
 	Route::get('benchmark_data/search_chart/', 'BenchmarkDataController@search_chart');
 	Route::get('benchmark_data/search_chart_quarter/', 'BenchmarkDataController@search_chart_quarter');
+	Route::get('benchmark_data/search_chart_month/', 'BenchmarkDataController@search_chart_month');
 
 	Route::Resource('generate', 'JasperController@generate');
 
@@ -401,6 +405,3 @@ Route::group(['middleware' => 'cors'], function()
 		return response()->json(['status' => '405']);
 	}]);	
 });
-
-
-
