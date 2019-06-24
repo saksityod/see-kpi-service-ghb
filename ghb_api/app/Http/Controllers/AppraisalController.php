@@ -48,6 +48,7 @@ class AppraisalController extends Controller
 			appraisal_year
 			from appraisal_period
 			LEFT OUTER JOIN system_config on system_config.current_appraisal_year = appraisal_period.appraisal_year
+			ORDER BY appraisal_year DESC
 		");
 		return response()->json($items);
 	}
