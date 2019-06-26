@@ -203,6 +203,7 @@ class BenchmarkDataController extends Controller
 					");
 
 					$category = [];
+					$sumCount = [];
 
 					foreach ($listYear as $year) {
 						$category[] = ['label'=>(string) $year];
@@ -211,8 +212,10 @@ class BenchmarkDataController extends Controller
 					foreach ($records as $record) {
 						if (!isset($sumByGroup[$record->year])) {
 							$sumByGroup[$record->year] = 0; 
+							$sumCount[$record->year] = 0;
 						}
 						$sumByGroup[$record->year] += (float) $record->value;
+						$sumCount[$record->year] += 1;
 
 						if (!in_array($record->company_code, $companies)) {
 							$companies[] = $record->company_code;
@@ -234,7 +237,10 @@ class BenchmarkDataController extends Controller
 						foreach ($records as $record) {
 							foreach ($listYear as $yearIndex => $year) {
 								if ($record->year === $year && $record->company_code === $company) {
-									$dataItem['data'][$yearIndex] = ['value'=>$record->value];
+									if(!isset($dataItem['data'][$yearIndex]['value'])) {
+										$dataItem['data'][$yearIndex]['value'] = 0;
+									}
+									$dataItem['data'][$yearIndex]['value'] += (float) $record->value;
 								} else {
 									if (!isset($dataItem['data'][$yearIndex])) {
 										$dataItem['data'][$yearIndex] = ['value'=>0];
@@ -250,7 +256,7 @@ class BenchmarkDataController extends Controller
 					$average['data'] = [];
 					foreach($listYear as $year) {
 						if (isset($sumByGroup[$year])) {
-							$average['data'][] = ['value'=>$sumByGroup[$year]/count($companies)];
+							$average['data'][] = ['value'=>$sumByGroup[$year]/$sumCount[$year]];
 						} else {
 							$average['data'][] = ['value'=>0];
 						}
@@ -276,17 +282,20 @@ class BenchmarkDataController extends Controller
 
 					$quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
 					$category = [];
+					$sumCount = [];
 
 					foreach ($quarters as $quarter) {
 						$category[] = ['label'=>$quarter];
 					}
 
 					foreach ($records as $record) {
-						if (!isset($sumByGroup[$record->year])) {
-							$sumByGroup[$record->year] = 0; 
+						if (!isset($sumByGroup[$record->year][$record->quarter])) {
+							$sumByGroup[$record->year][$record->quarter] = 0; 
+							$sumCount[$record->year][$record->quarter] = 0;
 						}
-						$sumByGroup[$record->year] += (float) $record->value;
-
+						$sumByGroup[$record->year][$record->quarter] += (float) $record->value;
+						$sumCount[$record->year][$record->quarter] += 1;
+						
 						if (!in_array($record->company_code, $companies)) {
 							$companies[] = $record->company_code;
 						}
@@ -308,10 +317,16 @@ class BenchmarkDataController extends Controller
 							foreach ($records as $record) {
 								foreach ($quarters as $quarterIndex => $quarter) {
 									if ($record->year === $year && $record->company_code === $company) {
+										if(!isset($dataItem['data'][$quarterIndex]['value'])) {
+											$dataItem['data'][$quarterIndex]['value'] = 0;
+										}
 										if ($record->quarter === $quarter) {
-											$dataItem['data'][$quarterIndex] = ['value'=>$record->value];
+											// if(!isset($dataItem['data'][$quarterIndex]['value'])) {
+											// 	$dataItem['data'][$quarterIndex]['value'] = 0;
+											// }
+											$dataItem['data'][$quarterIndex]['value'] += (float) $record->value;
 										} else {
-											$dataItem['data'][$quarterIndex] = ['value'=>0];
+											$dataItem['data'][$quarterIndex]['value'] += 0;
 										}
 									} else {
 										if (!isset($dataItem['data'][$quarterIndex])) {
@@ -328,16 +343,16 @@ class BenchmarkDataController extends Controller
 						$average['data'] = [];
 						foreach($quarters as $quarter) {
 							if (isset($sumByGroup[$year][$quarter])) {
-								$average['data'][] = ['value'=>$sumByGroup[$year][$quarter]/count($companies)];
+								$average['data'][] = ['value'=>$sumByGroup[$year][$quarter]/$sumCount[$year][$quarter]];
 							} else {
 								$average['data'][] = ['value'=>0];
 							}
 						}
 						$resultArray[$yearIndex]['dataset'][] = $average;
-						foreach ($resultArray[$yearIndex]['dataset'] as $data) {
-							$data['renderas'] = 'line';
-							$data['initiallyHidden'] = '1';
-							$tempLineDataset[] = $data;
+						foreach ($resultArray[$yearIndex]['dataset'] as $stackData) {
+							$stackData['renderas'] = 'line';
+							$stackData['initiallyHidden'] = '1';
+							$tempLineDataset[] = $stackData;
 						}
 						$resultArray[$yearIndex]['dataset'] = array_merge($resultArray[$yearIndex]['dataset'], $tempLineDataset);
 					}
@@ -356,16 +371,19 @@ class BenchmarkDataController extends Controller
 
 					$months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 					$category = [];
+					$sumCount = [];
 
 					foreach ($months as $month) {
 						$category[] = ['label'=>$month];
 					}
 
 					foreach ($records as $record) {
-						if (!isset($sumByGroup[$record->year])) {
-							$sumByGroup[$record->year] = 0; 
+						if (!isset($sumByGroup[$record->year][$record->month])) {
+							$sumByGroup[$record->year][$record->month] = 0; 
+							$sumCount[$record->year][$record->month] = 0;
 						}
-						$sumByGroup[$record->year] += (float) $record->value;
+						$sumByGroup[$record->year][$record->month] += (float) $record->value;
+						$sumCount[$record->year][$record->month] += 1;
 
 						if (!in_array($record->company_code, $companies)) {
 							$companies[] = $record->company_code;
@@ -388,10 +406,13 @@ class BenchmarkDataController extends Controller
 							foreach ($records as $record) {
 								foreach ($months as $monthIndex => $month) {
 									if ($record->year === $year && $record->company_code === $company) {
+										if(!isset($dataItem['data'][$monthIndex]['value'])) {
+											$dataItem['data'][$monthIndex]['value'] = 0;
+										}
 										if ($record->month === $month) {
-											$dataItem['data'][$monthIndex] = ['value'=>$record->value];
+											$dataItem['data'][$monthIndex]['value'] += (float) $record->value;
 										} else {
-											$dataItem['data'][$monthIndex] = ['value'=>0];
+											$dataItem['data'][$monthIndex]['value'] += 0;
 										}
 									} else {
 										if (!isset($dataItem['data'][$monthIndex])) {
@@ -408,16 +429,16 @@ class BenchmarkDataController extends Controller
 						$average['data'] = [];
 						foreach($months as $month) {
 							if (isset($sumByGroup[$year][$month])) {
-								$average['data'][] = ['value'=>$sumByGroup[$year][$month]/count($companies)];
+								$average['data'][] = ['value'=>$sumByGroup[$year][$month]/$sumCount[$year][$month]];
 							} else {
 								$average['data'][] = ['value'=>0];
 							}
 						}
 						$resultArray[$yearIndex]['dataset'][] = $average;
-						foreach ($resultArray[$yearIndex]['dataset'] as $data) {
-							$data['renderas'] = 'line';
-							$data['initiallyHidden'] = '1';
-							$tempLineDataset[] = $data;
+						foreach ($resultArray[$yearIndex]['dataset'] as $stackData) {
+							$stackData['renderas'] = 'line';
+							$stackData['initiallyHidden'] = '1';
+							$tempLineDataset[] = $stackData;
 						}
 						$resultArray[$yearIndex]['dataset'] = array_merge($resultArray[$yearIndex]['dataset'], $tempLineDataset);
 					}
@@ -426,7 +447,7 @@ class BenchmarkDataController extends Controller
 				default: {}
 			}
 
-			// return response() -> json(compact('resultArray', 'sumByGroup', 'average'));
+			// return response() -> json(compact('resultArray', 'sumByGroup', 'sumCount', 'average'));
 			return response() -> json($resultArray);
 		}
 	}
