@@ -1932,8 +1932,6 @@ class DashboardController extends Controller
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}	
 
-		
-
 		$counter = 1;
 		if ($frequency->frequency_month_value > 1) {
 
@@ -1942,53 +1940,84 @@ class DashboardController extends Controller
 			if ($request->appraisal_type_id == 2) {
 				$emp = Employee::where('emp_id',$request->emp_id)->first();
 				$org_list = DB::select("
-					SELECT a.org_id, a.emp_id, g.emp_name org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, b.threshold_group_id, e.is_show_variance, max(a.etl_dttm) etl_dttm
-					FROM monthly_appraisal_item_result a
-					left outer join appraisal_item_result b
-					on a.item_id = b.item_id
-					and a.emp_result_id = b.emp_result_id
-					left outer join emp_result c
-					on a.emp_result_id = c.emp_result_id
-					left outer join org d
-					on a.org_id = d.org_id
-					left outer join appraisal_item e
-					on a.item_id = e.item_id
-					left outer join perspective f
-					on e.perspective_id = f.perspective_id
-					left outer join employee g
-					on b.emp_id = g.emp_id
-					left outer join uom u
-					on e.uom_id = u.uom_id
-					where a.item_id = ?
-					and c.appraisal_type_id = ?
-					and (g.emp_code = ? or g.chief_emp_code = ?)
-					and c.period_id = ?
-					group by a.org_id, a.emp_id, g.emp_name ,org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, e.is_show_variance
-					order by b.percent_achievement desc, a.org_id asc, a.appraisal_month_no asc			
+				SELECT
+					a.org_id ,a.emp_id ,g.emp_name org_name, e.item_name ,f.perspective_name ,u.uom_name,
+					c.result_threshold_group_id ,b.item_result_id, b.threshold_group_id ,e.is_show_variance,
+					CASE
+						WHEN DATE_FORMAT( MAX( a.etl_dttm ), '%Y-%m' ) > DATE_FORMAT( CONCAT( a.YEAR, '-', a.appraisal_month_no, '-', '01' ), '%Y-%m' ) 
+						THEN MAX( cds.etl_dttm ) 
+						ELSE MAX( a.etl_dttm ) 
+					END AS etl_dttm 
+				FROM
+					monthly_appraisal_item_result a
+					LEFT OUTER JOIN appraisal_item_result b ON a.item_id = b.item_id 
+					AND a.emp_result_id = b.emp_result_id
+					LEFT OUTER JOIN emp_result c ON a.emp_result_id = c.emp_result_id
+					LEFT OUTER JOIN org d ON a.org_id = d.org_id
+					LEFT OUTER JOIN appraisal_item e ON a.item_id = e.item_id
+					LEFT OUTER JOIN perspective f ON e.perspective_id = f.perspective_id
+					LEFT OUTER JOIN employee g ON b.emp_id = g.emp_id
+					LEFT OUTER JOIN uom u ON e.uom_id = u.uom_id
+					LEFT OUTER JOIN kpi_cds_mapping kcm ON a.item_id = kcm.item_id
+					LEFT OUTER JOIN cds_result cds ON kcm.cds_id = cds.cds_id 
+					AND a.org_id = cds.org_id 
+					AND a.level_id = cds.level_id 
+					AND a.`year` = cds.`year` 
+					AND a.appraisal_month_no = cds.appraisal_month_no 
+					AND c.appraisal_type_id = cds.appraisal_type_id 
+				WHERE
+					a.item_id = ? 
+					AND c.appraisal_type_id = ? 
+					AND ( g.emp_code = ? OR g.chief_emp_code = ? ) 
+					AND c.period_id = ? 
+				GROUP BY
+					a.org_id, a.emp_id, g.emp_name, org_name, e.item_name, f.perspective_name,
+					u.uom_name, c.result_threshold_group_id, b.item_result_id, e.is_show_variance 
+				ORDER BY
+					b.percent_achievement DESC,
+					a.org_id ASC,
+					a.appraisal_month_no ASC		
 				", array($request->item_id,$request->appraisal_type_id,$emp->emp_code, $emp->emp_code, $request->period_id));
 			} else {
 				$org_list = DB::select("
-					SELECT a.org_id, a.emp_id, d.org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, b.threshold_group_id, e.is_show_variance, max(a.etl_dttm) etl_dttm
-					FROM monthly_appraisal_item_result a
-					left outer join appraisal_item_result b
-					on a.item_id = b.item_id
-					and a.emp_result_id = b.emp_result_id
-					left outer join emp_result c
-					on a.emp_result_id = c.emp_result_id
-					left outer join org d
-					on a.org_id = d.org_id
-					left outer join appraisal_item e
-					on a.item_id = e.item_id
-					left outer join perspective f
-					on e.perspective_id = f.perspective_id
-					left outer join uom u
-					on e.uom_id = u.uom_id
-					where a.item_id = ?
-					and c.appraisal_type_id = ?
-					and (d.org_code = ? or d.parent_org_code = ?)
-					and c.period_id = ?
-					group by a.org_id, a.emp_id, d.org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, e.is_show_variance
-					order by b.percent_achievement desc, a.org_id asc, a.appraisal_month_no asc			
+				SELECT
+					a.org_id, a.emp_id, d.org_name, e.item_name, f.perspective_name,
+					u.uom_name, c.result_threshold_group_id, b.item_result_id,
+					b.threshold_group_id, e.is_show_variance,
+					CASE
+						WHEN DATE_FORMAT( MAX( a.etl_dttm ), '%Y-%m' ) > DATE_FORMAT( CONCAT( a.YEAR, '-', a.appraisal_month_no, '-', '01' ), '%Y-%m' ) 
+						THEN MAX( cds.etl_dttm ) 
+						ELSE MAX( a.etl_dttm ) 
+					END AS etl_dttm 
+				FROM
+					monthly_appraisal_item_result a
+					LEFT OUTER JOIN appraisal_item_result b ON a.item_id = b.item_id 
+					AND a.emp_result_id = b.emp_result_id
+					LEFT OUTER JOIN emp_result c ON a.emp_result_id = c.emp_result_id
+					LEFT OUTER JOIN org d ON a.org_id = d.org_id
+					LEFT OUTER JOIN appraisal_item e ON a.item_id = e.item_id
+					LEFT OUTER JOIN perspective f ON e.perspective_id = f.perspective_id
+					LEFT OUTER JOIN uom u ON e.uom_id = u.uom_id
+					LEFT OUTER JOIN kpi_cds_mapping kcm ON a.item_id = kcm.item_id
+					LEFT OUTER JOIN cds_result cds ON kcm.cds_id = cds.cds_id 
+					AND a.org_id = cds.org_id 
+					AND a.level_id = cds.level_id 
+					AND a.`year` = cds.`year` 
+					AND a.appraisal_month_no = cds.appraisal_month_no 
+					AND c.appraisal_type_id = cds.appraisal_type_id 
+				WHERE
+					a.item_id = ? 
+					AND c.appraisal_type_id = ? 
+					AND ( d.org_code = ? OR d.parent_org_code = ? ) 
+					AND c.period_id = ? 
+				GROUP BY
+					a.org_id, a.emp_id, d.org_name, e.item_name,
+					f.perspective_name, u.uom_name, c.result_threshold_group_id,
+					b.item_result_id, e.is_show_variance 
+				ORDER BY
+					b.percent_achievement DESC,
+					a.org_id ASC,
+					a.appraisal_month_no ASC		
 				", array($request->item_id,$request->appraisal_type_id,$org->org_code, $org->org_code, $request->period_id));			
 			}
 			
@@ -2021,6 +2050,7 @@ class DashboardController extends Controller
 						AND c.appraisal_type_id = cds.appraisal_type_id 
 						AND kcm.cds_id = cds.cds_id 
 						AND a.appraisal_month_no = cds.appraisal_month_no 
+						AND cds.`year` = a.`year`
 					WHERE a.item_id = ?
 						AND c.appraisal_type_id = ?
 						AND b.emp_id = ?
@@ -2054,6 +2084,7 @@ class DashboardController extends Controller
 						AND c.appraisal_type_id = cds.appraisal_type_id
 						AND kcm.cds_id = cds.cds_id
 						AND a.appraisal_month_no = cds.appraisal_month_no
+						AND cds.`year` = a.`year`
 					WHERE
 						a.item_id = ?
 						AND c.appraisal_type_id = ?
@@ -2565,36 +2596,6 @@ class DashboardController extends Controller
 					order by begin_threshold asc
 				", array($o->result_threshold_group_id));
 
-				//print_r($o);
-
-				//print_r($dual_chart);
-
-		/*
-    	if(empty($dual_chart)){
-    		$o->dual_chart = [
-					'data' => [
-					"target" => 0,
-					"forecast" => 0,
-					"actual_value" => null
-					],
-					'color_range' => $color
-				];
-
-
-    	}else{
-
-    		$o->dual_chart = [
-					'data' => [
-					"target" => $dual_chart[0]->target_value,
-					"forecast" => $dual_chart[0]->forecast_value,
-					"actual_value" => $dual_chart[0]->actual_value
-					],
-					'color_range' => $color
-				];
-
-
-    	}
-    	*/
 
 				if (empty($dual_chart)) {
 					$o->dual_chart = [
