@@ -8,6 +8,7 @@ use Auth;
 use DB;
 use Excel;
 use Validator;
+use Log;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 //use Illuminate\Pagination\LengthAwarePaginator;
@@ -26,16 +27,15 @@ class BenchmarkDataController extends Controller
 		//header('Access-Control-Allow-Origin: *');
 		$resultArray = [];
 		$year = DB::select("
-				SELECT year
-				FROM benchmark_data
-				GROUP BY year
+			SELECT DISTINCT year
+			FROM benchmark_data
 		");
 
 		$quarter = DB::select("
-				SELECT quarter
-				FROM benchmark_data
-				GROUP BY quarter
+			SELECT DISTINCT quarter
+			FROM benchmark_data
 		");
+
 		$resultArray['year'] = $year;
 		$resultArray['quarter'] = $quarter;
 
@@ -86,11 +86,15 @@ class BenchmarkDataController extends Controller
 		if($data['s_check']=='wdsdwaswdokd')
 		{
 			$resultArray = [];
-			$s_yr = $data['s_yr'];
+			$s_yr1 = $data['s_yr1'];
+			$s_yr2 = $data['s_yr2'];
+			$s_type = $data['s_type'];
+
 			$benchmark = DB::select("
 				SELECT kpi_name
 				FROM benchmark_data
-				WHERE year = '$s_yr'
+				WHERE year BETWEEN '$s_yr1' AND '$s_yr2'
+				AND type = '$s_type'
 				GROUP BY kpi_name
 			");
 
@@ -123,6 +127,14 @@ class BenchmarkDataController extends Controller
 				FROM benchmark_data
 				GROUP BY kpi_name
 		");
+		
+		$type = array('Year', 'Quarter', 'Month');
+		// $quarter = array('Q1', 'Q2', 'Q3', 'Q4');
+		// $month = array('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
+		
+		$resultArray['type'] = $type; 
+		// $resultArray['quarter'] = $quarter;
+		// $resultArray['month'] = $month;
 		$resultArray['year'] = $year;
 		$resultArray['kpi'] = $kpi;
 
@@ -158,177 +170,263 @@ class BenchmarkDataController extends Controller
 	public function search_chart(Request $request)
 	{
 		//header('Access-Control-Allow-Origin: *');
-		$data = json_decode($request['datas'], true);
+		// return $request['datas'];
+		$data = $request['datas'];
 		if($data['s_check']=='Kcsodwdw2iow48')
 		{
-			$s_yr = $data['s_yr'];
+			$s_yr1 = $data['s_yr1'];
+			$s_yr2 = $data['s_yr2'];
+			$s_type = strtolower($data['s_type']);
 			$s_kpi = $data['s_kpi'];
 			$resultArray = [];
-			$resultArray['year'] = $s_yr;
-			$resultArray['kpi'] = $s_kpi;
 
-			$benchmark = DB::select("
-				SELECT quarter,SUM(value) as sum
-				FROM benchmark_data
-				WHERE year = '$s_yr'
-				AND kpi_name = '$s_kpi'
-				GROUP BY quarter
-				ORDER BY quarter ASC
-			");
-			$benchmark2 = DB::select("
-				SELECT quarter,value,company_code
-				FROM benchmark_data
-				WHERE year = '$s_yr'
-				AND kpi_name = '$s_kpi'
-				ORDER BY quarter ASC, FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), value ASC
-			");
-
-			$benchmark11 = DB::select("
-				SELECT benchmark_id
-				FROM benchmark_data
-				WHERE year = '$s_yr'
-				AND kpi_name = '$s_kpi'
-				GROUP BY company_code
-			");
-
-			$benchmark_previous = DB::select("
-				SELECT year,kpi_name
-				FROM benchmark_data
-				WHERE year < '$s_yr'
-				GROUP BY year
-				ORDER BY year DESC
-				LIMIT 0,1
-			");
-			if(empty($benchmark_previous))
-			{
-				$resultArray['nodata_year_previos'] = "nodata_p";
-			}
-			else
-			{
-				foreach($benchmark_previous as $benchmark_previouss)
-				{
-					$resultArray['year_previos'] = $benchmark_previouss->year;
-					$resultArray['kpi_previos'] = $benchmark_previouss->kpi_name;
-				}
-
+			$listYear = [];
+			for($i = (int) $s_yr1; $i <= (int) $s_yr2; $i++ ) {
+				$listYear[] = $i;
 			}
 
-			$benchmark_next = DB::select("
-				SELECT year,kpi_name
-				FROM benchmark_data
-				WHERE year > '$s_yr'
-				GROUP BY year
-				ORDER BY year ASC
-				LIMIT 0,1
-			");
-			if(empty($benchmark_next))
-			{
-				$resultArray['nodata_year_next'] = "nodata_next";
-			}
-			else
-			{
-				foreach($benchmark_next as $benchmark_nexts)
-				{
-					$resultArray['year_next'] = $benchmark_nexts->year;
-					$resultArray['kpi_next'] = $benchmark_nexts->kpi_name;
-				}
-			}
+			$sumByGroup = [];
+			$companies = [];
+			$records = [];
 
-
-			$count_cv = 0;
-			foreach ($benchmark11 as $benchmark11s) {
-				$count_cv ++;
-			}
-
-			$nc = 0;
-			foreach($benchmark2 as $benchmark2s)
-			{
-				if($nc<$count_cv)
-				{
-					//$resultArray['colorcompany'][] = $benchmark2s->company_color;
-					$resultArray['dataset'][]['seriesname'] = $benchmark2s->company_code;
-					$benchmark3 = DB::select("
-						SELECT value
+			switch ($s_type) {
+				case 'year': {
+					$records = DB::select("
+						SELECT company_code, value, year
 						FROM benchmark_data
-						WHERE year = '$s_yr'
-						AND kpi_name = '$s_kpi'
-						AND company_code = '$benchmark2s->company_code'
-						ORDER BY quarter ASC, FIELD(company_code,'ธ.กรุงเทพ','ธอส.','ธ.ออมสิน','ธ.กสิกรไทย','ธ.กรุงไทย','ธ.ไทยพาณิช',''), value ASC
+						WHERE year BETWEEN '$s_yr1' AND '$s_yr2'
+						AND kpi_name = '$s_kpi' 
+						AND type = '$s_type'
+						ORDER BY year,
+						FIELD( company_code, 'ธอส', 'ธ.กสิกรไทย', 'ธ.กรุงเทพ', 'ธ.ไทยพาาณิช', 'ธ.ออมสิน', 'ธ.กรุงไทย', 'อื่นๆ', '' )
 					");
 
-				    $bc = 1;
-					foreach($benchmark3 as $benchmark3s)
-					{
-						if($bc==1)
-						{
-							$resultArray['dataset'][$nc]['data'][]['value'] = $benchmark3s->value;
-						}
-						else
-						{
-							$resultArray['dataset'][$nc]['data'][]['value'] = $benchmark3s->value;
-						}
-						$bc ++;
+					$category = [];
+
+					foreach ($listYear as $year) {
+						$category[] = ['label'=>(string) $year];
 					}
-					$nc ++;
+
+					foreach ($records as $record) {
+						if (!isset($sumByGroup[$record->year])) {
+							$sumByGroup[$record->year] = 0; 
+						}
+						$sumByGroup[$record->year] += (float) $record->value;
+
+						if (!in_array($record->company_code, $companies)) {
+							$companies[] = $record->company_code;
+						}
+					}
+
+					$resultItem = [];
+					$resultItem['year'] = "$s_yr1 - $s_yr2";
+					$resultItem['kpi'] = $s_kpi;
+					$resultItem['category'] = $category;
+					$resultItem['dataset'] = [];
+					$resultItem['type'] = $data['s_type'];
+					$tempLineDataset = [];
+					$average = [];
+					foreach ($companies as $company) {
+						$dataItem['seriesname'] = $company;
+						$dataItem['initiallyHidden'] = $company === 'ธอส.' ? '0' : '1';
+						$dataItem['data'] = [];
+						foreach ($records as $record) {
+							foreach ($listYear as $yearIndex => $year) {
+								if ($record->year === $year && $record->company_code === $company) {
+									$dataItem['data'][$yearIndex] = ['value'=>$record->value];
+								} else {
+									if (!isset($dataItem['data'][$yearIndex])) {
+										$dataItem['data'][$yearIndex] = ['value'=>0];
+									}
+								}
+							}
+						}
+						$resultItem['dataset'][] = $dataItem;
+					}
+					$resultArray[] = $resultItem;
+					$average['seriesname'] = 'ค่าเฉลี่ย';
+					$average['initiallyHidden'] = '1';
+					$average['data'] = [];
+					foreach($listYear as $year) {
+						if (isset($sumByGroup[$year])) {
+							$average['data'][] = ['value'=>$sumByGroup[$year]/count($companies)];
+						} else {
+							$average['data'][] = ['value'=>0];
+						}
+					}
+					$resultArray[0]['dataset'][] = $average;
+					foreach ($resultArray[0]['dataset'] as $data) {
+						$data['renderas'] = 'line';
+						$data['initiallyHidden'] = '1';
+						$tempLineDataset[] = $data;
+					}
+					$resultArray[0]['dataset'] = array_merge($resultArray[0]['dataset'], $tempLineDataset);
+					break;
 				}
+				case 'quarter': {
+					$records = DB::select("
+						SELECT company_code, value, quarter, year 
+						FROM benchmark_data
+						WHERE year BETWEEN '$s_yr1' AND '$s_yr2'
+						AND kpi_name = '$s_kpi' AND type = '$s_type'
+						ORDER BY year, quarter,
+						FIELD( company_code, 'ธอส', 'ธ.กสิกรไทย', 'ธ.กรุงเทพ', 'ธ.ไทยพาณิช', 'ธ.ออมสิน', 'ธ.กรุงไทย', 'อื่นๆ', '' )
+					");
+
+					$quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+					$category = [];
+
+					foreach ($quarters as $quarter) {
+						$category[] = ['label'=>$quarter];
+					}
+
+					foreach ($records as $record) {
+						if (!isset($sumByGroup[$record->year])) {
+							$sumByGroup[$record->year] = 0; 
+						}
+						$sumByGroup[$record->year] += (float) $record->value;
+
+						if (!in_array($record->company_code, $companies)) {
+							$companies[] = $record->company_code;
+						}
+					}
+
+					foreach ($listYear as $yearIndex=>$year) {
+						$resultItem = [];
+						$resultItem['year'] = $year;
+						$resultItem['kpi'] = $s_kpi;
+						$resultItem['category'] = $category;
+						$resultItem['dataset'] = [];
+						$resultItem['type'] = $data['s_type'];
+						$tempLineDataset = [];
+						$average = [];
+						foreach ($companies as $company) {
+							$dataItem['seriesname'] = $company;
+							$dataItem['initiallyHidden'] = $company === 'ธอส.' ? '0' : '1';
+							$dataItem['data'] = [];
+							foreach ($records as $record) {
+								foreach ($quarters as $quarterIndex => $quarter) {
+									if ($record->year === $year && $record->company_code === $company) {
+										if ($record->quarter === $quarter) {
+											$dataItem['data'][$quarterIndex] = ['value'=>$record->value];
+										} else {
+											$dataItem['data'][$quarterIndex] = ['value'=>0];
+										}
+									} else {
+										if (!isset($dataItem['data'][$quarterIndex])) {
+											$dataItem['data'][$quarterIndex] = ['value'=>0];
+										}
+									}
+								}
+							}
+							$resultItem['dataset'][] = $dataItem;
+						}
+						$resultArray[] = $resultItem;
+						$average['seriesname'] = 'ค่าเฉลี่ย';
+						$average['initiallyHidden'] = '1';
+						$average['data'] = [];
+						foreach($quarters as $quarter) {
+							if (isset($sumByGroup[$year][$quarter])) {
+								$average['data'][] = ['value'=>$sumByGroup[$year][$quarter]/count($companies)];
+							} else {
+								$average['data'][] = ['value'=>0];
+							}
+						}
+						$resultArray[$yearIndex]['dataset'][] = $average;
+						foreach ($resultArray[$yearIndex]['dataset'] as $data) {
+							$data['renderas'] = 'line';
+							$data['initiallyHidden'] = '1';
+							$tempLineDataset[] = $data;
+						}
+						$resultArray[$yearIndex]['dataset'] = array_merge($resultArray[$yearIndex]['dataset'], $tempLineDataset);
+					}
+					
+					break;
+				}
+				case 'month': {
+					$records = DB::select("
+						SELECT company_code, value, month, year
+						FROM benchmark_data
+						WHERE year BETWEEN '$s_yr1' AND '$s_yr2'
+						AND kpi_name = '$s_kpi' AND type = '$s_type'
+						ORDER BY year, FIELD(month, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', ''),
+						FIELD( company_code, 'ธอส', 'ธ.กสิกรไทย', 'ธ.กรุงเทพ', 'ธ.ไทยพาณิช', 'ธ.ออมสิน', 'ธ.กรุงไทย', 'อื่นๆ', '' )
+					");
+
+					$months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+					$category = [];
+
+					foreach ($months as $month) {
+						$category[] = ['label'=>$month];
+					}
+
+					foreach ($records as $record) {
+						if (!isset($sumByGroup[$record->year])) {
+							$sumByGroup[$record->year] = 0; 
+						}
+						$sumByGroup[$record->year] += (float) $record->value;
+
+						if (!in_array($record->company_code, $companies)) {
+							$companies[] = $record->company_code;
+						}
+					}
+
+					foreach ($listYear as $yearIndex=>$year) {
+						$resultItem = [];
+						$resultItem['year'] = $year;
+						$resultItem['kpi'] = $s_kpi;
+						$resultItem['category'] = $category;
+						$resultItem['dataset'] = [];
+						$resultItem['type'] = $data['s_type'];
+						$tempLineDataset = [];
+						$average = [];
+						foreach ($companies as $company) {
+							$dataItem['seriesname'] = $company;
+							$dataItem['initiallyHidden'] = $company === 'ธอส.' ? '0' : '1';
+							$dataItem['data'] = [];
+							foreach ($records as $record) {
+								foreach ($months as $monthIndex => $month) {
+									if ($record->year === $year && $record->company_code === $company) {
+										if ($record->month === $month) {
+											$dataItem['data'][$monthIndex] = ['value'=>$record->value];
+										} else {
+											$dataItem['data'][$monthIndex] = ['value'=>0];
+										}
+									} else {
+										if (!isset($dataItem['data'][$monthIndex])) {
+											$dataItem['data'][$monthIndex] = ['value'=>0];
+										}
+									}
+								}
+							}
+							$resultItem['dataset'][] = $dataItem;
+						}
+						$resultArray[] = $resultItem;
+						$average['seriesname'] = 'ค่าเฉลี่ย';
+						$average['initiallyHidden'] = '1';
+						$average['data'] = [];
+						foreach($months as $month) {
+							if (isset($sumByGroup[$year][$month])) {
+								$average['data'][] = ['value'=>$sumByGroup[$year][$month]/count($companies)];
+							} else {
+								$average['data'][] = ['value'=>0];
+							}
+						}
+						$resultArray[$yearIndex]['dataset'][] = $average;
+						foreach ($resultArray[$yearIndex]['dataset'] as $data) {
+							$data['renderas'] = 'line';
+							$data['initiallyHidden'] = '1';
+							$tempLineDataset[] = $data;
+						}
+						$resultArray[$yearIndex]['dataset'] = array_merge($resultArray[$yearIndex]['dataset'], $tempLineDataset);
+					}
+					break;
+				}
+				default: {}
 			}
 
-			$tempCategory = [];
-			$nll = 0;
-			foreach($benchmark as $benchmarks)
-			{
-				$benchmark_avg = DB::select("
-				SELECT benchmark_id
-				FROM benchmark_data
-				WHERE quarter = '$benchmarks->quarter'
-				AND year = '$s_yr'
-				AND kpi_name = '$s_kpi'
-				");
-
-				$count_avg = 0;
-				foreach ($benchmark_avg as $benchmarks_avgs) {
-					$count_avg ++;
-				}
-
-				$avg_quarter = $benchmarks->sum / $count_avg;
-				if($nll==0)
-				{
-					$resultArray['dataset'][]['seriesname'] = "ค่าเฉลี่ย";
-				}
-
-				$resultArray['dataset'][$nc]['data'][]['value'] = number_format($avg_quarter,2);
-
-				$resultArray['category'][$nll]['label'] = $benchmarks->quarter;
-				$resultArray['quarter_previos_next'] = $benchmarks->quarter;
-				$resultArray['category'][$nll]['link'] = "JavaScript:s_chart_q(".$benchmarks->quarter.")";
-				$nll ++;
-			}
-
-			$resultForMixed = $resultArray;
-			foreach($resultArray['category'] as $value) {
-				$value['link'] = str_replace('s_chart_q', 's_chart_month', $value['link']);
-				$tempCategory[] = $value;
-			}
-
-			$tempStackDataset = [];
-			$tempLineDataset = [];
-			foreach ($resultForMixed['dataset'] as $value) {
-				$stack = $value;
-				$line = $value;
-				$stack['initiallyHidden'] = "1";
-				$line['initiallyHidden'] = "1";
-				if ($value['seriesname'] === 'ธอส.') {
-					$stack['initiallyHidden'] = "0";
-				}
-				$line['renderas'] = "line";
-				$tempStackDataset[] = $stack;
-				$tempLineDataset[] = $line;
-			}
-
-			$resultForMixed['category'] = $tempCategory;
-			$resultForMixed['dataset'] = array_merge($tempStackDataset, $tempLineDataset);
-
-			return response()->json(compact('resultArray', 'resultForMixed'));
+			// return response() -> json(compact('resultArray', 'sumByGroup', 'average'));
+			return response() -> json($resultArray);
 		}
 	}
 
@@ -405,8 +503,9 @@ class BenchmarkDataController extends Controller
 			foreach ($items as $index => $i) {
 				$validator = Validator::make($i->toArray(), [
 							'year' => 'required',
-							'quarter' => 'required',
-							'month' => 'required',
+							'type' => 'required',
+							'quarter' => 'required_if:type,quarter',
+							'month' => 'required_if:type,month',
 							'kpi_name' => 'required',
 							'company_code' => 'required',
 							'value' => 'required',
@@ -416,8 +515,8 @@ class BenchmarkDataController extends Controller
 		            $errors_validator[] = ['row' => $index + 2, 'errors' => $validator->errors()];
 		            return response()->json(['status' => 400, 'errors' => $errors_validator]);
 		        } else {
-
 					$insert = new BenchmarkData;
+					$insert->type = $i['type'];
 					$insert->year = $i['year'];
 					$insert->quarter = $i['quarter'];
 					$insert->month = $i['month'];
@@ -429,7 +528,7 @@ class BenchmarkDataController extends Controller
 					 try {
 	                    $insert->save();
 	                } catch (Exception $e) {
-	                    $errors[] = ['year' => $i['year'], 'quarter' => $i['quarter'], 'month'=>$i['month'], 'kpi_name' => $i['kpi_name'], 'errors' => $e];
+	                    $errors[] = ['year' => $i['year'], 'quarter' => $i['quarter'], 'month'=>$i['month'], 'kpi_name' => $i['kpi_name'], 'type' => $i['type'], 'errors' => $e];
 	                }
 	            }		
 			}
@@ -451,7 +550,7 @@ class BenchmarkDataController extends Controller
 		if($dCheck=='Swc4w8dQ88Wcd8')
 		{
 			$benchmark = DB::select("
-				SELECT year,quarter,month,kpi_name,company_code,value
+				SELECT type,year,quarter,month,kpi_name,company_code,value
 				FROM benchmark_data
 			");
 
@@ -464,7 +563,7 @@ class BenchmarkDataController extends Controller
 				{
 					$excel->sheet('Benchmark', function($sheet) use ($resultArray)
 				    {
-						$headings = array('year', 'quarter', 'month', 'kpi_name', 'company_code', 'value');
+						$headings = array('type', 'year', 'quarter', 'month', 'kpi_name', 'company_code', 'value');
 						$sheet->prependRow(1, $headings);
 				    });
 				})->download('xls');
