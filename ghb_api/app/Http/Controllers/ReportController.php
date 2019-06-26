@@ -160,7 +160,7 @@ class ReportController extends Controller
 				on e.position_id = p.position_id
 				Where e.emp_name like ?
 				and e.is_active = 1
-				Order by e.emp_name
+				Order by e.emp_code asc
 			", array('%'.$request->emp_name.'%'));
 		} else {
 			$items = DB::select("
@@ -173,7 +173,7 @@ class ReportController extends Controller
 				".$level_id."
 				".$org_id."
 				and e.is_active = 1
-				Order by e.emp_name
+				Order by e.emp_code asc
 			", array('%'.$request->emp_name.'%'));
 		}
 		return response()->json($items);
@@ -277,7 +277,7 @@ class ReportController extends Controller
 			";
 		
 		$qfooter = " GROUP BY air.item_id
-			ORDER BY air.item_id ";
+			ORDER BY kt.kpi_type_name asc ";
 		
 		if ($request->appraisal_type_id == 1) {
 			empty($request->appraisal_level) ?: ($query .= " and level_id = ? " AND $qinput[] = $request->appraisal_level);

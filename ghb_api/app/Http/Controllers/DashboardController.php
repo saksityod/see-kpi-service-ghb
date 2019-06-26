@@ -73,6 +73,7 @@ class DashboardController extends Controller
 			where b.district_flag = 1 and a.is_active = 1
 			) b
 			where a.org_code = b.parent_org_code	and a.is_active = 1
+			order by a.org_name asc
 		");
 		return response()->json($items);
 	}
@@ -87,6 +88,7 @@ class DashboardController extends Controller
 			where b.district_flag = 1		
 			and a.parent_org_code = ?
 			and a.is_active = 1
+			order by a.org_name asc
 		", array($request->org_code));
 		return response()->json($items);
 	}
@@ -363,7 +365,7 @@ class DashboardController extends Controller
 			".$KPI_type."
 			".$year."
 			GROUP BY air.item_id
-			ORDER BY air.item_id";
+			ORDER BY ai.item_name ASC";
 
 		$items = DB::select($query);
 		return response()->json($items);

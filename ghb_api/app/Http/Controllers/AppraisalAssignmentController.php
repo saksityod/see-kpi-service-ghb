@@ -197,7 +197,7 @@ class AppraisalAssignmentController extends Controller
 				Where position_name like ? 
 				and a.is_active = 1
 				and b.is_active = 1
-				Order by position_name			
+				Order by position_code asc			
 				limit 10
 			",array('%'.$request->position_name.'%'));
 		} else {
@@ -209,7 +209,7 @@ class AppraisalAssignmentController extends Controller
 				and position_name like ? 				
 				and a.is_active = 1
 				and b.is_active = 1
-				Order by position_name		
+				Order by position_code asc	
 				limit 10
 			", array($emp->emp_code,'%'.$request->position_name.'%'));
 		}
@@ -354,7 +354,7 @@ class AppraisalAssignmentController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by level_id			
+				Order by appraisal_level_name asc			
 			");
 		} else {
 			$items = DB::select("
@@ -364,7 +364,7 @@ class AppraisalAssignmentController extends Controller
 				and (e.chief_emp_code = ? or e.emp_code = ?)
 				and e.is_active = 1			
 				and al.is_hr = 0
-				Order by level_id	
+				Order by appraisal_level_name asc	
 			", array($emp->emp_code,$emp->emp_code));
 		}
 		
@@ -426,7 +426,7 @@ class AppraisalAssignmentController extends Controller
 				From employee 
 				Where emp_name like ? 
 				and is_active = 1
-				Order by emp_name			
+				Order by emp_code asc			
 			", array('%'.$request->emp_name.'%'));
 		} else {
 			$items = DB::select("
@@ -435,7 +435,7 @@ class AppraisalAssignmentController extends Controller
 				Where chief_emp_code = ?
 				And emp_name like ?
 				and is_active = 1
-				Order by emp_name	
+				Order by emp_code asc
 			", array($emp->emp_code,'%'.$request->emp_name.'%'));
 		}
 		return response()->json($items);
