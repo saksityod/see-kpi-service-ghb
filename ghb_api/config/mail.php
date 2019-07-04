@@ -54,7 +54,7 @@ return [
     |
     */
 
-    'from' => ['address' => null, 'name' => null],
+    'from' => ['address' => 'smart-kpi@ghb.co.th', 'name' => 'Smart-kpi System'],
 
     /*
     |--------------------------------------------------------------------------
