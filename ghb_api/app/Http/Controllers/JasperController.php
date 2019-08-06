@@ -24,6 +24,7 @@ class JasperController extends Controller
         $template_name = $request->template_name;
         $template_format = $request->template_format;
         $used_connection = $request->used_connection;
+		$path_jasper = $request->path_jasper;
         $is_inline = $request->inline;
 
         $db_connection = env("DB_CONNECTION");
@@ -74,7 +75,7 @@ class JasperController extends Controller
         $params = $params1;
         Log::info($params);
         */
-        $command = 'java -jar '.base_path('jasperStarter/lib/jasperstarter.jar').'  pr '.base_path('resources/jasper/'.$template_name.'.jasper')
+        $command = 'java -jar '.base_path('jasperStarter/lib/jasperstarter.jar').'  pr '.base_path('resources/jasper/'.$path_jasper.$template_name.'.jasper')
             .'  -f '.$template_format.'  -o '.base_path('resources/generate/'.$name_gen);
         //shell_exec('java -jar '.base_path('resources/JasperStarter/lib/jasperstarter.jar').'  pr /Users/imake/WORK/PROJECT/GJ/Jasper/jasper_service_api/resources/jasper/CherryTest.jasper  -f pdf  -o /Users/imake/WORK/PROJECT/GJ/Jasper/jasper_service_api/resources/jasper/CherryTest2');
         //shell_exec('java -jar '.base_path('vendor/cossou/jasperphp/src/JasperStarter/lib/jasperstarter.jar').'  pr /Users/imake/WORK/PROJECT/GJ/Jasper/jasper_service_api/resources/jasper/CherryTest.jasper  -f pdf  -o /Users/imake/WORK/PROJECT/GJ/Jasper/jasper_service_api/resources/jasper/CherryTest2');
