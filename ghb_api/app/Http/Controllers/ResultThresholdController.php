@@ -36,10 +36,35 @@ class ResultThresholdController extends Controller
 		}		
 
 		$items = DB::select("
-			select result_threshold_group_id, result_threshold_group_name, is_active
-			from result_threshold_group
-			where result_type = ?
-		", array($config->result_type));
+			select rtg.result_threshold_group_id, rtg.result_threshold_group_name, rtg.is_active,v.value_type_id,v.value_type_name
+			from result_threshold_group rtg
+			INNER JOIN value_type v ON rtg.value_type_id = v.value_type_id
+			where rtg.result_type = ?
+		", array($config->result_type)
+		);
+
+		foreach ($items as $i) {
+			$result_group = DB::select("
+			select v.value_type_id,v.value_type_name
+			from result_threshold_group rtg
+			INNER JOIN value_type v ON rtg.value_type_id = v.value_type_id
+			where rtg.result_threshold_group_id = ?
+			" ,array($i->result_threshold_group_id)
+			
+			);
+			$i->result_group = $result_group;
+			//return response()->json($result_group);
+			}
+		
+		return response()->json($items);
+	}
+
+	public function valuetype_list(){
+
+		$items = DB::select("
+			select value_type_id, value_type_name
+			from value_type 
+		");
 		
 		return response()->json($items);
 	}
@@ -53,6 +78,7 @@ class ResultThresholdController extends Controller
 		}		
 		
 		$validator = Validator::make($request->all(), [
+			'value_type_id' => 'required',
 			'result_threshold_group_name' => 'required|max:255',
 			'is_active' => 'required|boolean'
 		]);
@@ -62,10 +88,13 @@ class ResultThresholdController extends Controller
 		} else {
 			$item = new ResultThresholdGroup;
 			$item->result_threshold_group_name = $request->result_threshold_group_name;
+			$item->value_type_id = $request->value_type_id;
 			if ($request->is_active == 0) {
 				$item->is_active = 0;
 			} else {
-				DB::table('result_threshold_group')->update(['is_active' => 0]);
+				DB::table('result_threshold_group')
+				->Where('value_type_id','=',$request->value_type_id)
+				->update(['is_active' => 0]);
 				$item->is_active = 1;
 			}
 			$item->result_type = $config->result_type;
@@ -81,6 +110,7 @@ class ResultThresholdController extends Controller
 	{
 		try {
 			$item = ResultThresholdGroup::findOrFail($result_threshold_group_id);
+
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Result Threshold Group not found.']);
 		}
@@ -123,6 +153,7 @@ class ResultThresholdController extends Controller
 		}
 		
 		$validator = Validator::make($request->all(), [	
+			'value_type_id' => 'required',
 			'result_threshold_group_name' => 'required|max:255',
 			'is_active' => 'required|boolean',
 		]);
@@ -130,12 +161,15 @@ class ResultThresholdController extends Controller
 		if ($validator->fails()) {
 			return response()->json(['status' => 400, 'data' => $validator->errors()]);
 		} else {
+			$item->value_type_id = $request->value_type_id;
 			$item->result_threshold_group_name = $request->result_threshold_group_name;
 			if ($request->is_active == 0) {
 				$item->is_active = 0;
 			} else {
 				//DB::table('result_threshold_group')->update(['is_active' => 0]);
-				ResultThresholdGroup::where('result_threshold_group_id','!=',$result_threshold_group_id)->update(['is_active' => 0]);
+				ResultThresholdGroup::where('result_threshold_group_id','!=',$result_threshold_group_id)
+					->Where('value_type_id','=',$request->value_type_id)
+					->update(['is_active' => 0]);
 				$item->is_active = 1;
 				$item->save();
 			}

@@ -242,6 +242,7 @@ Route::group(['middleware' => 'cors'], function()
 	// Result Threshold Group //
 	Route::get('result_threshold/group', 'ResultThresholdController@group_list');
 	Route::post('result_threshold/group', 'ResultThresholdController@add_group');
+	Route::get('result_threshold/value_type', 'ResultThresholdController@valuetype_list');
 	Route::get('result_threshold/group/{result_threshold_group_id}', 'ResultThresholdController@show_group');
 	Route::patch('result_threshold/group/{result_threshold_group_id}', 'ResultThresholdController@edit_group');
 	Route::delete('result_threshold/group/{result_threshold_group_id}', 'ResultThresholdController@delete_group');	
