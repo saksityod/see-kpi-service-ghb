@@ -261,7 +261,11 @@ class CDSResultController extends Controller
 			" . $is_all_sql_org . $is_hr_sql;
 		
 		}
+	/* 
 /* 
+	/* 
+/* 
+	/* 
 	-- TOTO --
 		$query ="
 			SELECT DISTINCT
@@ -1196,6 +1200,225 @@ class CDSResultController extends Controller
 
 
 		return response()->json($result);
+	}
+
+
+	// Performance Tuning
+	public function index_v2(Request $request)
+	{
+		$employee = Employee::find(Auth::id());
+		$levelOfEmp = AppraisalLevel::find($employee->level_id); // $is_hr = $level->is_hr;
+		$orgOfEmp = Org::find($employee->org_id);
+		$childOrgOfEmp = Org::where('parent_org_code', $orgOfEmp->org_code)->get();
+		
+		$reEmp = array_unique($childOrgOfEmp->pluck('org_code')->toArray());
+		$orgList = array_unique($childOrgOfEmp->pluck('org_code')->toArray());
+
+		// convert array to comma string with single quotes.
+		$orgListStr = "'" . implode ( "', '", $orgList ) . "'";
+
+		do {				
+			empty($orgListStr) ? $orgListStr = "null" : null;
+			$emp_list = array();
+
+			$emp_items = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code in ({$in_emp})
+				and parent_org_code != org_code
+				and is_active = 1			
+				");
+
+			foreach ($emp_items as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}			
+
+			$emp_list = array_unique($emp_list);
+
+					// Get array keys
+			$arrayKeys = array_keys($emp_list);
+					// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+					//iterate array
+			$in_emp = '';
+			foreach($emp_list as $k => $v) {
+				if($k == $lastArrayKey) {
+							//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}		
+		} while (!empty($emp_list));		
+
+		while ($a <= 10) {
+			# code...
+		}
+
+		// $re_emp[] = $co->org_code;
+		// $re_emp = array_unique($re_emp);
+
+		// 		// Get array keys
+		// $arrayKeys = array_keys($re_emp);
+		// 		// Fetch last array key
+		// $lastArrayKey = array_pop($arrayKeys);
+		// 		//iterate array
+		// $in_emp = '';
+		// foreach($re_emp as $k => $v) {
+		// 	if($k == $lastArrayKey) {
+		// 				//during array iteration this condition states the last element.
+		// 		$in_emp .= "'" . $v . "'";
+		// 	} else {
+		// 		$in_emp .= "'" . $v . "'" . ',';
+		// 	}
+		// }				
+
+		// empty($in_emp) ? $in_emp = "null" : null;
+		
+		
+		// $all_emp = DB::select("
+		// 	SELECT sum(b.is_all_employee) count_no
+		// 	from employee a
+		// 	left outer join appraisal_level b
+		// 	on a.level_id = b.level_id
+		// 	where emp_code = ?
+		// ", array(Auth::id()));
+
+		
+		// if ($all_emp[0]->count_no > 0) {
+		// 	$is_all_sql = "";
+		// 	$is_all_sql_org = "";
+		// } else {
+		// 	$is_all_sql = " and (e.emp_code = '{$emp->emp_code}' or e.chief_emp_code = '{$emp->emp_code}') ";
+		// 	//$is_all_sql_org = " and (org.org_code = '{$org->org_code}' or org.parent_org_code = '{$org->org_code}') ";
+		// 	$is_all_sql_org = " and org.org_code in ({$in_emp})";
+		// }
+		
+		// if ($is_hr == 0) {
+		// 	$is_hr_sql = " and cds.is_hr = 0 ";
+		// } else {
+		// 	$is_hr_sql = "";
+		// }
+		
+		
+		// $qinput = array();
+
+		// try {
+		// 	$config = SystemConfiguration::firstOrFail();
+		// } catch (ModelNotFoundException $e) {
+		// 	return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
+		// }		
+		
+		
+		// $checkyear = DB::select("
+		// 	select 1
+		// 	from appraisal_period
+		// 	where appraisal_year = ?
+		// 	and date(?) between start_date and end_date		
+		// ", array($config->current_appraisal_year, $request->current_appraisal_year . str_pad($request->month_id,2,'0',STR_PAD_LEFT) . '01'));
+		
+		// if (empty($checkyear)) {
+		// 	return 'Appraisal Period not found for the Current Appraisal Year.';
+		// }
+		
+		
+		// if ($request->appraisal_type_id == 2) {
+		// 	$query = "
+		// 		select distinct r.level_id, al.appraisal_level_name, r.org_id, org.org_name, r.emp_id, e.emp_code, e.emp_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom_name, cr.cds_result_id, ifnull(cr.cds_value,'') as cds_value, {$request->current_appraisal_year} year, {$request->month_id} month
+		// 		from appraisal_item_result r
+		// 		left outer join employee e on r.emp_id = e.emp_id 
+		// 		inner join appraisal_item i on r.item_id = i.item_id
+		// 		inner join uom on uom.uom_id = i.uom_id
+		// 		left outer join appraisal_item_position p on i.item_id = p.item_id
+		// 		inner join kpi_cds_mapping m on i.item_id = m.item_id
+		// 		inner join cds on m.cds_id = cds.cds_id
+		// 		inner join appraisal_period ap on r.period_id = ap.period_id
+		// 		inner join system_config sys on ap.appraisal_year = sys.current_appraisal_year
+		// 		inner join emp_result er on r.emp_result_id = er.emp_result_id	
+		// 		left outer join position po on r.position_id = po.position_id
+		// 		left outer join org on r.org_id = org.org_id
+		// 		left outer join appraisal_level al on r.level_id = al.level_id
+		// 		left outer join cds_result cr on cds.cds_id = cr.cds_id
+		// 		and cr.emp_id = e.emp_id
+		// 		and r.org_id = cr.org_id
+		// 		and r.position_id = cr.position_id
+		// 	";
+		// 	empty($request->org_id) ?: ($query .= " And cr.org_id = " . $request->org_id);
+		// 	$query .= "
+		// 		and cr.year = {$request->current_appraisal_year}
+		// 		and cr.appraisal_month_no = {$request->month_id}
+		// 		and cr.appraisal_type_id = {$request->appraisal_type_id} ";
+		// 	empty($request->level_id) ?: ($query .= " And cr.level_id = ? " AND $qinput[] = $request->level_id);
+		// 	$query .= "
+		// 		where cds.is_sql = 0	
+		// 	" . $is_all_sql . $is_hr_sql;
+			
+		// 	empty($request->level_id) ?: ($query .= " And r.level_id = ? " AND $qinput[] = $request->level_id);
+		// 	empty($request->emp_id) ?: ($query .= " And e.emp_id = ? " AND $qinput[] = $request->emp_id);					
+			
+		// } else {
+		// 	$query = "
+		// 		select distinct r.level_id, al.appraisal_level_name, r.org_id, org.org_code, org.org_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom.uom_name, cr.cds_result_id, ifnull(cr.cds_value,'') as cds_value, {$request->current_appraisal_year} year, {$request->month_id} month
+		// 		from appraisal_item_result r
+		// 		inner join appraisal_item i on r.item_id = i.item_id
+		// 		inner join uom on uom.uom_id = i.uom_id
+		// 		left outer join appraisal_item_position p on i.item_id = p.item_id
+		// 		inner join kpi_cds_mapping m on i.item_id = m.item_id
+		// 		inner join cds on m.cds_id = cds.cds_id
+		// 		inner join appraisal_period ap on r.period_id = ap.period_id
+		// 		inner join system_config sys on ap.appraisal_year = sys.current_appraisal_year
+		// 		inner join emp_result er on r.emp_result_id = er.emp_result_id	
+		// 		left outer join position po on r.position_id = po.position_id
+		// 		left outer join org on r.org_id = org.org_id
+		// 		left outer join appraisal_level al on r.level_id = al.level_id
+		// 		left outer join cds_result cr on cds.cds_id = cr.cds_id
+		// 		and cr.org_id = org.org_id
+		// 		and r.org_id = cr.org_id
+		// 	";
+		// 	empty($request->org_id) ?: ($query .= " And cr.org_id = " . $request->org_id);
+		// 	$query .= "
+		// 		and cr.year = {$request->current_appraisal_year}
+		// 		and cr.appraisal_month_no = {$request->month_id}
+		// 		and cr.appraisal_type_id = {$request->appraisal_type_id}
+		// 		where cds.is_sql = 0	
+		// 	" . $is_all_sql_org . $is_hr_sql;
+		
+		// }
+		
+		// if (!empty($request->current_appraisal_year) && !empty($request->month_id)) {
+		// 	$current_date = $request->current_appraisal_year . str_pad($request->month_id,2,'0',STR_PAD_LEFT) . '01';
+		// 	$query .= " and date(?) between ap.start_date and ap.end_date ";
+		// 	$qinput[] = $current_date;
+		// }
+		
+		// empty($request->level_id) ?: ($query .= " And org.level_id = ? " AND $qinput[] = $request->level_id);
+		// empty($request->org_id) ?: ($query .= " And r.org_id = ? " AND $qinput[] = $request->org_id);
+		// empty($request->position_id) ?: ($query .= " And r.position_id = ? " AND $qinput[] = $request->position_id);
+		// empty($request->appraisal_type_id) ?: ($query .= " And er.appraisal_type_id = ? " AND $qinput[] = $request->appraisal_type_id);
+		
+		// $qfooter = " Order by r.emp_id, cds.cds_id ";
+			
+		
+		// $items = DB::select($query . $qfooter, $qinput);
+		
+		
+		// // Get the current page from the url if it's not set default to 1
+		// empty($request->page) ? $page = 1 : $page = $request->page;
+		
+		// // Number of items per page
+		// empty($request->rpp) ? $perPage = 10 : $perPage = $request->rpp;
+		
+		// $offSet = ($page * $perPage) - $perPage; // Start displaying items from this number
+
+		// // Get only the items you need using array_slice (only get 10 items since that's what you need)
+		// $itemsForCurrentPage = array_slice($items, $offSet, $perPage, false);
+		
+		// // Return the paginator with only 10 items but with the count of all items and set the it on the correct page
+		// $result = new LengthAwarePaginator($itemsForCurrentPage, count($items), $perPage, $page);
+
+
+		// return response()->json($result);
 	}
 	
 	public function update(Request $request)
