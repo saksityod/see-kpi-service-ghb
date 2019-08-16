@@ -8,6 +8,7 @@ use App\AppraisalItemResult;
 use App\AppraisalLevel;
 use App\EmpResultStage;
 use App\Employee;
+use App\EmpOrg;
 use App\Org;
 use App\ActionPlan;
 use App\Reason;
@@ -22,6 +23,7 @@ use Excel;
 use Config;
 use Mail;
 use Exception;
+use Log;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -254,8 +256,21 @@ class AppraisalController extends Controller
 			} while (!empty($emp_list));		
 
 			$re_emp[] = $co->org_code;
-			$re_emp = array_unique($re_emp);
 
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
+			$re_emp = array_unique($re_emp);
+			
 				// Get array keys
 			$arrayKeys = array_keys($re_emp);
 				// Fetch last array key
@@ -435,7 +450,7 @@ class AppraisalController extends Controller
 					$in_emp .= "'" . $v . "'" . ',';
 				}
 			}	
-
+			
 			do {				
 				empty($in_emp) ? $in_emp = "null" : null;
 
@@ -469,10 +484,24 @@ class AppraisalController extends Controller
 					} else {
 						$in_emp .= "'" . $v . "'" . ',';
 					}
-				}		
+				}	
+					
 			} while (!empty($emp_list));		
-
+			
 			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
 			$re_emp = array_unique($re_emp);
 
 					// Get array keys
@@ -488,7 +517,7 @@ class AppraisalController extends Controller
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
-			}				
+			}
 
 			empty($in_emp) ? $in_emp = "null" : null;
 
@@ -521,9 +550,9 @@ class AppraisalController extends Controller
 					select distinct level_id, appraisal_level_name
 					from appraisal_level
 					where level_id = 2
-					and is_hr = 0
+					and (1 = {$emp->is_show_corporate})
 					)appralsai_level
-					order by al.appraisal_level_name
+					order by appraisal_level_name
 				");
 			} else {
 				// $items = DB::select("
