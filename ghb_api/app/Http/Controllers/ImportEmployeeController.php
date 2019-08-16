@@ -402,6 +402,7 @@ class ImportEmployeeController extends Controller
 
 		try {
 			$item->delete();
+			EmpOrg::where('emp_id',$emp_id)->delete();
 		} catch (Exception $e) {
 			if ($e->errorInfo[1] == 1451) {
 				return response()->json(['status' => 400, 'data' => 'Cannot delete because this Employee is in use.']);
