@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\EmpLevel;
+use App\EmpOrg;
 use App\Employee;
 use App\Position;
 use App\Org;
@@ -169,6 +170,37 @@ class ImportEmployeeController extends Controller
 		return response()->json($items);
 	}
    
+	public function org_list(Request $request)
+    {
+	/* Format
+	{
+		"results": [
+			{
+			"id": 1,
+			"text": "Option 1"
+			},
+			{
+			"id": 2,
+			"text": "Option 2",
+			"selected": true
+			},
+			{
+			"id": 3,
+			"text": "Option 3",
+			"disabled": true
+			}
+		]
+	} */
+
+		$items = DB::select("
+			SELECT org_id id , org_name text, IF(is_active=1, false, true)  as disabled
+			FROM org
+			ORDER BY org_code
+		");
+		return response()->json($items);
+		return response()->json(['results' => $items]);				
+	}
+	
     public function sec_list(Request $request)
     {
 
@@ -230,7 +262,15 @@ class ImportEmployeeController extends Controller
 			$item = Employee::findOrFail($emp_id);
 			$position= Position::find($item->position_id);
 			empty($position) ? $position_name = null : $position_name = $position->position_name;
+			$item->multi_org;
+			$emp_org = EmpOrg::select(DB::raw('group_concat(org_id) as org_id'))
+            			->where('emp_id',$item->emp_id)
+            			->get();
+			if(!empty($emp_org)){
+				$item->multi_org = $emp_org[0]['org_id'] ;
+			}
 			$item->position_name = $position_name;
+			
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Employee not found.']);
 		}
@@ -285,6 +325,18 @@ class ImportEmployeeController extends Controller
 			$item->is_active = $request->is_active;					
 			$item->updated_by = Auth::id();
 			$item->save();
+			
+			EmpOrg::where('emp_id',$item->emp_id)->delete();
+			if (!empty($request->multi_org)) {
+				foreach ($request->multi_org as $i) {
+					$org = new EmpOrg;
+					$org->emp_id = $item->emp_id;
+					$org->org_id = $i;
+					$org->created_by = Auth::id();
+					$org->updated_by = Auth::id();
+					$org->save();
+				}	
+			}
 		}		
 		
 		return response()->json(['status' => 200, 'data' => $item]);

@@ -66,6 +66,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('import_employee/role_list','ImportEmployeeController@role_list');
 	Route::get('import_employee/dep_list','ImportEmployeeController@dep_list');
 	Route::get('import_employee/sec_list','ImportEmployeeController@sec_list');
+	Route::get('import_employee/org_list','ImportEmployeeController@org_list');
 	Route::get('import_employee/auto_position_name','ImportEmployeeController@auto_position_name');
 	Route::post('import_employee/auto_employee_name','ImportEmployeeController@auto_employee_name');
 	Route::get('import_employee/{emp_code}/role', 'ImportEmployeeController@show_role');
