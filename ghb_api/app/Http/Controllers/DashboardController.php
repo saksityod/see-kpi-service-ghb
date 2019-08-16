@@ -2326,54 +2326,63 @@ class DashboardController extends Controller
 				", array($o->item_result_id));
 				
 				$action_groups = array();
-				foreach ($action_plans as $a) {
-					$action_item = [
-						[
-						   "id" => $o->item_result_id.'-'.$a->month_name."-Base",
-						   "type" => "rectangle",
-						   "radius" => "2",
-						   "alpha" => "90",
-						   "fillColor" => "#7FC31C",
-						   "link" => "javascript:void(0)",
-						   "x" => '$dataset.0.set.'.$a->month_no.'.x-15',
-						   "y" => '$dataset.0.set.'.$a->month_no.'.starty-15',
-						   "tox" => '$dataset.0.set.'.$a->month_no.'.x+15',
-						   "toy" => '$dataset.0.set.'.$a->month_no.'.starty-30'
-						],
-						[
-						   "id" => $o->item_result_id.'-'.$a->month_name."Triangle",
-						   "type" => "polygon",
-						   "sides" => "3",
-						   "startangle" => "270",
-						   "alpha" => "90",
-						   "fillColor" => "#7FC31C",
-						   "link" => "javascript:void(0)",
-						   "x" => '$dataset.0.set.'.$a->month_no.'.x',
-						   "y" => '$dataset.0.set.'.$a->month_no.'.starty-18',
-						   "radius" => "11",
-						],		
-						[
-						   "id" => $o->item_result_id.'-'.$a->month_name."-Label",
-						   "type" => "Text",
-						   "fontSize" => "10",
-						   "link" => "javascript:void(0)",
-						   "bold" => "1",
-						   "fillcolor" => "#ffffff",
-						   "text" => "SIP",
-						   "x" => '$dataset.0.set.'.$a->month_no.'.x-',
-						   "y" => '$dataset.0.set.'.$a->month_no.'.starty - 23'
-						]
-					];
-					
-					$action_groups[] = [
-						'id' => $o->item_result_id.'-'.$a->month_name,
-						'items' => $action_item
-					];	
+				foreach ($action_plans as $a) {		// เดือนที่มีข้อมูล
+
+					foreach ($items as $index => $i) { 	// เดือนที่แสดงใน bar chart
+
+						if($a->month_name == $i->appraisal_month_name){		// เปรียบเทียบเดือนที่มีข้อมูล และเดือนที่แสดงใน chart เพื่อหาตำแหน่ง index ของเดือนใน chart
+
+							$action_item = [
+								[
+								   "id" => $o->item_result_id.'-'.$a->month_name."-Base",
+								   "type" => "rectangle",
+								   "radius" => "2",
+								   "alpha" => "90",
+								   "fillColor" => "#7FC31C",
+								   "link" => "javascript:void(0)",
+								   "x" => '$dataset.0.set.'.$index.'.x-15',
+								   "y" => '$dataset.0.set.'.$index.'.starty-15',
+								   "tox" => '$dataset.0.set.'.$index.'.x+15',
+								   "toy" => '$dataset.0.set.'.$index.'.starty-30'
+								],
+								[
+								   "id" => $o->item_result_id.'-'.$a->month_name."Triangle",
+								   "type" => "polygon",
+								   "sides" => "3",
+								   "startangle" => "270",
+								   "alpha" => "90",
+								   "fillColor" => "#7FC31C",
+								   "link" => "javascript:void(0)",
+								   "x" => '$dataset.0.set.'.$index.'.x',
+								   "y" => '$dataset.0.set.'.$index.'.starty-18',
+								   "radius" => "11",
+								],		
+								[
+								   "id" => $o->item_result_id.'-'.$a->month_name."-Label",
+								   "type" => "Text",
+								   "fontSize" => "10",
+								   "link" => "javascript:void(0)",
+								   "bold" => "1",
+								   "fillcolor" => "#ffffff",
+								   "text" => "SIP",
+								   "x" => '$dataset.0.set.'.$index.'.x-',
+								   "y" => '$dataset.0.set.'.$index.'.starty - 23'
+								]
+							];
+						
+						$action_groups[] = [
+							'id' => $o->item_result_id.'-'.$a->month_name,
+							'items' => $action_item
+						];
+
+						}	// end if month_name
+					}// end foreach $items
 				}		
 				
 				$o->annotations = [
 					"drawImmediately" => "1",
                     "showbelow" => "1",
+                    "showShadow" => "1",
 					"groups" => $action_groups
 				];
 				

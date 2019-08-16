@@ -12,6 +12,7 @@ use File;
 use Validator;
 use Excel;
 use Exception;
+use Log;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -201,6 +202,19 @@ class OrgController extends Controller
 			} while (!empty($emp_list));		
 			
 			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
 			$re_emp = array_unique($re_emp);
 			
 			// Get array keys
@@ -315,7 +329,7 @@ class OrgController extends Controller
                     FROM
                         org 
                     WHERE
-                        parent_org_code IN ( { $in_emp } ) 
+                        parent_org_code IN ( {$in_emp} ) 
                         AND parent_org_code != org_code 
                         AND is_active = 1	
 				");
@@ -339,6 +353,19 @@ class OrgController extends Controller
 			} while (!empty($emp_list));		
 			
 			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
 			$re_emp = array_unique($re_emp);
 			
 			$arrayKeys = array_keys($re_emp);			// Get array keys
@@ -366,7 +393,7 @@ class OrgController extends Controller
 				LEFT OUTER JOIN appraisal_level c ON a.level_id = c.level_id
 				LEFT OUTER JOIN province d ON a.province_code = d.province_code 
 			WHERE 1=1
-				a.org_code IN ( { $in_emp } ) ".$level." 
+				AND a.org_code IN ( {$in_emp} ) ".$level." 
 			ORDER BY
 				a.org_name ASC
 			
@@ -682,6 +709,19 @@ class OrgController extends Controller
 			} while (!empty($emp_list));		
 
 			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
 			$re_emp = array_unique($re_emp);
 
 					// Get array keys
@@ -700,7 +740,7 @@ class OrgController extends Controller
 			}				
 
 			empty($in_emp) ? $in_emp = "null" : null;
-
+			
 			if($all_org[0]->count_no > 0) {
 				if(empty($request->level_id)) {
 					$items = DB::select("
