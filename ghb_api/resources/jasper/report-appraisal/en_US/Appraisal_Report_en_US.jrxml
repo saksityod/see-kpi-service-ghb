@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.9.0.final using JasperReports Library version 6.9.0-cb8f9004be492ccc537180b49c026951f4220bf3  -->
+<!-- Created with Jaspersoft Studio version 6.5.1.final using JasperReports Library version 5.5.2  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Appraisal_Report" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoPages" columnWidth="822" leftMargin="10" rightMargin="10" topMargin="10" bottomMargin="10" isSummaryWithPageHeaderAndFooter="true" uuid="06b504be-999f-4bff-8a47-9cd206daf9a0">
 	<property name="ireport.zoom" value="1.2100000000000255"/>
 	<property name="ireport.x" value="0"/>
 	<property name="ireport.y" value="0"/>
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="see-kpi-ghb"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="see-kpi-ghb4"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<parameter name="param_year" class="java.lang.String">
 		<defaultValueExpression><![CDATA[2017]]></defaultValueExpression>
@@ -34,6 +34,9 @@
 ,main.target_value
 ,main.actual_value
 ,main.actual_target
+,main.score
+
+,main.sumscore
 ,concat('#',case
 	when atrt.color_code is null and actual_target < mint.min_begin then mint.min_color_code
 	when atrt.color_code is null and actual_target > maxt.max_end then maxt.max_color_code
@@ -66,7 +69,9 @@ SELECT air.emp_result_id,
 		air.actual_value,
 		air.percent_achievement actual_target,
 		air.forecast_value,
-		air.percent_forecast actual_forecast
+		air.percent_forecast actual_forecast,
+		air.score
+		,sscore.sumscore
 		FROM appraisal_item_result air
 		inner join appraisal_item ai on ai.item_id = air.item_id
 		inner join kpi_type kt on kt.kpi_type_id = ai.kpi_type_id
@@ -75,6 +80,16 @@ SELECT air.emp_result_id,
 		inner join appraisal_level al on al.level_id = air.level_id
 		inner join org on org.org_id = air.org_id
 		inner join emp_result ere on ere.emp_result_id = air.emp_result_id
+		inner join structure_result sr on ere.emp_result_id = sr.emp_result_id
+		INNER JOIN (SELECT (SUM(air.weigh_score)/100)sumscore,air.emp_result_id, per.perspective_id,air.org_id , air.level_id
+								FROM appraisal_item_result air 
+								inner join appraisal_item ai on ai.item_id = air.item_id
+								inner join perspective per on per.perspective_id = ai.perspective_id 
+								GROUP BY air.org_id , air.level_id,per.perspective_id,air.emp_result_id ) sscore 
+				on air.level_id = sscore.level_id 
+				and air.org_id = sscore.org_id 
+				and per.perspective_id = sscore.perspective_id 
+				and air.emp_result_id = sscore.emp_result_id 
 		where air.period_id = $P{param_period}
 		and ere.appraisal_type_id = 1
 		and (air.level_id = $P{param_level} or 'ALL' = $P{param_level})
@@ -164,48 +179,66 @@ order by main.level_id
 	</queryString>
 	<field name="appraisal_level_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.label" value="appraisal_level_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_level"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="org_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.label" value="org_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="org"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="perspective_id" class="java.lang.Integer">
 		<property name="com.jaspersoft.studio.field.label" value="perspective_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="perspective"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="perspective_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.label" value="perspective_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="perspective"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="item_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.label" value="item_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_item_result"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="uom_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.label" value="uom_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="uom"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="target_value" class="java.math.BigDecimal">
 		<property name="com.jaspersoft.studio.field.label" value="target_value"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_item_result"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="actual_value" class="java.math.BigDecimal">
 		<property name="com.jaspersoft.studio.field.label" value="actual_value"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_item_result"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="actual_target" class="java.math.BigDecimal">
 		<property name="com.jaspersoft.studio.field.label" value="actual_target"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_item_result"/>
+	</field>
+	<field name="score" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.label" value="score"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_item_result"/>
+	</field>
+	<field name="sumscore" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.label" value="sumscore"/>
 	</field>
 	<field name="actual_target_color_code" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.label" value="actual_target_color_code"/>
 	</field>
 	<field name="forecast_value" class="java.math.BigDecimal">
 		<property name="com.jaspersoft.studio.field.label" value="forecast_value"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_item_result"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="actual_forecast" class="java.math.BigDecimal">
 		<property name="com.jaspersoft.studio.field.label" value="actual_forecast"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_item_result"/>
 	</field>
 	<field name="actual_forecast_color_code" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.label" value="actual_forecast_color_code"/>
@@ -215,9 +248,11 @@ order by main.level_id
 	</field>
 	<field name="level_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.label" value="level_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_level"/>
 	</field>
 	<field name="item_result_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.label" value="item_result_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="appraisal_item_result"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
 	<field name="reason" class="java.lang.String">
@@ -251,7 +286,7 @@ order by main.level_id
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
 					</textElement>
-					<text><![CDATA[% Forecast]]></text>
+					<text><![CDATA[Score comparison 5 goals]]></text>
 				</staticText>
 				<textField>
 					<reportElement mode="Opaque" x="1" y="8" width="820" height="36" forecolor="#000000" backcolor="#FFBF00" uuid="2fdffc8a-7dd3-4e1c-8c93-f5c741377c19"/>
@@ -348,6 +383,38 @@ order by main.level_id
 				</staticText>
 			</band>
 		</groupHeader>
+		<groupFooter>
+			<band height="19">
+				<staticText>
+					<reportElement mode="Transparent" x="653" y="0" width="79" height="19" backcolor="#FFDC73" uuid="369dc5d1-7f9b-4740-8c99-c33ba73d63cc"/>
+					<box rightPadding="3">
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement textAlignment="Right" verticalAlignment="Middle">
+						<font fontName="TH SarabunPSK" size="15" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total score]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00#;#,##0.00#-">
+					<reportElement stretchType="RelativeToBandHeight" mode="Opaque" x="732" y="0" width="89" height="19" backcolor="#FFFFFF" uuid="ecfef03d-7edc-490f-ae3b-6539ae4e2a4a"/>
+					<box>
+						<topPen lineWidth="0.75"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.75"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Right" verticalAlignment="Top">
+						<font fontName="TH SarabunPSK" size="14" isBold="true"/>
+						<paragraph rightIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{sumscore}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
 	</group>
 	<group name="item_name" keepTogether="true">
 		<groupExpression><![CDATA[$F{item_name}]]></groupExpression>
@@ -426,9 +493,7 @@ order by main.level_id
 					<textFieldExpression><![CDATA[String.format("%.2f",$F{actual_target})]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement stretchType="RelativeToBandHeight" mode="Opaque" x="732" y="0" width="89" height="19" backcolor="#FFFFFF" uuid="6eb243db-3bb9-4fc0-aab3-b67c745d196e">
-						<propertyExpression name="net.sf.jasperreports.style.backcolor"><![CDATA[$F{actual_forecast_color_code}]]></propertyExpression>
-					</reportElement>
+					<reportElement stretchType="RelativeToBandHeight" mode="Opaque" x="732" y="0" width="89" height="19" backcolor="#FFFFFF" uuid="6eb243db-3bb9-4fc0-aab3-b67c745d196e"/>
 					<box>
 						<topPen lineWidth="0.75"/>
 						<leftPen lineWidth="1.0"/>
@@ -439,7 +504,7 @@ order by main.level_id
 						<font fontName="TH SarabunPSK" size="14" isBold="true"/>
 						<paragraph rightIndent="5"/>
 					</textElement>
-					<textFieldExpression><![CDATA[String.format("%.2f",$F{actual_forecast})]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$F{score}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
 					<reportElement stretchType="RelativeToBandHeight" x="653" y="0" width="79" height="19" uuid="0ea873fd-303a-4490-a6f1-59a3a0f268cc"/>
@@ -501,7 +566,7 @@ order by main.level_id
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font fontName="TH SarabunPSK" size="18" isBold="true" pdfEncoding="Identity-H" isPdfEmbedded="false"/>
 				</textElement>
-				<textFieldExpression><![CDATA["Reports of indicators based on Balance Scorecard : BSC\n"+
+				<textFieldExpression><![CDATA["Report Performance Tracking \n"+
 "Year : "+$P{param_year}+"  Level : "+$F{appraisal_level_name}+"  Organization : "+$F{org_name}+"\n"+
 "Date "+ $F{show_date}]]></textFieldExpression>
 			</textField>
