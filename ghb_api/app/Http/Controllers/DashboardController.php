@@ -716,7 +716,7 @@ class DashboardController extends Controller
 				SELECT begin_threshold, end_threshold, color_code, result_type
 				FROM result_threshold
 				WHERE result_threshold_group_id = (
-					SELECT MAX(er.result_threshold_group_id) result_threshold_group_id
+					SELECT MAX(air.result_threshold_group_id) result_threshold_group_id
 					FROM appraisal_item_result air
 					INNER JOIN emp_result er ON er.emp_result_id = air.emp_result_id
 					INNER JOIN appraisal_period ap ON ap.period_id = air.period_id
@@ -1945,7 +1945,7 @@ class DashboardController extends Controller
 				$org_list = DB::select("
 				SELECT
 					a.org_id ,a.emp_id ,g.emp_name org_name, e.item_name ,f.perspective_name ,u.uom_name,
-					c.result_threshold_group_id ,b.item_result_id, b.threshold_group_id ,e.is_show_variance,
+					b.result_threshold_group_id ,b.item_result_id, b.threshold_group_id ,e.is_show_variance,
 					CASE
 						WHEN DATE_FORMAT( MAX( a.etl_dttm ), '%Y-%m' ) > DATE_FORMAT( CONCAT( a.YEAR, '-', a.appraisal_month_no, '-', '01' ), '%Y-%m' ) 
 						THEN MAX( cds.etl_dttm ) 
@@ -1975,7 +1975,7 @@ class DashboardController extends Controller
 					AND c.period_id = ? 
 				GROUP BY
 					a.org_id, a.emp_id, g.emp_name, org_name, e.item_name, f.perspective_name,
-					u.uom_name, c.result_threshold_group_id, b.item_result_id, e.is_show_variance 
+					u.uom_name, b.result_threshold_group_id, b.item_result_id, e.is_show_variance 
 				ORDER BY
 					b.percent_achievement DESC,
 					a.org_id ASC,
@@ -1985,7 +1985,7 @@ class DashboardController extends Controller
 				$org_list = DB::select("
 				SELECT
 					a.org_id, a.emp_id, d.org_name, e.item_name, f.perspective_name,
-					u.uom_name, c.result_threshold_group_id, b.item_result_id,
+					u.uom_name, b.result_threshold_group_id, b.item_result_id,
 					b.threshold_group_id, e.is_show_variance,
 					CASE
 						WHEN DATE_FORMAT( MAX( a.etl_dttm ), '%Y-%m' ) > DATE_FORMAT( CONCAT( a.YEAR, '-', a.appraisal_month_no, '-', '01' ), '%Y-%m' ) 
@@ -2015,7 +2015,7 @@ class DashboardController extends Controller
 					AND c.period_id = ? 
 				GROUP BY
 					a.org_id, a.emp_id, d.org_name, e.item_name,
-					f.perspective_name, u.uom_name, c.result_threshold_group_id,
+					f.perspective_name, u.uom_name, b.result_threshold_group_id,
 					b.item_result_id, e.is_show_variance 
 				ORDER BY
 					b.percent_achievement DESC,
@@ -2403,7 +2403,7 @@ class DashboardController extends Controller
 				$org_list = DB::select("
 					select * from
 					(
-						select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
+						select e.org_id, d.emp_id, i.emp_name org_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
 						from monthly_appraisal_item_result a
 						left outer join appraisal_period b
 						on a.period_id = b.period_id
@@ -2434,9 +2434,9 @@ class DashboardController extends Controller
 						and a.level_id = ?
 						and a.org_id = ?
 						" . $position_query . "
-						group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+						group by e.org_id, d.emp_id, i.emp_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
 						union all
-						select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
+						select e.org_id, d.emp_id, i.emp_name org_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
 						from monthly_appraisal_item_result a
 						left outer join appraisal_period b
 						on a.period_id = b.period_id
@@ -2465,7 +2465,7 @@ class DashboardController extends Controller
 						and b.appraisal_year = ?
 						and f.appraisal_type_id = ?
 						and i.chief_emp_code = ?
-						group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+						group by e.org_id, d.emp_id, i.emp_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
 					)d1
 					order by percent_achievement desc
 				",array($period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $emp->emp_code, $request->level_id, $request->org_id,$period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $emp->emp_code));
@@ -2475,7 +2475,7 @@ class DashboardController extends Controller
 				$org = Org::find($request->org_id);
 				$period = AppraisalPeriod::find($request->period_id);
 				$org_list = DB::select("
-					select e.org_id, d.emp_id, e.org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm
+					select e.org_id, d.emp_id, e.org_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm
 					from monthly_appraisal_item_result a
 					left outer join appraisal_period b
 					on a.period_id = b.period_id
@@ -2501,7 +2501,7 @@ class DashboardController extends Controller
 					and b.appraisal_year = ?
 					and f.appraisal_type_id = ?
 					and (e.org_code = ? or e.parent_org_code = ?)
-					group by e.org_id, d.emp_id, e.org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+					group by e.org_id, d.emp_id, e.org_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
 					order by d.percent_achievement desc
 				",array($period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $org->org_code, $org->org_code));
 			}
