@@ -2211,10 +2211,8 @@ class AppraisalController extends Controller
 		$result_threshold_color = DB::select("
 			select begin_threshold, end_threshold, color_code
 			from appraisal_item_result a
-			left outer join emp_result b
-			on a.emp_result_id = b.emp_result_id
 			left outer join result_threshold c
-			on b.result_threshold_group_id = c.result_threshold_group_id
+			on a.result_threshold_group_id = c.result_threshold_group_id
 			where a.item_result_id = ?
 			order by begin_threshold desc		
 		", array($item_result_id));
