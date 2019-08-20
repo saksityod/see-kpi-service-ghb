@@ -703,9 +703,11 @@ class ImportAssignmentController extends Controller
       // Get active threshold group id
       $thresholdGroupId = 0;
       $thresholdGroup = DB::select("
-        SELECT result_threshold_group_id
-        FROM result_threshold_group
-        WHERE is_active = 1
+        SELECT rtg.result_threshold_group_id
+        FROM result_threshold_group rtg
+        inner join value_type v on rtg.value_type_id = v.value_type_id
+        WHERE rtg.is_active = 1
+        and v.value_type_id = 1
         LIMIT 1"
       );
       foreach ($thresholdGroup as $value) {
@@ -896,7 +898,19 @@ class ImportAssignmentController extends Controller
               foreach ($itemResultExist as $value) {
                 $existItemResultId = $value->item_result_id;
               }
-
+              // Get active threshold group id
+              $itemthresholdGroupId = 0;
+              $itemthresholdGroup = DB::select("
+                SELECT rtg.result_threshold_group_id
+                FROM result_threshold_group rtg
+                inner join appraisal_item ai on rtg.value_type_id = ai.value_type_id
+                WHERE rtg.is_active = 1
+                and rtg.value_type_id = ai.value_type_id
+                LIMIT 1"
+              );
+              foreach ($itemthresholdGroup as $value) {
+                $itemthresholdGroupId = $value->result_threshold_group_id;
+              }
               //-- Checking if record exists in appraisal_item_result.
               if (empty($itemResultExist)) {
                 //---- Insert @appraisal_item_result
@@ -926,6 +940,7 @@ class ImportAssignmentController extends Controller
                 $appraisalItemResult->over_value = 0;
                 $appraisalItemResult->score = 0;
                 $appraisalItemResult->threshold_group_id = $thresholdGroupId;
+                $appraisalItemResult->result_threshold_group_id = $itemthresholdGroupId;
                 $appraisalItemResult->weight_percent = (empty($row->weight)) ? "0": $row->weight;
                 $appraisalItemResult->weigh_score = "0";
                 $appraisalItemResult->structure_weight_percent = (empty($criteriaInfoQry)) ? "0" : $criteriaInfoQry[0]->weight_percent;
@@ -960,6 +975,7 @@ class ImportAssignmentController extends Controller
                   "target_value" => $row->target,
                   "max_value" => $row->max_value,
                   "threshold_group_id" => $thresholdGroupId,
+                  "result_threshold_group_id" => $itemthresholdGroupId,
                   "weight_percent" => (empty($row->weight)) ? "0": $row->weight,
                   //"weigh_score" => "0",
                   "structure_weight_percent" => (empty($criteriaInfoQry)) ? "0" : $criteriaInfoQry[0]->weight_percent,
