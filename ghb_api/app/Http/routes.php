@@ -66,7 +66,6 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('import_employee/role_list','ImportEmployeeController@role_list');
 	Route::get('import_employee/dep_list','ImportEmployeeController@dep_list');
 	Route::get('import_employee/sec_list','ImportEmployeeController@sec_list');
-	Route::get('import_employee/org_list','ImportEmployeeController@org_list');
 	Route::get('import_employee/auto_position_name','ImportEmployeeController@auto_position_name');
 	Route::post('import_employee/auto_employee_name','ImportEmployeeController@auto_employee_name');
 	Route::get('import_employee/{emp_code}/role', 'ImportEmployeeController@show_role');
@@ -104,7 +103,7 @@ Route::group(['middleware' => 'cors'], function()
 	// Appraisal Assignment //
 	Route::get('appraisal_assignment/appraisal_type_list', 'AppraisalAssignmentController@appraisal_type_list');
 	Route::post('appraisal_assignment/auto_position_name', 'AppraisalAssignmentController@auto_position_name');
-	Route::get('appraisal_assignment/al_list', 'AppraisalController@al_list');
+	Route::get('appraisal_assignment/al_list', 'AppraisalAssignmentController@al_list');
 	Route::get('appraisal_assignment/period_list', 'AppraisalAssignmentController@period_list');
 	Route::get('appraisal_assignment/frequency_list', 'AppraisalAssignmentController@frequency_list');
 	Route::post('appraisal_assignment/auto_employee_name', 'AppraisalAssignmentController@auto_employee_name');
@@ -209,6 +208,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('org/parent_list', 'OrgController@parent_list');
 	Route::get('org/province_list', 'OrgController@province_list');
 	Route::get('org/al_list', 'OrgController@al_list');
+	Route::get('org/org_kpi', 'OrgController@org_kpi');
 	Route::post('org/master', 'OrgController@store');
 	Route::post('org/master/import', 'OrgController@import');
 	Route::patch('org/role', 'OrgController@batch_role');
