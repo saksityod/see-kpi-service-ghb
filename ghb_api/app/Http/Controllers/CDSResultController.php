@@ -1090,6 +1090,8 @@ class CDSResultController extends Controller
 					AND cr.cds_id = cds.cds_id
 					AND date(".$current_date.") BETWEEN ap.start_date AND ap.end_date
 				WHERE cr.cds_result_id = ".$cds_result_id." 
+				AND air.item_desc IS NOT NULL
+				AND air.item_desc != ''
 				GROUP BY ai.item_id, air.item_desc
 				ORDER BY ap.period_id, ai.item_id, air.item_desc ");
 
@@ -1114,6 +1116,8 @@ class CDSResultController extends Controller
 					AND cr.position_id = air.position_id
 					AND date(".$current_date.") BETWEEN ap.start_date AND ap.end_date
 				WHERE cr.cds_result_id = ".$cds_result_id." 
+				AND air.item_desc IS NOT NULL
+				AND air.item_desc != ''
 				GROUP BY ai.item_id, air.item_desc
 				ORDER BY ap.period_id, ai.item_id, air.item_desc ");
 
@@ -1407,11 +1411,7 @@ class CDSResultController extends Controller
 					, ".$is_edit_forecast." as is_edit_forecast
 					, ".$is_edit_forecast_bu." as is_edit_forecast_bu
 					, ".$is_edit_cds_value." as is_edit_cds_value
-					, (SELECT count(km.cds_id)
-						FROM kpi_cds_mapping km
-						WHERE km.cds_id = cr.cds_id
-						AND km.item_id = r.item_id
-					) as is_item_desc
+					, SUM(COALESCE(dsc.item_desc, 0)) as is_item_desc
 				from appraisal_item_result r
 				left outer join employee e on r.emp_id = e.emp_id 
 				inner join appraisal_item i on r.item_id = i.item_id
@@ -1437,11 +1437,21 @@ class CDSResultController extends Controller
 				and cr.appraisal_type_id = {$request->appraisal_type_id} ";
 			empty($request->level_id) ?: ($query .= " And cr.level_id = ? " AND $qinput[] = $request->level_id);
 			$query .= "
+				LEFT JOIN (
+					SELECT (CASE WHEN ISNULL(air.item_desc) OR air.item_desc = '' THEN 0 ELSE 1 END) item_desc
+					, air.item_result_id
+					, km.cds_id
+					FROM kpi_cds_mapping km
+					INNER JOIN appraisal_item_result air ON km.item_id = air.item_id
+				) dsc ON dsc.item_result_id = r.item_result_id
+					AND dsc.cds_id = cr.cds_id
 				where cds.is_sql = 0	
 			" . $is_all_sql . $is_hr_sql;
 			
 			empty($request->level_id) ?: ($query .= " And r.level_id = ? " AND $qinput[] = $request->level_id);
-			empty($request->emp_id) ?: ($query .= " And e.emp_id = ? " AND $qinput[] = $request->emp_id);					
+			empty($request->emp_id) ?: ($query .= " And e.emp_id = ? " AND $qinput[] = $request->emp_id);
+
+			$qgroup = "GROUP BY r.level_id, al.appraisal_level_name, r.org_id, org.org_name, r.emp_id, e.emp_code, e.emp_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom_name, cr.cds_result_id, ifnull(cr.cds_value,''), ifnull(cr.corporate_forecast_value,''), ifnull(cr.bu_forecast_value,'')";					
 			
 		} else {
 			$query = "
@@ -1453,11 +1463,7 @@ class CDSResultController extends Controller
 					, ".$is_edit_forecast." as is_edit_forecast
 					, ".$is_edit_forecast_bu." as is_edit_forecast_bu
 					, ".$is_edit_cds_value." as is_edit_cds_value
-					, (SELECT count(km.cds_id)
-						FROM kpi_cds_mapping km
-						WHERE km.cds_id = cr.cds_id
-						AND km.item_id = r.item_id
-					) as is_item_desc
+					, SUM(COALESCE(dsc.item_desc, 0)) as is_item_desc
 				from appraisal_item_result r
 				inner join appraisal_item i on r.item_id = i.item_id
 				inner join uom on uom.uom_id = i.uom_id
@@ -1473,14 +1479,26 @@ class CDSResultController extends Controller
 				left outer join cds_result cr on cds.cds_id = cr.cds_id
 				and cr.org_id = org.org_id
 				and r.org_id = cr.org_id
+
 			";
 			empty($request->org_id) ?: ($query .= " And cr.org_id = " . $request->org_id);
+
 			$query .= "
 				and cr.year = {$request->current_appraisal_year}
 				and cr.appraisal_month_no = {$request->month_id}
 				and cr.appraisal_type_id = {$request->appraisal_type_id}
+				LEFT JOIN (
+					SELECT (CASE WHEN ISNULL(air.item_desc) OR air.item_desc = '' THEN 0 ELSE 1 END) item_desc
+					, air.item_result_id
+					, km.cds_id
+					FROM kpi_cds_mapping km
+					INNER JOIN appraisal_item_result air ON km.item_id = air.item_id
+				) dsc ON dsc.item_result_id = r.item_result_id
+					AND dsc.cds_id = cr.cds_id
 				where cds.is_sql = 0	
 			" . $is_all_sql_org . $is_hr_sql;
+
+			$qgroup = "GROUP BY r.level_id, al.appraisal_level_name, r.org_id, org.org_code, org.org_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom.uom_name, cr.cds_result_id, ifnull(cr.cds_value,''), ifnull(cr.corporate_forecast_value,''), ifnull(cr.bu_forecast_value,'')";
 		
 		}
 		
@@ -1498,7 +1516,7 @@ class CDSResultController extends Controller
 		$qfooter = " Order by r.emp_id, cds.cds_id ";
 			
 		
-		$items = DB::select($query . $qfooter, $qinput);
+		$items = DB::select($query .$qgroup . $qfooter, $qinput);
 		
 		
 		// Get the current page from the url if it's not set default to 1
