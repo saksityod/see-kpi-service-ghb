@@ -1025,12 +1025,12 @@ public function org_kpi(Request $request)
 			where emp_code = ?
 		", array(Auth::id()));
 		
-		empty($request->level_id) ? $level = "" : $level = " and a.level_id = " . $request->level_id . " ";
-		empty($request->org_code) ? $org = "" : $org = " and a.org_code = " . $request->org_code . " ";
+		// empty($request->level_id) ? $level = "" : $level = " and a.level_id = " . $request->level_id . " ";
+		// empty($request->org_code) ? $org = "" : $org = " and a.org_code = " . $request->org_code . " ";
 		
 		if ($all_emp[0]->count_no > 0) {
 			$items = DB::select("
-			SELECT
+						SELECT
 				a.org_id ,a.org_name ,a.org_code ,a.org_abbr ,a.is_active ,b.org_name parent_org_name,
 				a.parent_org_code ,a.level_id ,c.appraisal_level_name,
 				CASE WHEN a.longitude = 0 THEN '' ELSE a.longitude END longitude,
@@ -1041,8 +1041,6 @@ public function org_kpi(Request $request)
 				LEFT OUTER JOIN org b ON b.org_code = a.parent_org_code
 				LEFT OUTER JOIN appraisal_level c ON a.level_id = c.level_id
 				LEFT OUTER JOIN province d ON a.province_code = d.province_code 
-			WHERE
-				1 = 1 " . $level . $org . " 
 			ORDER BY
 			a.org_name ASC
 			");
