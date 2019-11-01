@@ -85,9 +85,11 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('cds_result/auto_position_name', 'CDSResultController@auto_position_name');
 	Route::post('cds_result/auto_emp_name', 'CDSResultController@auto_emp_name');
 	Route::get('cds_result', 'CDSResultController@index');
+	Route::get('cds_result_v2', 'CDSResultController@index_v2');
 	Route::post('cds_result/export', 'CDSResultController@export');
 	Route::post('cds_result', 'CDSResultController@import');
 	Route::patch('cds_result','CDSResultController@update_cdsResult');
+	Route::put('cds_result_v2','CDSResultController@update_cdsResult_v2');
 	Route::delete('cds_result/{cds_result_id}','CDSResultController@destroy');
 	Route::get('cds_result/detail/{cds_result_id}','CDSResultController@detail_list');
 	Route::delete('cds_result/detail/{reason_cds_result_id}','CDSResultController@detail_del');
