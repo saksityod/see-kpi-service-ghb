@@ -2323,11 +2323,6 @@ class CDSResultController extends Controller
     {
 		$emp = Employee::find(Auth::id());
 
-		$allCorpFilterString = "";
-		if ($emp->is_show_corporate) {
-			$allCorpFilterString = " and level_id != 2 ";
-		}
-
 		$all_emp = DB::select("
 			SELECT sum(b.is_all_employee) count_no
 			from employee a
@@ -2345,7 +2340,6 @@ class CDSResultController extends Controller
 				Order by level_id asc			
 			");
 		} else {
-			$emp = Employee::find(Auth::id());
 			$co = Org::find($emp->org_id);
 
 			$re_emp = array();
@@ -2455,7 +2449,6 @@ class CDSResultController extends Controller
 				inner join appraisal_level al on al.level_id = org.level_id
 				where org_code in({$in_emp})
 				and al.is_hr = 0
-				{$allCorpFilterString}
 				order by al.level_id asc
 			");
 			

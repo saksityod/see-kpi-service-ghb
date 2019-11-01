@@ -41,7 +41,7 @@ class AuthenticateController extends Controller
 		}		
 		
 		$emp = DB::select("
-			select b.is_hr
+			select b.is_hr, a.is_show_corporate
 			from employee a
 			inner join appraisal_level b
 			on a.level_id = b.level_id
@@ -55,7 +55,7 @@ class AuthenticateController extends Controller
 
 		
 		
-		return response()->json(['status' => 200, 'theme_color' => $config->theme_color, 'is_hr' => $emp[0]->is_hr]);
+		return response()->json(['status' => 200, 'theme_color' => $config->theme_color, 'is_hr' => $emp[0]->is_hr, 'is_show_corporate' => $emp[0]->is_show_corporate ]);
     }    
 	
 	public function debug(Request $request)
@@ -146,7 +146,7 @@ From Going Jesse Team
         // if no errors are encountered we can return a JWT
 		
 		$emp = DB::select("
-			select b.is_hr
+			select b.is_hr, a.is_show_corporate
 			from employee a
 			inner join appraisal_level b
 			on a.level_id = b.level_id
@@ -162,7 +162,7 @@ From Going Jesse Team
 		$u->plid = $request->plid;
 		$u->save();		
 		
-        return response()->json(['token' => $token, 'theme_color' => $config->theme_color, 'is_hr' => $emp[0]->is_hr]);
+        return response()->json(['token' => $token, 'theme_color' => $config->theme_color, 'is_hr' => $emp[0]->is_hr, 'is_show_corporate' => $emp[0]->is_show_corporate ]);
     }
 	
 	public function destroy()
