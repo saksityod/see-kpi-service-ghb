@@ -21,7 +21,7 @@ class User extends Model implements AuthenticatableContract,
      *
      * @var string
      */
-    protected $table = 'lportal.User-mpn_';
+    protected $table = 'lportal.User';
 	protected $primaryKey = 'screenName';
 	public $incrementing = false;
 //	public $timestamps = false;
