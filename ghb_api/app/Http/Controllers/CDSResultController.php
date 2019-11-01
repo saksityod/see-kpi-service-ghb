@@ -2318,9 +2318,9 @@ class CDSResultController extends Controller
 		return response()->json(['status' => 200]);
 		
 	}
-	
+
 	public function al_list_v2()
-	{
+    {
 		$emp = Employee::find(Auth::id());
 
 		$allCorpFilterString = "";
@@ -2328,15 +2328,139 @@ class CDSResultController extends Controller
 			$allCorpFilterString = " and level_id != 2 ";
 		}
 
-		$items = DB::select("
-			select level_id, appraisal_level_name
-			from appraisal_level
-			where is_active = 1
-			and is_hr = 0
-			{$allCorpFilterString} 
-			order by level_id
-		");
+		$all_emp = DB::select("
+			SELECT sum(b.is_all_employee) count_no
+			from employee a
+			left outer join appraisal_level b
+			on a.level_id = b.level_id
+			where emp_code = ?
+		", array(Auth::id()));
+		
+		if ($all_emp[0]->count_no > 0) {
+			$items = DB::select("
+				Select level_id, appraisal_level_name
+				From appraisal_level 
+				Where is_active = 1 
+				and is_hr = 0
+				Order by level_id asc			
+			");
+		} else {
+			$emp = Employee::find(Auth::id());
+			$co = Org::find($emp->org_id);
+
+			$re_emp = array();
+				
+			$emp_list = array();
+
+			$emps = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code = ?
+				", array($co->org_code));
+
+			foreach ($emps as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}
+			
+			$emp_list = array_unique($emp_list);
+
+				// Get array keys
+			$arrayKeys = array_keys($emp_list);
+				// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+			$in_emp = '';
+			foreach($emp_list as $k => $v) {
+				if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}	
+
+			do {				
+				empty($in_emp) ? $in_emp = "null" : null;
+
+				$emp_list = array();			
+
+				$emp_items = DB::select("
+					select distinct org_code
+					from org
+					where parent_org_code in ({$in_emp})
+					and parent_org_code != org_code
+					and is_active = 1			
+					");
+
+				foreach ($emp_items as $e) {
+					$emp_list[] = $e->org_code;
+					$re_emp[] = $e->org_code;
+				}			
+
+				$emp_list = array_unique($emp_list);
+
+					// Get array keys
+				$arrayKeys = array_keys($emp_list);
+					// Fetch last array key
+				$lastArrayKey = array_pop($arrayKeys);
+					//iterate array
+				$in_emp = '';
+				foreach($emp_list as $k => $v) {
+					if($k == $lastArrayKey) {
+							//during array iteration this condition states the last element.
+						$in_emp .= "'" . $v . "'";
+					} else {
+						$in_emp .= "'" . $v . "'" . ',';
+					}
+				}		
+			} while (!empty($emp_list));		
+
+			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
+			$re_emp = array_unique($re_emp);
+			
+				// Get array keys
+			$arrayKeys = array_keys($re_emp);
+				// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+			$in_emp = '';
+			foreach($re_emp as $k => $v) {
+				if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}				
+
+			empty($in_emp) ? $in_emp = "null" : null;
+
+			$items = DB::select("
+				select DISTINCT al.level_id, al.appraisal_level_name
+				from org
+				inner join appraisal_level al on al.level_id = org.level_id
+				where org_code in({$in_emp})
+				and al.is_hr = 0
+				{$allCorpFilterString}
+				order by al.level_id asc
+			");
+			
+		}
 		
 		return response()->json($items);
-	}
+    }
 }
