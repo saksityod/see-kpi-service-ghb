@@ -2317,5 +2317,26 @@ class CDSResultController extends Controller
 		
 		return response()->json(['status' => 200]);
 		
-	}	
+	}
+	
+	public function al_list_v2()
+	{
+		$emp = Employee::find(Auth::id());
+
+		$allCorpFilterString = "";
+		if ($emp->is_show_corporate) {
+			$allCorpFilterString = " and level_id != 2 ";
+		}
+
+		$items = DB::select("
+			select level_id, appraisal_level_name
+			from appraisal_level
+			where is_active = 1
+			and is_hr = 0
+			{$allCorpFilterString} 
+			order by level_id
+		");
+		
+		return response()->json($items);
+	}
 }

@@ -80,6 +80,7 @@ Route::group(['middleware' => 'cors'], function()
 	
 	// CDS Result //
 	Route::get('cds_result/al_list','CDSResultController@al_list');
+	Route::get('cds_result/al_list_v2','CDSResultController@al_list_v2');
 	Route::get('cds_result/year_list', 'CDSResultController@year_list');
 	Route::get('cds_result/month_list', 'CDSResultController@month_list');
 	Route::post('cds_result/auto_position_name', 'CDSResultController@auto_position_name');
