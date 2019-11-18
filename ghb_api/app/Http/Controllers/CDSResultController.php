@@ -2052,6 +2052,9 @@ class CDSResultController extends Controller
 		if ($all_emp[0]->count_no > 0) {
 			$is_all_sql = "";
 			$is_all_sql_org = "";
+		} else if ($all_emp[0]->count_no == 0 && $emp->is_show_corporate == 1) {
+			$is_all_sql = " and (e.emp_code = '{$emp->emp_code}' or e.chief_emp_code = '{$emp->emp_code}') ";
+			$is_all_sql_org = " and ( o.org_code in ({$in_emp}, '50000001') OR (eo.emp_id = {$emp->emp_id})) ";
 		} else {
 			$is_all_sql = " and (e.emp_code = '{$emp->emp_code}' or e.chief_emp_code = '{$emp->emp_code}') ";
 			$is_all_sql_org = " and ( o.org_code in ({$in_emp}) OR (eo.emp_id = {$emp->emp_id})) ";
@@ -2169,7 +2172,18 @@ class CDSResultController extends Controller
 			INNER JOIN uom u ON u.uom_id = ai.uom_id
 			INNER JOIN (
 				SELECT DISTINCT
-					cr.cds_id
+					cr.cds_id,
+					o.org_id,
+					o.org_code,
+					o.org_name,
+					e.emp_id,
+					e.emp_name,
+					p.position_id,
+					p.position_name,
+					al.level_id,
+					al.appraisal_level_name,
+					cr.`year`,
+					cr.appraisal_type_id 
 				FROM 
 					cds_result cr
 					LEFT OUTER JOIN org o ON o.org_id = cr.org_id
@@ -2443,18 +2457,207 @@ class CDSResultController extends Controller
 			}				
 
 			empty($in_emp) ? $in_emp = "null" : null;
-
-			$items = DB::select("
-				select DISTINCT al.level_id, al.appraisal_level_name
-				from org
-				inner join appraisal_level al on al.level_id = org.level_id
-				where org_code in({$in_emp})
-				and al.is_hr = 0
-				order by al.level_id asc
-			");
 			
+			if ($emp->is_show_corporate == 1) {
+				$items = DB::select("
+					select DISTINCT al.level_id, al.appraisal_level_name
+					from org
+					inner join appraisal_level al on al.level_id = org.level_id
+					where org_code in({$in_emp}, '50000001')
+					and al.is_hr = 0
+					order by al.level_id asc
+				");
+			} else {
+				$items = DB::select("
+					select DISTINCT al.level_id, al.appraisal_level_name
+					from org
+					inner join appraisal_level al on al.level_id = org.level_id
+					where org_code in({$in_emp})
+					and al.is_hr = 0
+					order by al.level_id asc
+				");
+			}
 		}
 		
 		return response()->json($items);
-    }
+	}
+	
+	public function org_list_v2(Request $request)
+	{		
+		
+		$emp = Employee::find(Auth::id());
+		$co = Org::find($emp->org_id);
+		
+		$all_emp = DB::select("
+			SELECT sum(b.is_all_employee) count_no
+			from employee a
+			left outer join appraisal_level b
+			on a.level_id = b.level_id
+			where emp_code = ?
+		", array(Auth::id()));
+		
+		empty($request->level_id) ? $level = "" : $level = " and a.level_id = '{$request->level_id}'";
+		empty($request->org_code) ? $org = "" : $org = " and a.org_code = " . $request->org_code . " ";
+		
+		if ($all_emp[0]->count_no > 0) {
+			$items = DB::select("
+			SELECT
+				a.org_id ,a.org_name ,a.org_code ,a.org_abbr ,a.is_active ,b.org_name parent_org_name,
+				a.parent_org_code ,a.level_id ,c.appraisal_level_name,
+				CASE WHEN a.longitude = 0 THEN '' ELSE a.longitude END longitude,
+				CASE WHEN a.latitude = 0 THEN '' ELSE a.latitude END latitude,
+				a.province_code ,d.province_name 
+			FROM
+				org a
+				LEFT OUTER JOIN org b ON b.org_code = a.parent_org_code
+				LEFT OUTER JOIN appraisal_level c ON a.level_id = c.level_id
+				LEFT OUTER JOIN province d ON a.province_code = d.province_code 
+			WHERE
+				1 = 1 " . $level . $org . " 
+				AND a.is_active = 1 
+			ORDER BY
+			a.org_name ASC
+			");
+		} else {
+
+			$re_emp = array();
+			
+			$emp_list = array();
+			
+			$emps = DB::select("
+				select distinct org_code
+				from org
+				where parent_org_code = ?
+			", array($co->org_code));
+			
+			foreach ($emps as $e) {
+				$emp_list[] = $e->org_code;
+				$re_emp[] = $e->org_code;
+			}
+		
+			$emp_list = array_unique($emp_list);
+			
+			// Get array keys
+			$arrayKeys = array_keys($emp_list);
+			// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+			//iterate array
+			$in_emp = '';
+			foreach($emp_list as $k => $v) {
+				if($k == $lastArrayKey) {
+					//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}	
+				
+			do {				
+				empty($in_emp) ? $in_emp = "null" : null;
+
+				$emp_list = array();			
+
+				$emp_items = DB::select("
+					select distinct org_code
+					from org
+					where parent_org_code in ({$in_emp})
+					and parent_org_code != org_code
+					and is_active = 1			
+				");
+				
+				foreach ($emp_items as $e) {
+					$emp_list[] = $e->org_code;
+					$re_emp[] = $e->org_code;
+				}			
+				
+				$emp_list = array_unique($emp_list);
+				
+				// Get array keys
+				$arrayKeys = array_keys($emp_list);
+				// Fetch last array key
+				$lastArrayKey = array_pop($arrayKeys);
+				//iterate array
+				$in_emp = '';
+				foreach($emp_list as $k => $v) {
+					if($k == $lastArrayKey) {
+						//during array iteration this condition states the last element.
+						$in_emp .= "'" . $v . "'";
+					} else {
+						$in_emp .= "'" . $v . "'" . ',';
+					}
+				}		
+			} while (!empty($emp_list));		
+			
+			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
+			$re_emp = array_unique($re_emp);
+			
+			// Get array keys
+			$arrayKeys = array_keys($re_emp);
+			// Fetch last array key
+			$lastArrayKey = array_pop($arrayKeys);
+			//iterate array
+			$in_emp = '';
+			foreach($re_emp as $k => $v) {
+				if($k == $lastArrayKey) {
+					//during array iteration this condition states the last element.
+					$in_emp .= "'" . $v . "'";
+				} else {
+					$in_emp .= "'" . $v . "'" . ',';
+				}
+			}				
+			
+			empty($in_emp) ? $in_emp = "null" : null;
+
+			if ($emp->is_show_corporate == 1) {
+				$items = DB::select("
+				SELECT
+					a.org_id ,a.org_name ,a.org_code ,a.org_abbr ,a.is_active ,b.org_name parent_org_name,
+					a.parent_org_code ,a.level_id ,c.appraisal_level_name ,a.longitude,
+					a.latitude ,a.province_code ,d.province_name 
+				FROM
+					org a
+					LEFT OUTER JOIN org b ON b.org_code = a.parent_org_code
+					LEFT OUTER JOIN appraisal_level c ON a.level_id = c.level_id
+					LEFT OUTER JOIN province d ON a.province_code = d.province_code 
+				WHERE
+					a.org_code IN ({$in_emp}, '50000001') and a.is_active = 1 ".$level."
+				ORDER BY
+					c.level_id ASC
+				");
+			} else {
+				$items = DB::select("
+				SELECT
+					a.org_id ,a.org_name ,a.org_code ,a.org_abbr ,a.is_active ,b.org_name parent_org_name,
+					a.parent_org_code ,a.level_id ,c.appraisal_level_name ,a.longitude,
+					a.latitude ,a.province_code ,d.province_name 
+				FROM
+					org a
+					LEFT OUTER JOIN org b ON b.org_code = a.parent_org_code
+					LEFT OUTER JOIN appraisal_level c ON a.level_id = c.level_id
+					LEFT OUTER JOIN province d ON a.province_code = d.province_code 
+				WHERE
+					a.org_code IN ({$in_emp}) ".$level." 
+					AND a.is_active = 1 
+				ORDER BY
+					c.level_id ASC
+				");
+			}
+			//echo $in_emp;
+			
+		}
+		return response()->json($items);
+	}
 }
