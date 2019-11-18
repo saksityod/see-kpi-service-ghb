@@ -2054,7 +2054,7 @@ class CDSResultController extends Controller
 			$is_all_sql_org = "";
 		} else {
 			$is_all_sql = " and (e.emp_code = '{$emp->emp_code}' or e.chief_emp_code = '{$emp->emp_code}') ";
-			$is_all_sql_org = " and o.org_code in ({$in_emp})";
+			$is_all_sql_org = " and ( o.org_code in ({$in_emp}) OR (eo.emp_id = {$emp->emp_id})) ";
 		}
 
 		if ($is_hr == 0) {
@@ -2125,6 +2125,7 @@ class CDSResultController extends Controller
 					LEFT OUTER JOIN employee e ON e.emp_id = cr.emp_id
 					LEFT OUTER JOIN position p ON p.position_id = cr.position_id
 					LEFT OUTER JOIN appraisal_level al ON al.level_id = cr.level_id
+					LEFT OUTER JOIN emp_org eo ON eo.org_id = cr.org_id
 		";
 		$query .= "
 		WHERE cr.year = {$request->current_appraisal_year}
@@ -2134,14 +2135,14 @@ class CDSResultController extends Controller
 		empty($request->org_id) ?: ($query .= " And cr.org_id = ? " and $qinput[] = $request->org_id);
 		empty($request->emp_id) ?: ($query .= " And cr.emp_id = ? " and $qinput[] = $request->emp_id);
 		empty($request->position_id) ?: ($query .= " And cr.position_id = ? " and $qinput[] = $request->position_id);
-		$query .= ") res ON res.cds_id = c.cds_id";
-
 		if ($request->appraisal_type_id == 2) {
-			$query .= $is_all_sql . $is_hr_sql;
+			$query .= $is_all_sql;
 		} else {
-			$query .= $is_all_sql_org . $is_hr_sql;
+			$query .= $is_all_sql_org;
 		}
 
+		$query .= ") res ON res.cds_id = c.cds_id";
+		
 		// pagination param settings
 		empty($request->page) ? $page = 1 : $page = $request->page;
 		empty($request->size) ? $perPage = 10 : $perPage = $request->size;
@@ -2149,7 +2150,7 @@ class CDSResultController extends Controller
 		$offset = $perPage * ($page - 1);
 
 		$qfooter = "
-			WHERE c.is_sql = 0 
+			WHERE c.is_sql = 0 {$is_hr_sql}
 			ORDER BY 
 				c.cds_id 
 			LIMIT {$perPage} 
@@ -2175,6 +2176,7 @@ class CDSResultController extends Controller
 					LEFT OUTER JOIN employee e ON e.emp_id = cr.emp_id
 					LEFT OUTER JOIN position p ON p.position_id = cr.position_id
 					LEFT OUTER JOIN appraisal_level al ON al.level_id = cr.level_id
+					LEFT OUTER JOIN emp_org eo ON eo.org_id = cr.org_id
 		";
 		$countQuery .= "
 		WHERE cr.year = {$request->current_appraisal_year}
@@ -2184,13 +2186,12 @@ class CDSResultController extends Controller
 		empty($request->org_id) ?: ($countQuery .= " And cr.org_id = ? " and $qcinput[] = $request->org_id);
 		empty($request->emp_id) ?: ($countQuery .= " And cr.emp_id = ? " and $qcinput[] = $request->emp_id);
 		empty($request->position_id) ?: ($countQuery .= " And cr.position_id = ? " and $qcinput[] = $request->position_id);
-		$countQuery .= ") res ON res.cds_id = c.cds_id";
-
 		if ($request->appraisal_type_id == 2) {
-			$countQuery .= $is_all_sql . $is_hr_sql;
+			$countQuery .= $is_all_sql;
 		} else {
-			$countQuery .= $is_all_sql_org . $is_hr_sql;
+			$countQuery .= $is_all_sql_org;
 		}
+		$countQuery .= ") res ON res.cds_id = c.cds_id WHERE 1=1 {$is_hr_sql}";
 
 		$cdsItemsCount = DB::select($countQuery, $qinput);
 
