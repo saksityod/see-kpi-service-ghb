@@ -3472,7 +3472,7 @@ class DashboardController extends Controller
 				SELECT o.district_id,avg( o.pct ) dt_pct 
 				FROM
 					(
-					SELECT DISTINCT dto.org_id district_id {$select_org}  
+					SELECT  dto.org_id district_id {$select_org}  
 					FROM
 						appraisal_item_result a
 						LEFT OUTER JOIN emp_result b ON a.emp_result_id = b.emp_result_id
@@ -3497,7 +3497,7 @@ class DashboardController extends Controller
 				SELECT o.division_id, avg( o.pct ) dv_pct 
 				FROM
 					(
-					SELECT DISTINCT pdto.org_id division_id {$select_org}  
+					SELECT  pdto.org_id division_id {$select_org}  
 					FROM appraisal_item_result a
 						LEFT OUTER JOIN emp_result b ON a.emp_result_id = b.emp_result_id
 						LEFT OUTER JOIN org c ON b.org_id = c.org_id
@@ -3522,7 +3522,7 @@ class DashboardController extends Controller
 				SELECT o.section_id, avg( o.pct ) s_pct 
 				FROM
 					(
-					SELECT DISTINCT so.org_id section_id {$select_org}  
+					SELECT  so.org_id section_id {$select_org}  
 					FROM
 						appraisal_item_result a
 						LEFT OUTER JOIN emp_result b ON a.emp_result_id = b.emp_result_id
