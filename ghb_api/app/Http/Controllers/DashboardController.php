@@ -2868,10 +2868,11 @@ class DashboardController extends Controller
 			$latitude = $location[0]->latitude;			
 		}
 		
+		
 		if (empty($request->region_code)) {
 			if (empty($request->item_id)) {
 				$vector = DB::select("
-					select province_code, FORMAT(avg(b.result_score), 2) average
+					select province_code, FORMAT(avg(b.result_score), 2) average,b.result_threshold_group_id
 					#(select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 					#from result_threshold x
 					#left outer join result_threshold_group y on x.result_threshold_group_id = y.result_threshold_group_id
@@ -2891,7 +2892,7 @@ class DashboardController extends Controller
 						where y.district_flag = 1
 						and x.org_code = c.parent_org_code
 					)				
-					group by province_code
+					group by province_code,b.result_threshold_group_id
 				", array($request->period_id));
 				
 				foreach ($vector as $i) {
@@ -2899,7 +2900,7 @@ class DashboardController extends Controller
 						select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 						from result_threshold x
 						left outer join result_threshold_group y on x.result_threshold_group_id = y.result_threshold_group_id
-						where y.is_active = 1
+						where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 						and ? between x.begin_threshold and x.end_threshold
 					", array($i->average));
 					if (empty($color)) {
@@ -2907,7 +2908,7 @@ class DashboardController extends Controller
 							select min(begin_threshold) min_threshold, max(end_threshold) max_threshold
 							from result_threshold a left outer join result_threshold_group b
 							on a.result_threshold_group_id = b.result_threshold_group_id
-							where b.is_active = 1		
+							where b.result_threshold_group_id = {$i->result_threshold_group_id}		
 						");
 						
 						if (empty($minmax)) {
@@ -2918,7 +2919,7 @@ class DashboardController extends Controller
 									select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 									from result_threshold x left outer join result_threshold_group y
 									on x.result_threshold_group_id = y.result_threshold_group_id
-									where y.is_active = 1
+									where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 									and x.begin_threshold = ?
 								", array($minmax[0]->min_threshold));
 								$i->color_code = $get_color[0]->color_code;
@@ -2927,7 +2928,7 @@ class DashboardController extends Controller
 									select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 									from result_threshold x left outer join result_threshold_group y
 									on x.result_threshold_group_id = y.result_threshold_group_id
-									where y.is_active = 1
+									where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 									and x.end_threshold = ?
 								", array($minmax[0]->max_threshold));
 								$i->color_code = $get_color[0]->color_code;					
@@ -2942,7 +2943,7 @@ class DashboardController extends Controller
 				}
 			} else {
 				$vector = DB::select("
-					select province_code, FORMAT(if(ai.value_type_id = 1,(sum(a.actual_value)/sum(a.target_value))*100,(((sum(a.target_value)-sum(a.actual_value))/sum(a.target_value))*100)+100), 2)average
+					select province_code, FORMAT(if(ai.value_type_id = 1,(sum(a.actual_value)/sum(a.target_value))*100,(((sum(a.target_value)-sum(a.actual_value))/sum(a.target_value))*100)+100), 2)average,a.result_threshold_group_id
 					#province_code, avg(a.percent_achievement) average
 					#(select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 					#from result_threshold x
@@ -2965,7 +2966,7 @@ class DashboardController extends Controller
 						where y.district_flag = 1
 						and x.org_code = c.parent_org_code
 					)							
-					group by province_code
+					group by province_code,a.result_threshold_group_id
 				", array($request->period_id, $request->item_id));	
 
 				foreach ($vector as $i) {
@@ -2973,15 +2974,15 @@ class DashboardController extends Controller
 						select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 						from result_threshold x
 						left outer join result_threshold_group y on x.result_threshold_group_id = y.result_threshold_group_id
-						where y.is_active = 1
+						where y.result_threshold_group_id = ?
 						and ? between x.begin_threshold and x.end_threshold
-					", array($i->average));
+					", array($i->result_threshold_group_id,$i->average));
 					if (empty($color)) {
 						$minmax = DB::select("
 							select min(begin_threshold) min_threshold, max(end_threshold) max_threshold
 							from result_threshold a left outer join result_threshold_group b
 							on a.result_threshold_group_id = b.result_threshold_group_id
-							where b.is_active = 1		
+							where b.result_threshold_group_id = {$i->result_threshold_group_id}		
 						");
 						
 						if (empty($minmax)) {
@@ -2992,7 +2993,7 @@ class DashboardController extends Controller
 									select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 									from result_threshold x left outer join result_threshold_group y
 									on x.result_threshold_group_id = y.result_threshold_group_id
-									where y.is_active = 1
+									where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 									and x.begin_threshold = ?
 								", array($minmax[0]->min_threshold));
 								$i->color_code = $get_color[0]->color_code;
@@ -3001,7 +3002,7 @@ class DashboardController extends Controller
 									select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 									from result_threshold x left outer join result_threshold_group y
 									on x.result_threshold_group_id = y.result_threshold_group_id
-									where y.is_active = 1
+									where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 									and x.end_threshold = ?
 								", array($minmax[0]->max_threshold));
 								$i->color_code = $get_color[0]->color_code;					
