@@ -2048,13 +2048,14 @@ class CDSResultController extends Controller
 			where emp_code = ?
 		", array(Auth::id()));
 
+		$organization = Org::findOrFail(1);
 
 		if ($all_emp[0]->count_no > 0) {
 			$is_all_sql = "";
 			$is_all_sql_org = "";
 		} else if ($all_emp[0]->count_no == 0 && $emp->is_show_corporate == 1) {
 			$is_all_sql = " and (e.emp_code = '{$emp->emp_code}' or e.chief_emp_code = '{$emp->emp_code}') ";
-			$is_all_sql_org = " and ( o.org_code in ({$in_emp}, '50000001') OR (eo.emp_id = {$emp->emp_id})) ";
+			$is_all_sql_org = " and ( o.org_code in ({$in_emp}, {$organization->org_code}) OR (eo.emp_id = {$emp->emp_id})) ";
 		} else {
 			$is_all_sql = " and (e.emp_code = '{$emp->emp_code}' or e.chief_emp_code = '{$emp->emp_code}') ";
 			$is_all_sql_org = " and ( o.org_code in ({$in_emp}) OR (eo.emp_id = {$emp->emp_id})) ";
@@ -2091,7 +2092,7 @@ class CDSResultController extends Controller
 		SELECT
 			c.cds_id,
 			c.cds_name,
-			res.appraisal_type_id,
+			{$request->appraisal_type_id} as appraisal_type_id,
 			res.org_id,
 			res.org_code,
 			res.org_name,
@@ -2102,49 +2103,57 @@ class CDSResultController extends Controller
 			u.uom_name,
 			res.level_id,
 			res.appraisal_level_name,
-			res.year
-		FROM 
-			cds c
-			INNER JOIN kpi_cds_mapping kcm ON kcm.cds_id = c.cds_id
-			INNER JOIN appraisal_item ai ON ai.item_id = kcm.item_id
-			INNER JOIN uom u ON u.uom_id = ai.uom_id
-			INNER JOIN (
-				SELECT DISTINCT
-					cr.cds_id, 
-					o.org_id, 
-					o.org_code, 
-					o.org_name, 
-					e.emp_id, 
-					e.emp_name, 
-					p.position_id, 
-					p.position_name, 
-					al.level_id, 
-					al.appraisal_level_name, 
-					cr.`year`,
-					cr.appraisal_type_id
-				FROM 
-					cds_result cr
-					LEFT OUTER JOIN org o ON o.org_id = cr.org_id
-					LEFT OUTER JOIN employee e ON e.emp_id = cr.emp_id
-					LEFT OUTER JOIN position p ON p.position_id = cr.position_id
-					LEFT OUTER JOIN appraisal_level al ON al.level_id = cr.level_id
-					LEFT OUTER JOIN emp_org eo ON eo.org_id = cr.org_id
+			res.year 
+		FROM cds c
+		INNER JOIN kpi_cds_mapping kcm ON kcm.cds_id = c.cds_id
+		INNER JOIN appraisal_item ai ON ai.item_id = kcm.item_id
+		INNER JOIN uom u ON u.uom_id = ai.uom_id
+		INNER JOIN (
+			SELECT DISTINCT
+				air.item_id,
+				kc.cds_id,
+				o.org_id,
+				o.org_code,
+				o.org_name,
+				e.emp_id,
+				e.emp_name,
+				p.position_id,
+				p.position_name,
+				al.level_id,
+				al.appraisal_level_name,
+				ap.appraisal_year AS `year`,
+				cr.appraisal_type_id
+			FROM appraisal_item_result air
+			INNER JOIN appraisal_period ap ON ap.period_id = air.period_id
+			INNER JOIN kpi_cds_mapping kc ON kc.item_id = air.item_id
+			LEFT OUTER JOIN cds_result cr ON cr.cds_id = kc.cds_id
+				AND cr.year = ap.appraisal_year
+				AND cr.emp_id = air.emp_id
+				AND cr.org_id = air.org_id
+				AND cr.level_id = air.level_id
+			LEFT OUTER JOIN org o ON o.org_id = air.org_id
+			LEFT OUTER JOIN employee e ON e.emp_id = air.emp_id
+			LEFT OUTER JOIN position p ON p.position_id = air.position_id
+			LEFT OUTER JOIN appraisal_level al ON al.level_id = air.level_id
+			LEFT OUTER JOIN emp_org eo ON eo.org_id = cr.org_id 
 		";
+
 		$query .= "
-		WHERE cr.year = {$request->current_appraisal_year}
-			AND cr.appraisal_type_id = {$request->appraisal_type_id}
+		WHERE ap.appraisal_year = {$request->current_appraisal_year}
+			AND (cr.appraisal_type_id = {$request->appraisal_type_id} OR cr.appraisal_type_id IS NULL)
 		";
-		empty($request->level_id) ?: ($query .= " And cr.level_id = ? " and $qinput[] = $request->level_id);
-		empty($request->org_id) ?: ($query .= " And cr.org_id = ? " and $qinput[] = $request->org_id);
-		empty($request->emp_id) ?: ($query .= " And cr.emp_id = ? " and $qinput[] = $request->emp_id);
-		empty($request->position_id) ?: ($query .= " And cr.position_id = ? " and $qinput[] = $request->position_id);
+
+		empty($request->level_id) ?: ($query .= " And air.level_id = ? " and $qinput[] = $request->level_id);
+		empty($request->org_id) ?: ($query .= " And air.org_id = ? " and $qinput[] = $request->org_id);
+		empty($request->emp_id) ?: ($query .= " And air.emp_id = ? " and $qinput[] = $request->emp_id);
+		empty($request->position_id) ?: ($query .= " And air.position_id = ? " and $qinput[] = $request->position_id);
 		if ($request->appraisal_type_id == 2) {
 			$query .= $is_all_sql;
 		} else {
 			$query .= $is_all_sql_org;
 		}
 
-		$query .= ") res ON res.cds_id = c.cds_id";
+		$query .= ") res ON res.item_id = kcm.item_id";
 		
 		// pagination param settings
 		empty($request->page) ? $page = 1 : $page = $request->page;
@@ -2165,47 +2174,53 @@ class CDSResultController extends Controller
 		$countQuery = "
 		SELECT DISTINCT
 			COUNT(c.cds_id) as cdsCount
-		FROM 
-			cds c
-			INNER JOIN kpi_cds_mapping kcm ON kcm.cds_id = c.cds_id
-			INNER JOIN appraisal_item ai ON ai.item_id = kcm.item_id
-			INNER JOIN uom u ON u.uom_id = ai.uom_id
-			INNER JOIN (
-				SELECT DISTINCT
-					cr.cds_id,
-					o.org_id,
-					o.org_code,
-					o.org_name,
-					e.emp_id,
-					e.emp_name,
-					p.position_id,
-					p.position_name,
-					al.level_id,
-					al.appraisal_level_name,
-					cr.`year`,
-					cr.appraisal_type_id 
-				FROM 
-					cds_result cr
-					LEFT OUTER JOIN org o ON o.org_id = cr.org_id
-					LEFT OUTER JOIN employee e ON e.emp_id = cr.emp_id
-					LEFT OUTER JOIN position p ON p.position_id = cr.position_id
-					LEFT OUTER JOIN appraisal_level al ON al.level_id = cr.level_id
-					LEFT OUTER JOIN emp_org eo ON eo.org_id = cr.org_id
+		FROM cds c
+		INNER JOIN kpi_cds_mapping kcm ON kcm.cds_id = c.cds_id
+		INNER JOIN appraisal_item ai ON ai.item_id = kcm.item_id
+		INNER JOIN uom u ON u.uom_id = ai.uom_id
+		INNER JOIN (
+			SELECT DISTINCT
+				air.item_id,
+				kc.cds_id,
+				o.org_id,
+				o.org_code,
+				o.org_name,
+				e.emp_id,
+				e.emp_name,
+				p.position_id,
+				p.position_name,
+				al.level_id,
+				al.appraisal_level_name,
+				ap.appraisal_year AS `year`,
+				cr.appraisal_type_id
+			FROM appraisal_item_result air
+			INNER JOIN appraisal_period ap ON ap.period_id = air.period_id
+			INNER JOIN kpi_cds_mapping kc ON kc.item_id = air.item_id
+			LEFT OUTER JOIN cds_result cr ON cr.cds_id = kc.cds_id
+				AND cr.year = ap.appraisal_year
+				AND cr.emp_id = air.emp_id
+				AND cr.org_id = air.org_id
+				AND cr.level_id = air.level_id
+			LEFT OUTER JOIN org o ON o.org_id = air.org_id
+			LEFT OUTER JOIN employee e ON e.emp_id = air.emp_id
+			LEFT OUTER JOIN position p ON p.position_id = air.position_id
+			LEFT OUTER JOIN appraisal_level al ON al.level_id = air.level_id
+			LEFT OUTER JOIN emp_org eo ON eo.org_id = cr.org_id 
 		";
 		$countQuery .= "
-		WHERE cr.year = {$request->current_appraisal_year}
-			AND cr.appraisal_type_id = {$request->appraisal_type_id}
+		WHERE ap.appraisal_year = {$request->current_appraisal_year}
+			AND (cr.appraisal_type_id = {$request->appraisal_type_id} OR cr.appraisal_type_id IS NULL)
 		";
-		empty($request->level_id) ?: ($countQuery .= " And cr.level_id = ? " and $qcinput[] = $request->level_id);
-		empty($request->org_id) ?: ($countQuery .= " And cr.org_id = ? " and $qcinput[] = $request->org_id);
-		empty($request->emp_id) ?: ($countQuery .= " And cr.emp_id = ? " and $qcinput[] = $request->emp_id);
-		empty($request->position_id) ?: ($countQuery .= " And cr.position_id = ? " and $qcinput[] = $request->position_id);
+		empty($request->level_id) ?: ($countQuery .= " And air.level_id = ? " and $qcinput[] = $request->level_id);
+		empty($request->org_id) ?: ($countQuery .= " And air.org_id = ? " and $qcinput[] = $request->org_id);
+		empty($request->emp_id) ?: ($countQuery .= " And air.emp_id = ? " and $qcinput[] = $request->emp_id);
+		empty($request->position_id) ?: ($countQuery .= " And air.position_id = ? " and $qcinput[] = $request->position_id);
 		if ($request->appraisal_type_id == 2) {
 			$countQuery .= $is_all_sql;
 		} else {
 			$countQuery .= $is_all_sql_org;
 		}
-		$countQuery .= ") res ON res.cds_id = c.cds_id WHERE 1=1 {$is_hr_sql}";
+		$countQuery .= ") res ON res.item_id = kcm.item_id WHERE 1=1 {$is_hr_sql}";
 
 		$cdsItemsCount = DB::select($countQuery, $qinput);
 
@@ -2239,8 +2254,13 @@ class CDSResultController extends Controller
 			cr.emp_id
 		FROM
 			cds_result cr
-			INNER JOIN kpi_cds_mapping kcm ON kcm.cds_id = cr.cds_id 
-			INNER JOIN appraisal_item ai ON ai.item_id = kcm.item_id  ";
+			INNER JOIN kpi_cds_mapping kcm ON kcm.cds_id = cr.cds_id
+			LEFT OUTER JOIN appraisal_item_result air ON air.item_id = kcm.item_id
+			AND cr.emp_id = air.emp_id 
+			AND cr.org_id = air.org_id 
+			AND cr.level_id = air.level_id 
+			AND cr.position_id = air.position_id  
+		";
 		$cdsValuesBaseQuery .= "
 		WHERE cr.year = {$request->current_appraisal_year}
 			AND cr.appraisal_type_id = {$request->appraisal_type_id}
