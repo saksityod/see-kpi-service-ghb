@@ -150,4 +150,8 @@ return [
 
     'secure' => false,
 
+    'license_assign' => 1000,
+    'license_mail_sender_name' => "SMART KPI Server",
+    'license_mail_to' => ['seekpi@goingjesse.com'],
+    'license_mail_subject' => "[SMART KPI Server]: License Verification",
 ];

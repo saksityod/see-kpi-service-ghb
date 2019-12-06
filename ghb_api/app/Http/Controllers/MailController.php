@@ -156,6 +156,15 @@ class MailController extends Controller
 		}
 		//---------------------------------- Send Mail By Employee [End]--------------------------------------------------------
 
+		// License Verification //
+		try{
+			$empAssign = Config::get("session.license_assign");
+			if((!empty($empAssign))&&$empAssign!=0){
+				$this->LicenseVerification();
+			}
+		} catch (Exception $e) {
+		}
+		
 		//return view('emails.remind',['items' => $items, 'emp_name' => 'hello', 'web_domain' => $config->web_domain]);
 		return response()->json(['status' => 200, 'error' => $error]);
 	}
@@ -314,5 +323,49 @@ class MailController extends Controller
 
 		return response()->json(['error' => $error]);
 
+	}
+
+	public function LicenseVerification(){
+		try {
+			$config = SystemConfiguration::firstOrFail();
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
+		}
+
+		Config::set('mail.driver',$config->mail_driver);
+		Config::set('mail.host',$config->mail_host);
+		Config::set('mail.port',$config->mail_port);
+		Config::set('mail.encryption',$config->mail_encryption);
+		Config::set('mail.username',$config->mail_username);
+		Config::set('mail.password',$config->mail_password);
+		$from = $config->mail_username;
+
+		//-- Get customer info--//
+		$org = DB::table('Org')
+			->where('parent_org_code', '')
+			->orWhereNull('parent_org_code')
+			->first();
+		$org = (empty($org) ? $config->mail_username : $org);
+		$empActive = DB::table('employee')->count();
+
+		$data = [
+			"customer_name" => $org->org_name,
+			"assinged" => Config::get("session.license_assign"),
+			"active" => ($empActive-1)
+		];
+
+		$error = '';
+		try {
+			Mail::send('emails.license_verification', $data, function($message) use ($from)
+			{
+				$message
+					->from($from, Config::get("session.license_mail_sender_name"))
+					->to(Config::get("session.license_mail_to"))
+					->subject(Config::get("session.license_mail_subject"));
+			});
+		} catch (Exception $e) {
+			$error = $e->getMessage();
+		}
+		return response()->json(['error' => $error]);
 	}
 }
