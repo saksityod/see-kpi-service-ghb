@@ -30,6 +30,8 @@ class ImportEmployeeController extends Controller
 	
 	public function import(Request $request)
 	{
+		set_time_limit(0);
+
 		$errors = array();
 		foreach ($request->file() as $f) {
 			$items = Excel::load($f, function($reader){})->get();	
@@ -103,7 +105,28 @@ class ImportEmployeeController extends Controller
 					}
 				}					
 			}
+
+			$count_user = Employee::where('is_active', 1)->count();
+			$empAssign = config("session.license_assign");
+			if ($count_user > $empAssign){
+				DB::rollback();
+				$error[] = ['ข้อมูลพนักงานที่นำเข้าเกินจำนวน License ที่ซื้ออยู่ '.$empAssign.' คน ' => 'ติดต่อพนักงานขาย หากต้องการซื้อจำนวน License เพิ่ม'];
+				return response()->json(['status' => 400, 'errors' => $error, "emp" => []]);
+			}else {
+				DB::commit();
+			}
+		}// end file
+
+		// License Verification //
+		try{
+			if((!empty($empAssign))&&$empAssign!=0){
+				$mail = new MailController();
+				$result = $mail->LicenseVerification();
+			}
+		} catch (Exception $e) {
 		}
+		
+
 		return response()->json(['status' => 200, 'errors' => $errors]);
 	}
 	
