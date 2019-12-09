@@ -909,6 +909,26 @@ class AppraisalItemController extends Controller
 		}
 		
 		return response()->json(['status' => 200]);
-	}	
+	}
+	
+	public function autoCompleteReferenceTarget(Request $request){
+		!empty($request->input)?$input=$request->input:$input='';
+		$json = DB::select("
+					SELECT
+					item_result_id,
+					appraisal_item_result.item_name 
+				FROM
+					appraisal_item_result
+					LEFT JOIN appraisal_item ON appraisal_item_result.item_id = appraisal_item.item_id
+					LEFT JOIN appraisal_structure ON appraisal_item.structure_id = appraisal_structure.structure_id 
+				WHERE
+					form_id = 1 
+					AND appraisal_item_result.item_name LIKE '%npl%' 
+				ORDER BY
+					appraisal_item_result.item_name ASC
+		");
+
+		return response()->json(['status' => 200,'data'=>$json]);
+	}
 	
 }

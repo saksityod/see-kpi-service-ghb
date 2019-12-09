@@ -61,6 +61,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('appraisal_item/{item_id}','AppraisalItemController@show');
 	Route::patch('appraisal_item/{item_id}','AppraisalItemController@update');
 	Route::delete('appraisal_item/{item_id}','AppraisalItemController@destroy');
+	Route::get('auto_complete_reference_target','AppraisalItemController@autoCompleteReferenceTarget');
 	
 	// Import Employee //
 	Route::get('import_employee/role_list','ImportEmployeeController@role_list');
