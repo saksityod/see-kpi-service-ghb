@@ -14,6 +14,7 @@ use App\ThresholdGroup;
 use App\Org;
 use App\SystemConfiguration;
 use App\AppraisalStage;
+use App\AppraisalItem;
 
 use Auth;
 use DB;
@@ -197,7 +198,7 @@ class AppraisalAssignmentController extends Controller
 				Where position_name like ? 
 				and a.is_active = 1
 				and b.is_active = 1
-				Order by position_name			
+				Order by position_code asc			
 				limit 10
 			",array('%'.$request->position_name.'%'));
 		} else {
@@ -209,7 +210,7 @@ class AppraisalAssignmentController extends Controller
 				and position_name like ? 				
 				and a.is_active = 1
 				and b.is_active = 1
-				Order by position_name		
+				Order by position_code asc	
 				limit 10
 			", array($emp->emp_code,'%'.$request->position_name.'%'));
 		}
@@ -354,7 +355,7 @@ class AppraisalAssignmentController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by level_id			
+				Order by appraisal_level_name asc			
 			");
 		} else {
 			$items = DB::select("
@@ -364,7 +365,7 @@ class AppraisalAssignmentController extends Controller
 				and (e.chief_emp_code = ? or e.emp_code = ?)
 				and e.is_active = 1			
 				and al.is_hr = 0
-				Order by level_id	
+				Order by appraisal_level_name asc	
 			", array($emp->emp_code,$emp->emp_code));
 		}
 		
@@ -426,7 +427,7 @@ class AppraisalAssignmentController extends Controller
 				From employee 
 				Where emp_name like ? 
 				and is_active = 1
-				Order by emp_name			
+				Order by emp_code asc			
 			", array('%'.$request->emp_name.'%'));
 		} else {
 			$items = DB::select("
@@ -435,7 +436,7 @@ class AppraisalAssignmentController extends Controller
 				Where chief_emp_code = ?
 				And emp_name like ?
 				and is_active = 1
-				Order by emp_name	
+				Order by emp_code asc
 			", array($emp->emp_code,'%'.$request->emp_name.'%'));
 		}
 		return response()->json($items);
@@ -1765,7 +1766,7 @@ class AppraisalAssignmentController extends Controller
 					//empty($request->head_params['appraisal_type_id']) ?: ($query_unassign .= " and appraisal_type_id = ? " AND $qinput[] = $request->head_params['appraisal_type_id']);	
 					
 					$check_unassign = DB::select($query_unassign,$qinput);	
-					$rtg_id = ResultThresholdGroup::where('is_active',1)->first();
+					$rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
 					empty($rtg_id) ? $rtg_id = null : $rtg_id = $rtg_id->result_threshold_group_id; 
 					if (empty($check_unassign)) {
 						$stage = WorkflowStage::find($request->head_params['action_to']);
@@ -1853,6 +1854,9 @@ class AppraisalAssignmentController extends Controller
 						$tg_id = ThresholdGroup::where('is_active',1)->first();
 						empty($tg_id) ? $tg_id = null : $tg_id = $tg_id->threshold_group_id;
 						
+						$rstg_id = ResultThresholdGroup::where('is_active',1)->first();
+						empty($rstg_id) ? $rstg_id = null : $rstg_id = $rstg_id->result_threshold_group_id;
+
 						foreach ($request->appraisal_items as $i) {
 							$check_item = DB::select("
 								select count(1) cnt
@@ -1861,6 +1865,8 @@ class AppraisalAssignmentController extends Controller
 								inner join org on org.org_id = aio.org_id
 								inner join appraisal_item_level ail on ail.item_id = ai.item_id
 								inner join appraisal_level al on al.level_id = ail.level_id
+								inner join result_threshold_group rtg on ai.value_type_id = rtg.value_type_id
+								inner join appraisal_item_result air on rtg.result_threshold_group_id = air.result_threshold_group_id
 								where ai.item_id = '".$i['item_id']."'
 								and org.org_id = {$org_id}
 								and al.level_id = {$level_id}
@@ -1893,6 +1899,7 @@ class AppraisalAssignmentController extends Controller
 									$aitem->weigh_score = 0;
 									$aitem->structure_weight_percent = $i['total_weight'];
 									$aitem->threshold_group_id = $tg_id;
+									$aitem->result_threshold_group_id = $rstg_id;
 									$aitem->created_by = Auth::id();
 									$aitem->updated_by = Auth::id();
 									$aitem->save();					
@@ -1915,6 +1922,7 @@ class AppraisalAssignmentController extends Controller
 									$aitem->weigh_score = 0;
 									$aitem->structure_weight_percent = $i['total_weight'];
 									$aitem->threshold_group_id = $tg_id;
+									$aitem->result_threshold_group_id = $rstg_id;
 									$aitem->created_by = Auth::id();
 									$aitem->updated_by = Auth::id();
 									$aitem->save();
@@ -1938,6 +1946,7 @@ class AppraisalAssignmentController extends Controller
 									$aitem->weigh_score = 0;
 									$aitem->structure_weight_percent = $i['total_weight'];
 									$aitem->threshold_group_id = $tg_id;
+									$aitem->result_threshold_group_id = $rstg_id;
 									$aitem->created_by = Auth::id();
 									$aitem->updated_by = Auth::id();
 									$aitem->save();
@@ -1981,7 +1990,7 @@ class AppraisalAssignmentController extends Controller
 				//empty($request->head_params['appraisal_type_id']) ?: ($query_unassign .= " and appraisal_type_id = ? " AND $qinput[] =  $request->head_params['appraisal_type_id']);	
 				
 				$check_unassign = DB::select($query_unassign,$qinput);	
-				$rtg_id = ResultThresholdGroup::where('is_active',1)->first();
+				$rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
 				empty($rtg_id) ? $rtg_id = null : $rtg_id = $rtg_id->result_threshold_group_id; 				
 				if (empty($check_unassign)) {
 					$stage = WorkflowStage::find($request->head_params['action_to']);
@@ -2091,6 +2100,8 @@ class AppraisalAssignmentController extends Controller
 					$tg_id = ThresholdGroup::where('is_active',1)->first();
 					empty($tg_id) ? $tg_id = null : $tg_id = $tg_id->threshold_group_id;	
 					
+					$rstg_id = ResultThresholdGroup::where('is_active',1)->first();
+						empty($rstg_id) ? $rstg_id = null : $rstg_id = $rstg_id->result_threshold_group_id;
 					foreach ($request->appraisal_items as $i) {
 
 						$check_item = DB::select("
@@ -2100,6 +2111,8 @@ class AppraisalAssignmentController extends Controller
 							inner join org on org.org_id = aio.org_id
 							inner join appraisal_item_level ail on ail.item_id = ai.item_id
 							inner join appraisal_level al on al.level_id = ail.level_id
+							inner join result_threshold_group rtg on ai.value_type_id = rtg.value_type_id
+							inner join appraisal_item_result air on rtg.result_threshold_group_id = air.result_threshold_group_id
 							where ai.item_id = '".$i['item_id']."'
 							and org.org_id = {$org_id}
 							and al.level_id = {$level_id}
@@ -2131,6 +2144,7 @@ class AppraisalAssignmentController extends Controller
 								$aitem->over_value = 0;
 								$aitem->weigh_score = 0;
 								$aitem->threshold_group_id = $tg_id;
+								$aitem->result_threshold_group_id = $rstg_id;
 								$aitem->structure_weight_percent = $i['total_weight'];
 								$aitem->created_by = Auth::id();
 								$aitem->updated_by = Auth::id();
@@ -2153,6 +2167,7 @@ class AppraisalAssignmentController extends Controller
 								$aitem->over_value = 0;
 								$aitem->weigh_score = 0;
 								$aitem->threshold_group_id = $tg_id;
+								$aitem->result_threshold_group_id = $rstg_id;
 								$aitem->structure_weight_percent = $i['total_weight'];
 								$aitem->created_by = Auth::id();
 								$aitem->updated_by = Auth::id();
@@ -2176,6 +2191,7 @@ class AppraisalAssignmentController extends Controller
 								$aitem->over_value = 0;
 								$aitem->weigh_score = 0;
 								$aitem->threshold_group_id = $tg_id;
+								$aitem->result_threshold_group_id = $rstg_id;
 								$aitem->structure_weight_percent = $i['total_weight'];
 								$aitem->created_by = Auth::id();
 								$aitem->updated_by = Auth::id();

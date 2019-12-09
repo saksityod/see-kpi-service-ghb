@@ -66,6 +66,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('import_employee/role_list','ImportEmployeeController@role_list');
 	Route::get('import_employee/dep_list','ImportEmployeeController@dep_list');
 	Route::get('import_employee/sec_list','ImportEmployeeController@sec_list');
+	Route::get('import_employee/org_list','ImportEmployeeController@org_list');
 	Route::get('import_employee/auto_position_name','ImportEmployeeController@auto_position_name');
 	Route::post('import_employee/auto_employee_name','ImportEmployeeController@auto_employee_name');
 	Route::get('import_employee/{emp_code}/role', 'ImportEmployeeController@show_role');
@@ -79,14 +80,25 @@ Route::group(['middleware' => 'cors'], function()
 	
 	// CDS Result //
 	Route::get('cds_result/al_list','CDSResultController@al_list');
+	Route::get('cds_result/al_list_v2','CDSResultController@al_list_v2');
+	Route::get('cds_result/org_list_v2','CDSResultController@org_list_v2');
 	Route::get('cds_result/year_list', 'CDSResultController@year_list');
 	Route::get('cds_result/month_list', 'CDSResultController@month_list');
 	Route::post('cds_result/auto_position_name', 'CDSResultController@auto_position_name');
 	Route::post('cds_result/auto_emp_name', 'CDSResultController@auto_emp_name');
 	Route::get('cds_result', 'CDSResultController@index');
+	Route::get('cds_result_v2', 'CDSResultController@index_v2');
 	Route::post('cds_result/export', 'CDSResultController@export');
 	Route::post('cds_result', 'CDSResultController@import');
+	Route::patch('cds_result','CDSResultController@update_cdsResult');
+	Route::put('cds_result_v2','CDSResultController@update_cdsResult_v2');
 	Route::delete('cds_result/{cds_result_id}','CDSResultController@destroy');
+	Route::get('cds_result/detail/{cds_result_id}','CDSResultController@detail_list');
+	Route::delete('cds_result/detail/{reason_cds_result_id}','CDSResultController@detail_del');
+	Route::post('cds_result/detail/{cds_result_id}','CDSResultController@detail_store');
+	Route::patch('cds_result/detail/{cds_result_id}','CDSResultController@detail_update');
+	Route::get('cds_result/detail/{cds_result_id}/{reason_cds_result_id}','CDSResultController@reason_cds_result_list');
+	Route::get('cds_result/item_desc/{cds_result_id}','CDSResultController@item_desc_list');
 	
 	// Appraisal Data //
 	Route::get('appraisal_data/structure_list','AppraisalDataController@structure_list');
@@ -103,7 +115,7 @@ Route::group(['middleware' => 'cors'], function()
 	// Appraisal Assignment //
 	Route::get('appraisal_assignment/appraisal_type_list', 'AppraisalAssignmentController@appraisal_type_list');
 	Route::post('appraisal_assignment/auto_position_name', 'AppraisalAssignmentController@auto_position_name');
-	Route::get('appraisal_assignment/al_list', 'AppraisalAssignmentController@al_list');
+	Route::get('appraisal_assignment/al_list', 'AppraisalController@al_list');
 	Route::get('appraisal_assignment/period_list', 'AppraisalAssignmentController@period_list');
 	Route::get('appraisal_assignment/frequency_list', 'AppraisalAssignmentController@frequency_list');
 	Route::post('appraisal_assignment/auto_employee_name', 'AppraisalAssignmentController@auto_employee_name');
@@ -242,6 +254,7 @@ Route::group(['middleware' => 'cors'], function()
 	// Result Threshold Group //
 	Route::get('result_threshold/group', 'ResultThresholdController@group_list');
 	Route::post('result_threshold/group', 'ResultThresholdController@add_group');
+	Route::get('result_threshold/value_type', 'ResultThresholdController@valuetype_list');
 	Route::get('result_threshold/group/{result_threshold_group_id}', 'ResultThresholdController@show_group');
 	Route::patch('result_threshold/group/{result_threshold_group_id}', 'ResultThresholdController@edit_group');
 	Route::delete('result_threshold/group/{result_threshold_group_id}', 'ResultThresholdController@delete_group');	
@@ -324,6 +337,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('dashboard/period_list', 'DashboardController@period_list');
 	Route::get('dashboard/region_list', 'DashboardController@region_list');
 	Route::get('dashboard/district_list', 'DashboardController@district_list');
+	Route::get('dashboard/level_list', 'DashboardController@level_list');
 	Route::get('dashboard/appraisal_level', 'DashboardController@appraisal_level');
 	Route::post('dashboard/org_list', 'DashboardController@org_list');
 	Route::post('dashboard/kpi_map_list', 'DashboardController@kpi_map_list');
@@ -336,7 +350,8 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dashboard/performance_trend', 'DashboardController@performance_trend');
 	Route::get('dashboard/gantt', 'DashboardController@gantt');
 	Route::get('dashboard/branch_performance', 'DashboardController@branch_performance');
-	Route::get('dashboard/branch_details', 'DashboardController@branch_details');	
+	Route::get('dashboard/branch_details', 'DashboardController@branch_details');
+	Route::get('dashboard/branch_details2', 'DashboardController@branch_details2');
 	Route::get('dashboard/perspective_details', 'DashboardController@perspective_details');
 	
 	//Dashbaord Emp
@@ -366,9 +381,12 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('report/auto_employee_name','ReportController@auto_employee_name');
 	
 	// Import Assignment //
+	Route::get('import_assignment/level_list', 'ImportAssignmentController@level_list');
 	Route::get('import_assignment/org_list', 'ImportAssignmentController@org_list');
-	Route::get('import_assignment/item_list','ImportAssignmentController@item_list');
-	Route::get('import_assignment/export','ImportAssignmentController@export_template');
+	Route::post('import_assignment/item_list','ImportAssignmentController@item_list');
+	Route::post('import_assignment/export_organization','ImportAssignmentController@export_template_organization');
+	Route::post('import_assignment/export_individual','ImportAssignmentController@export_template_individual');
+	Route::post('import_assignment/import','ImportAssignmentController@import_template');
 	
 	// benchmark data //
 	Route::get('benchmark_data/select_list_search/', 'BenchmarkDataController@select_list_search');
@@ -381,6 +399,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('benchmark_data/search_kpi/', 'BenchmarkDataController@search_kpi');
 	Route::get('benchmark_data/search_chart/', 'BenchmarkDataController@search_chart');
 	Route::get('benchmark_data/search_chart_quarter/', 'BenchmarkDataController@search_chart_quarter');
+	Route::get('benchmark_data/search_chart_month/', 'BenchmarkDataController@search_chart_month');
 
 	Route::Resource('generate', 'JasperController@generate');
 
@@ -401,6 +420,3 @@ Route::group(['middleware' => 'cors'], function()
 		return response()->json(['status' => '405']);
 	}]);	
 });
-
-
-

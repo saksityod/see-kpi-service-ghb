@@ -20,10 +20,16 @@ use DateTime;
 use DateInterval;
 use DatePeriod;
 use Exception;
+use Log;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Collection;
+
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
 
 class DashboardController extends Controller
 {
@@ -35,7 +41,55 @@ class DashboardController extends Controller
 	}
 
 
+	function get_color($result_threshold_group_id,$score){
+		
+		$branch_color = DB::select("
+				select if(instr(color_code,'#') > 0,color_code,concat('#',color_code)) color_code
+				from result_threshold
+				where result_threshold_group_id = ?
+				and ? between begin_threshold and end_threshold
+			", array($result_threshold_group_id, $score));
+			
+		//empty($branch_color) ? $color_code = '#9169FF' : $color_code = $branch_color[0]->color_code;
+ 			
+			if (empty($branch_color)) {
+				$minmax = DB::select("
+					select min(begin_threshold) min_threshold, max(end_threshold) max_threshold
+					from result_threshold
+					where result_threshold_group_id = ?		
+				",array($result_threshold_group_id));
+				
+				if (empty($minmax)) {
+					$color_code = '#9169FF';
+				} else {
+					if ($score < $minmax[0]->min_threshold) {
+						$get_color = DB::select("
+							select if(instr(color_code,'#') > 0,color_code,concat('#',color_code)) color_code
+							from result_threshold
+							where result_threshold_group_id = ?
+							and begin_threshold = ?
+						", array($result_threshold_group_id, $minmax[0]->min_threshold));
+						$color_code = $get_color[0]->color_code;
+					} elseif ($score > $minmax[0]->max_threshold) {
+						$get_color = DB::select("
+							select if(instr(color_code,'#') > 0,color_code,concat('#',color_code)) color_code
+							from result_threshold
+							where result_threshold_group_id = ?
+							and end_threshold = ?
+						", array($result_threshold_group_id, $minmax[0]->max_threshold));
+						$color_code = $get_color[0]->color_code;					
+					} else {
+						$color_code = '#9169FF';
+					}				
+				}
+				
+			} else {
+				$color_code = $branch_color[0]->color_code;
+			}	
 
+			return $color_code;
+
+	}
 	public function year_list()
 	{
 		// $items = DB::select("
@@ -73,6 +127,7 @@ class DashboardController extends Controller
 			where b.district_flag = 1 and a.is_active = 1
 			) b
 			where a.org_code = b.parent_org_code	and a.is_active = 1
+			order by a.org_name asc
 		");
 		return response()->json($items);
 	}
@@ -87,7 +142,48 @@ class DashboardController extends Controller
 			where b.district_flag = 1		
 			and a.parent_org_code = ?
 			and a.is_active = 1
+			order by a.org_name asc
 		", array($request->org_code));
+		return response()->json($items);
+	}
+
+	public function level_list(Request $request)
+	{
+		$level = DB::select("
+			SELECT
+				GROUP_CONCAT( DISTINCT o.level_id ) level_id 
+			FROM
+				org o,
+				(
+				SELECT
+					GROUP_CONCAT( po.parent_org_code ) section_org_code,
+					GROUP_CONCAT( o.org_code ) org_code,
+					GROUP_CONCAT( o.parent_org_code ) parent_org_code,
+					GROUP_CONCAT( oc.org_code ) child_org_code 
+				FROM
+					appraisal_level l
+					INNER JOIN org o ON o.level_id = l.level_id
+					LEFT JOIN org oc ON oc.parent_org_code = o.org_code
+					LEFT JOIN org po ON po.org_code = o.parent_org_code 
+					AND oc.is_active = 1 
+				WHERE
+					l.district_flag = 1 
+					AND o.is_active = 1 
+				) ol 
+			WHERE
+				FIND_IN_SET( o.org_code, ol.org_code )
+				OR FIND_IN_SET( o.org_code, ol.parent_org_code ) 
+				OR FIND_IN_SET( o.org_code, ol.child_org_code )
+				OR FIND_IN_SET( o.org_code, ol.section_org_code );
+		");
+		
+		$items = DB::select("
+			select level_id ,appraisal_level_name from appraisal_level
+			WHERE FIND_IN_SET(level_id,'".(empty($level[0]->level_id)? null : $level[0]->level_id)."')
+			ORDER BY parent_id
+		");
+		
+
 		return response()->json($items);
 	}
 
@@ -363,7 +459,7 @@ class DashboardController extends Controller
 			".$KPI_type."
 			".$year."
 			GROUP BY air.item_id
-			ORDER BY air.item_id";
+			ORDER BY ai.item_name ASC";
 
 		$items = DB::select($query);
 		return response()->json($items);
@@ -714,7 +810,7 @@ class DashboardController extends Controller
 				SELECT begin_threshold, end_threshold, color_code, result_type
 				FROM result_threshold
 				WHERE result_threshold_group_id = (
-					SELECT MAX(er.result_threshold_group_id) result_threshold_group_id
+					SELECT MAX(air.result_threshold_group_id) result_threshold_group_id
 					FROM appraisal_item_result air
 					INNER JOIN emp_result er ON er.emp_result_id = air.emp_result_id
 					INNER JOIN appraisal_period ap ON ap.period_id = air.period_id
@@ -1328,7 +1424,7 @@ class DashboardController extends Controller
 		$max_x = 0;
 		$qinput = [];
 		$query = "
-			select c.org_id, if(c.appraisal_type_id=1,e.emp_name,d.org_name) name, a.item_id, b.item_name, ifnull(a.target_value,0) target_value, ifnull(a.actual_value,0) actual_value, a.weight_percent,
+			select a.org_id, if(c.appraisal_type_id=1,e.emp_name,d.org_name) name, a.item_id, b.item_name, ifnull(a.target_value,0) target_value, ifnull(a.actual_value,0) actual_value, a.weight_percent,
 				(
 				SELECT axis_value_name FROM axis_mapping
 				where axis_type_id=2
@@ -1341,28 +1437,29 @@ class DashboardController extends Controller
 				and (100 - a.percent_achievement) between axis_value_start and axis_value_end 
 
 				)axis_value_name_x,
-			 a.etl_dttm, c.result_threshold_group_id,
+			 a.etl_dttm, a.result_threshold_group_id,
 			a.percent_achievement achievement,
 			#round(if(ifnull(a.target_value,0) = 0,0,(ifnull(a.actual_value,0)/a.target_value)*100),2) achievement,
 			100 - a.percent_achievement urgency,
 			(
 			select rt.color_code
 			from result_threshold rt
-			where rt.result_threshold_group_id = c.result_threshold_group_id
+			where rt.result_threshold_group_id = a.result_threshold_group_id
 			and a.percent_achievement between begin_threshold and end_threshold
 			) color_code,
 			(
 			select rt.begin_threshold
 			from result_threshold rt
-			where rt.result_threshold_group_id = c.result_threshold_group_id
+			where rt.result_threshold_group_id = a.result_threshold_group_id
 			and a.percent_achievement between begin_threshold and end_threshold
 			) begin_threshold,
 			(
 			select rt.end_threshold
 			from result_threshold rt
-			where rt.result_threshold_group_id = c.result_threshold_group_id
+			where rt.result_threshold_group_id = a.result_threshold_group_id
 			and a.percent_achievement between begin_threshold and end_threshold
-			) end_threshold
+			) end_threshold,
+			b.value_type_id ,v.value_type_name
 
 			from appraisal_item_result a
 			left outer join appraisal_item b
@@ -1374,11 +1471,13 @@ class DashboardController extends Controller
 			left outer join emp_result c
 			on a.emp_result_id = c.emp_result_id
 			left outer join org d
-			on c.org_id = d.org_id
+			on a.org_id = d.org_id
 			left outer join employee e
-			on c.emp_id = e.emp_id
+			on a.emp_id = e.emp_id
+			left outer join value_type v
+			on b.value_type_id = v.value_type_id
 			where c.appraisal_type_id = ?
-			and c.period_id = ?
+			and a.period_id = ?
 			and b.perspective_id is not null
 			and f.form_name = 'Quantity'
 		";
@@ -1389,9 +1488,9 @@ class DashboardController extends Controller
 		empty($request->perspective_id) ?: ($query .= " and b.perspective_id = ? " AND $qinput[] = $request->perspective_id);
 		
 		if ($request->appraisal_type_id == 2) {
-			empty($request->emp_id) ?: ($query .= " and c.emp_id = ? " AND $qinput[] = $request->emp_id);
+			empty($request->emp_id) ?: ($query .= " and a.emp_id = ? " AND $qinput[] = $request->emp_id);
 		} else {
-			empty($request->org_id) ?: ($query .= " and c.org_id = ? " AND $qinput[] = $request->org_id);
+			empty($request->org_id) ?: ($query .= " and a.org_id = ? " AND $qinput[] = $request->org_id);
 		}
 		
 		$qfooter = " order by begin_threshold is null asc,begin_threshold asc ";
@@ -1462,7 +1561,7 @@ class DashboardController extends Controller
 			
 			if (!isset($groups[$key])) {
 				$groups[$key] = array(
-					'items' => array('color' => $key, 'seriesName'=>$begin_threshold.'-'.$end_threshold,'bubbleHoverColor' => $key, 'data' => array(['x' => $i->urgency, 'y' => $i->weight_percent, 'z' => $i->achievement, 'name' => $i->item_name, 'item_id' => $i->item_id,
+					'items' => array('color' => $key, 'seriesName'=>$begin_threshold.'-'.$end_threshold.','.$i->value_type_name,'bubbleHoverColor' => $key, 'data' => array(['x' => $i->urgency, 'y' => $i->weight_percent, 'z' => $i->achievement, 'name' => $i->item_name, 'item_id' => $i->item_id,
 					"tooltext" => "<div id='nameDiv'>" .$i->item_name. "</div>{br}ทำได้ : <b>" . $i->achievement . "%</b>{br}ห่างเป้า : <b>" . $i->axis_value_name_x . "</b>{br}ความสำคัญ : <b>" . $i->axis_value_name ."</b>{br}As of: <b>" . $i->etl_dttm . "<b>"]))
 				);
 			} else {
@@ -1930,8 +2029,6 @@ class DashboardController extends Controller
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}	
 
-		
-
 		$counter = 1;
 		if ($frequency->frequency_month_value > 1) {
 
@@ -1940,53 +2037,84 @@ class DashboardController extends Controller
 			if ($request->appraisal_type_id == 2) {
 				$emp = Employee::where('emp_id',$request->emp_id)->first();
 				$org_list = DB::select("
-					SELECT a.org_id, a.emp_id, g.emp_name org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, b.threshold_group_id, e.is_show_variance, max(a.etl_dttm) etl_dttm
-					FROM monthly_appraisal_item_result a
-					left outer join appraisal_item_result b
-					on a.item_id = b.item_id
-					and a.emp_result_id = b.emp_result_id
-					left outer join emp_result c
-					on a.emp_result_id = c.emp_result_id
-					left outer join org d
-					on a.org_id = d.org_id
-					left outer join appraisal_item e
-					on a.item_id = e.item_id
-					left outer join perspective f
-					on e.perspective_id = f.perspective_id
-					left outer join employee g
-					on b.emp_id = g.emp_id
-					left outer join uom u
-					on e.uom_id = u.uom_id
-					where a.item_id = ?
-					and c.appraisal_type_id = ?
-					and (g.emp_code = ? or g.chief_emp_code = ?)
-					and c.period_id = ?
-					group by a.org_id, a.emp_id, g.emp_name ,org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, e.is_show_variance
-					order by b.percent_achievement desc, a.org_id asc, a.appraisal_month_no asc			
+				SELECT
+					a.org_id ,a.emp_id ,g.emp_name org_name, e.item_name ,f.perspective_name ,u.uom_name,
+					b.result_threshold_group_id ,b.item_result_id, b.threshold_group_id ,e.is_show_variance,
+					CASE
+						WHEN DATE_FORMAT( MAX( a.etl_dttm ), '%Y-%m' ) > DATE_FORMAT( CONCAT( a.YEAR, '-', a.appraisal_month_no, '-', '01' ), '%Y-%m' ) 
+						THEN MAX( cds.etl_dttm ) 
+						ELSE MAX( a.etl_dttm ) 
+					END AS etl_dttm 
+				FROM
+					monthly_appraisal_item_result a
+					LEFT OUTER JOIN appraisal_item_result b ON a.item_id = b.item_id 
+					AND a.emp_result_id = b.emp_result_id
+					LEFT OUTER JOIN emp_result c ON a.emp_result_id = c.emp_result_id
+					LEFT OUTER JOIN org d ON a.org_id = d.org_id
+					LEFT OUTER JOIN appraisal_item e ON a.item_id = e.item_id
+					LEFT OUTER JOIN perspective f ON e.perspective_id = f.perspective_id
+					LEFT OUTER JOIN employee g ON b.emp_id = g.emp_id
+					LEFT OUTER JOIN uom u ON e.uom_id = u.uom_id
+					LEFT OUTER JOIN kpi_cds_mapping kcm ON a.item_id = kcm.item_id
+					LEFT OUTER JOIN cds_result cds ON kcm.cds_id = cds.cds_id 
+					AND a.org_id = cds.org_id 
+					AND a.level_id = cds.level_id 
+					AND a.`year` = cds.`year` 
+					AND a.appraisal_month_no = cds.appraisal_month_no 
+					AND c.appraisal_type_id = cds.appraisal_type_id 
+				WHERE
+					a.item_id = ? 
+					AND c.appraisal_type_id = ? 
+					AND ( g.emp_code = ? OR g.chief_emp_code = ? ) 
+					AND c.period_id = ? 
+				GROUP BY
+					a.org_id, a.emp_id, g.emp_name, org_name, e.item_name, f.perspective_name,
+					u.uom_name, b.result_threshold_group_id, b.item_result_id, e.is_show_variance 
+				ORDER BY
+					b.percent_achievement DESC,
+					a.org_id ASC,
+					a.appraisal_month_no ASC		
 				", array($request->item_id,$request->appraisal_type_id,$emp->emp_code, $emp->emp_code, $request->period_id));
 			} else {
 				$org_list = DB::select("
-					SELECT a.org_id, a.emp_id, d.org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, b.threshold_group_id, e.is_show_variance, max(a.etl_dttm) etl_dttm
-					FROM monthly_appraisal_item_result a
-					left outer join appraisal_item_result b
-					on a.item_id = b.item_id
-					and a.emp_result_id = b.emp_result_id
-					left outer join emp_result c
-					on a.emp_result_id = c.emp_result_id
-					left outer join org d
-					on a.org_id = d.org_id
-					left outer join appraisal_item e
-					on a.item_id = e.item_id
-					left outer join perspective f
-					on e.perspective_id = f.perspective_id
-					left outer join uom u
-					on e.uom_id = u.uom_id
-					where a.item_id = ?
-					and c.appraisal_type_id = ?
-					and (d.org_code = ? or d.parent_org_code = ?)
-					and c.period_id = ?
-					group by a.org_id, a.emp_id, d.org_name, e.item_name, f.perspective_name, u.uom_name, c.result_threshold_group_id, b.item_result_id, e.is_show_variance
-					order by b.percent_achievement desc, a.org_id asc, a.appraisal_month_no asc			
+				SELECT
+					a.org_id, a.emp_id, d.org_name, e.item_name, f.perspective_name,
+					u.uom_name, b.result_threshold_group_id, b.item_result_id,
+					b.threshold_group_id, e.is_show_variance,
+					CASE
+						WHEN DATE_FORMAT( MAX( a.etl_dttm ), '%Y-%m' ) > DATE_FORMAT( CONCAT( a.YEAR, '-', a.appraisal_month_no, '-', '01' ), '%Y-%m' ) 
+						THEN MAX( cds.etl_dttm ) 
+						ELSE MAX( a.etl_dttm ) 
+					END AS etl_dttm 
+				FROM
+					monthly_appraisal_item_result a
+					LEFT OUTER JOIN appraisal_item_result b ON a.item_id = b.item_id 
+					AND a.emp_result_id = b.emp_result_id
+					LEFT OUTER JOIN emp_result c ON a.emp_result_id = c.emp_result_id
+					LEFT OUTER JOIN org d ON a.org_id = d.org_id
+					LEFT OUTER JOIN appraisal_item e ON a.item_id = e.item_id
+					LEFT OUTER JOIN perspective f ON e.perspective_id = f.perspective_id
+					LEFT OUTER JOIN uom u ON e.uom_id = u.uom_id
+					LEFT OUTER JOIN kpi_cds_mapping kcm ON a.item_id = kcm.item_id
+					LEFT OUTER JOIN cds_result cds ON kcm.cds_id = cds.cds_id 
+					AND a.org_id = cds.org_id 
+					AND a.level_id = cds.level_id 
+					AND a.`year` = cds.`year` 
+					AND a.appraisal_month_no = cds.appraisal_month_no 
+					AND c.appraisal_type_id = cds.appraisal_type_id 
+				WHERE
+					a.item_id = ? 
+					AND c.appraisal_type_id = ? 
+					AND ( d.org_code = ? OR d.parent_org_code = ? ) 
+					AND c.period_id = ? 
+				GROUP BY
+					a.org_id, a.emp_id, d.org_name, e.item_name,
+					f.perspective_name, u.uom_name, b.result_threshold_group_id,
+					b.item_result_id, e.is_show_variance 
+				ORDER BY
+					b.percent_achievement DESC,
+					a.org_id ASC,
+					a.appraisal_month_no ASC		
 				", array($request->item_id,$request->appraisal_type_id,$org->org_code, $org->org_code, $request->period_id));			
 			}
 			
@@ -1995,29 +2123,35 @@ class DashboardController extends Controller
 				
 				if ($request->appraisal_type_id == 2) {
 					$query = "
-						SELECT a.org_id, d.org_name, a.appraisal_month_name, a.appraisal_month_no, a.target_value monthly_target, ifnull(b.target_value, '&nbsp;') yearly_target, ifnull(b.forecast_value, '&nbsp;') forecast_value, ifnull(b.actual_value, '&nbsp;') actual_value, ifnull(b.percent_achievement, 0) percent_achievement, a.actual_value sum_actual_value
-						#(
-						# select sum(actual_value)
-						# from monthly_appraisal_item_result
-						# where period_id = a.period_id
-						# and item_id = a.item_id
-						# and emp_id = a.emp_id
-						# and appraisal_month_no <= a.appraisal_month_no
-						#) sum_actual_value
-						FROM monthly_appraisal_item_result a
-						left outer join appraisal_item_result b
-						on a.item_id = b.item_id
-						and a.emp_result_id = b.emp_result_id
-						left outer join emp_result c
-						on a.emp_result_id = c.emp_result_id
-						left outer join org d
-						on a.org_id = d.org_id
-						left outer join employee e
-						on b.emp_id = e.emp_id
-						where a.item_id = ?
-						and c.appraisal_type_id = ?
-						and b.emp_id = ?
-						and c.period_id = ?
+					SELECT
+						a.org_id ,d.org_name ,a.appraisal_month_name ,a.appraisal_month_no ,a.target_value monthly_target,
+						ifnull( b.target_value, '&nbsp;' ) yearly_target,
+						ifnull( b.forecast_value, '&nbsp;' ) forecast_value,
+						ifnull( b.actual_value, '&nbsp;' ) actual_value,
+						ifnull( b.percent_achievement, 0 ) percent_achievement,
+						ifnull( cds.forecast, 0 ) forecast,
+						ifnull( cds.forecast_bu, 0 ) forecast_bu,
+						a.actual_value sum_actual_value 
+					FROM
+						monthly_appraisal_item_result a
+						LEFT OUTER JOIN appraisal_item_result b ON a.item_id = b.item_id 
+						AND a.emp_result_id = b.emp_result_id
+						LEFT OUTER JOIN emp_result c ON a.emp_result_id = c.emp_result_id
+						LEFT OUTER JOIN org d ON a.org_id = d.org_id
+						LEFT OUTER JOIN employee e ON b.emp_id = e.emp_id
+						LEFT OUTER JOIN kpi_cds_mapping kcm ON b.item_id = kcm.item_id
+						LEFT OUTER JOIN cds_result cds ON c.emp_id = cds.emp_id 
+						AND c.position_id = cds.position_id 
+						AND c.org_id = cds.org_id 
+						AND c.level_id = cds.level_id 
+						AND c.appraisal_type_id = cds.appraisal_type_id 
+						AND kcm.cds_id = cds.cds_id 
+						AND a.appraisal_month_no = cds.appraisal_month_no 
+						AND cds.`year` = a.`year`
+					WHERE a.item_id = ?
+						AND c.appraisal_type_id = ?
+						AND b.emp_id = ?
+						AND c.period_id = ?
 					";
 					$qinput[] = $request->item_id;
 					$qinput[] = $request->appraisal_type_id;
@@ -2026,27 +2160,33 @@ class DashboardController extends Controller
 					
 				} else {
 					$query = "
-						SELECT a.org_id, d.org_name, a.appraisal_month_name, a.appraisal_month_no, a.target_value monthly_target, ifnull(b.target_value, '&nbsp;') yearly_target, ifnull(b.forecast_value, '&nbsp;') forecast_value, ifnull(b.actual_value, '&nbsp;') actual_value, ifnull(b.percent_achievement, 0) percent_achievement, a.actual_value sum_actual_value
-						#(
-						# select sum(actual_value)
-						# from monthly_appraisal_item_result
-						# where period_id = a.period_id
-						# and item_id = a.item_id
-						# and org_id = a.org_id
-						# and appraisal_month_no <= a.appraisal_month_no
-						#) sum_actual_value
-						FROM monthly_appraisal_item_result a
-						left outer join appraisal_item_result b
-						on a.item_id = b.item_id
-						and a.emp_result_id = b.emp_result_id
-						left outer join emp_result c
-						on a.emp_result_id = c.emp_result_id
-						left outer join org d
-						on a.org_id = d.org_id
-						where a.item_id = ?
-						and c.appraisal_type_id = ?
-						and a.org_id = ?
-						and c.period_id = ?
+					SELECT
+						a.org_id ,d.org_name ,a.appraisal_month_name ,a.appraisal_month_no ,a.target_value monthly_target,
+						ifnull( b.target_value,'&nbsp;' ) yearly_target,
+						ifnull( b.forecast_value,'&nbsp;' ) forecast_value,
+						ifnull( b.actual_value,'&nbsp;' ) actual_value,
+						ifnull( b.percent_achievement,0 ) percent_achievement,
+						ifnull(cds.forecast,0) forecast,
+						ifnull(cds.forecast_bu,0) forecast_bu,
+						a.actual_value sum_actual_value
+					FROM
+						monthly_appraisal_item_result a
+						LEFT OUTER JOIN appraisal_item_result b ON a.item_id = b.item_id
+						AND a.emp_result_id = b.emp_result_id
+						LEFT OUTER JOIN emp_result c ON a.emp_result_id = c.emp_result_id
+						LEFT OUTER JOIN org d ON a.org_id = d.org_id
+						LEFT OUTER JOIN kpi_cds_mapping kcm ON b.item_id = kcm.item_id
+						LEFT OUTER JOIN cds_result cds ON c.org_id = cds.org_id
+						AND c.level_id = cds.level_id
+						AND c.appraisal_type_id = cds.appraisal_type_id
+						AND kcm.cds_id = cds.cds_id
+						AND a.appraisal_month_no = cds.appraisal_month_no
+						AND cds.`year` = a.`year`
+					WHERE
+						a.item_id = ?
+						AND c.appraisal_type_id = ?
+						AND a.org_id = ?
+						AND c.period_id = ?
 					";
 					$qinput[] = $request->item_id;
 					$qinput[] = $request->appraisal_type_id;
@@ -2109,6 +2249,8 @@ class DashboardController extends Controller
 				$category = array();
 				$variance = array();
 				$growth = array();
+				$arrForecast = array();
+				$arrForecast_bu = array();
 				$max_value = 0;
 				$current_month = 0;
 				$previous_month = 0;
@@ -2152,6 +2294,8 @@ class DashboardController extends Controller
 						}
 						$v_counter++;
 					}
+					$arrForecast[] = ['value' => $i->forecast];
+					$arrForecast_bu[] = ['value' => $i->forecast_bu];
 				}
 				$dataset = [
 						[
@@ -2171,13 +2315,14 @@ class DashboardController extends Controller
 							// 'data' => $forecast						
 						// ],
 				];
-				
+
 				if (!empty($variance)) {
 					$dataset[] = [
 						"seriesName" => "Diff",
 						"parentYAxis" => "S",
 						"renderAs" => "line",
 						"showValues" => "0",
+						"initiallyHidden"=>"1",
 						"data" => $variance					
 					];
 					
@@ -2187,10 +2332,31 @@ class DashboardController extends Controller
 						"parentYAxis" => "S",
 						"renderAs" => "line",
 						"showValues" => "0",
+						"initiallyHidden"=>"1",
 						"data" => $growth					
 					];
 
 				}
+
+				/* add Forecast and Forecast BU*/
+				$dataset[] = [
+					"seriesName" => "Forecast BU",
+					"parentYAxis" => "S",
+					"renderAs" => "line",
+					"showValues" => "0",
+					"initiallyHidden"=>"0",
+					"color"=> "#00897b",
+					"data" => $arrForecast_bu					
+				];
+				$dataset[] = [
+					"seriesName" => "Forecast",
+					"parentYAxis" => "S",
+					"renderAs" => "line",
+					"showValues" => "0",
+					"initiallyHidden"=>"0",
+					"color"=> "#0288d1",
+					"data" => $arrForecast					
+				];
 				
 				if ($o->is_show_variance == 0) {
 					empty($items) ? $trendlines_target = 0 : $trendlines_target = $items[0]->monthly_target;
@@ -2257,54 +2423,63 @@ class DashboardController extends Controller
 				", array($o->item_result_id));
 				
 				$action_groups = array();
-				foreach ($action_plans as $a) {
-					$action_item = [
-						[
-						   "id" => $o->item_result_id.'-'.$a->month_name."-Base",
-						   "type" => "rectangle",
-						   "radius" => "2",
-						   "alpha" => "90",
-						   "fillColor" => "#7FC31C",
-						   "link" => "javascript:void(0)",
-						   "x" => '$dataset.0.set.'.$a->month_no.'.x-15',
-						   "y" => '$dataset.0.set.'.$a->month_no.'.starty-15',
-						   "tox" => '$dataset.0.set.'.$a->month_no.'.x+15',
-						   "toy" => '$dataset.0.set.'.$a->month_no.'.starty-30'
-						],
-						[
-						   "id" => $o->item_result_id.'-'.$a->month_name."Triangle",
-						   "type" => "polygon",
-						   "sides" => "3",
-						   "startangle" => "270",
-						   "alpha" => "90",
-						   "fillColor" => "#7FC31C",
-						   "link" => "javascript:void(0)",
-						   "x" => '$dataset.0.set.'.$a->month_no.'.x',
-						   "y" => '$dataset.0.set.'.$a->month_no.'.starty-18',
-						   "radius" => "11",
-						],		
-						[
-						   "id" => $o->item_result_id.'-'.$a->month_name."-Label",
-						   "type" => "Text",
-						   "fontSize" => "10",
-						   "link" => "javascript:void(0)",
-						   "bold" => "1",
-						   "fillcolor" => "#ffffff",
-						   "text" => "SIP",
-						   "x" => '$dataset.0.set.'.$a->month_no.'.x-',
-						   "y" => '$dataset.0.set.'.$a->month_no.'.starty - 23'
-						]
-					];
-					
-					$action_groups[] = [
-						'id' => $o->item_result_id.'-'.$a->month_name,
-						'items' => $action_item
-					];	
+				foreach ($action_plans as $a) {		// เดือนที่มีข้อมูล
+
+					foreach ($items as $index => $i) { 	// เดือนที่แสดงใน bar chart
+
+						if($a->month_name == $i->appraisal_month_name){		// เปรียบเทียบเดือนที่มีข้อมูล และเดือนที่แสดงใน chart เพื่อหาตำแหน่ง index ของเดือนใน chart
+
+							$action_item = [
+								[
+								   "id" => $o->item_result_id.'-'.$a->month_name."-Base",
+								   "type" => "rectangle",
+								   "radius" => "2",
+								   "alpha" => "90",
+								   "fillColor" => "#7FC31C",
+								   "link" => "javascript:void(0)",
+								   "x" => '$dataset.0.set.'.$index.'.x-15',
+								   "y" => '$dataset.0.set.'.$index.'.starty-15',
+								   "tox" => '$dataset.0.set.'.$index.'.x+15',
+								   "toy" => '$dataset.0.set.'.$index.'.starty-30'
+								],
+								[
+								   "id" => $o->item_result_id.'-'.$a->month_name."Triangle",
+								   "type" => "polygon",
+								   "sides" => "3",
+								   "startangle" => "270",
+								   "alpha" => "90",
+								   "fillColor" => "#7FC31C",
+								   "link" => "javascript:void(0)",
+								   "x" => '$dataset.0.set.'.$index.'.x',
+								   "y" => '$dataset.0.set.'.$index.'.starty-18',
+								   "radius" => "11",
+								],		
+								[
+								   "id" => $o->item_result_id.'-'.$a->month_name."-Label",
+								   "type" => "Text",
+								   "fontSize" => "10",
+								   "link" => "javascript:void(0)",
+								   "bold" => "1",
+								   "fillcolor" => "#ffffff",
+								   "text" => "SIP",
+								   "x" => '$dataset.0.set.'.$index.'.x-',
+								   "y" => '$dataset.0.set.'.$index.'.starty - 23'
+								]
+							];
+						
+						$action_groups[] = [
+							'id' => $o->item_result_id.'-'.$a->month_name,
+							'items' => $action_item
+						];
+
+						}	// end if month_name
+					}// end foreach $items
 				}		
 				
 				$o->annotations = [
 					"drawImmediately" => "1",
                     "showbelow" => "1",
+                    "showShadow" => "1",
 					"groups" => $action_groups
 				];
 				
@@ -2322,7 +2497,7 @@ class DashboardController extends Controller
 				$org_list = DB::select("
 					select * from
 					(
-						select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
+						select e.org_id, d.emp_id, i.emp_name org_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
 						from monthly_appraisal_item_result a
 						left outer join appraisal_period b
 						on a.period_id = b.period_id
@@ -2353,9 +2528,9 @@ class DashboardController extends Controller
 						and a.level_id = ?
 						and a.org_id = ?
 						" . $position_query . "
-						group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+						group by e.org_id, d.emp_id, i.emp_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
 						union all
-						select e.org_id, d.emp_id, i.emp_name org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
+						select e.org_id, d.emp_id, i.emp_name org_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm, d.percent_achievement
 						from monthly_appraisal_item_result a
 						left outer join appraisal_period b
 						on a.period_id = b.period_id
@@ -2384,7 +2559,7 @@ class DashboardController extends Controller
 						and b.appraisal_year = ?
 						and f.appraisal_type_id = ?
 						and i.chief_emp_code = ?
-						group by e.org_id, d.emp_id, i.emp_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+						group by e.org_id, d.emp_id, i.emp_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
 					)d1
 					order by percent_achievement desc
 				",array($period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $emp->emp_code, $request->level_id, $request->org_id,$period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $emp->emp_code));
@@ -2394,7 +2569,7 @@ class DashboardController extends Controller
 				$org = Org::find($request->org_id);
 				$period = AppraisalPeriod::find($request->period_id);
 				$org_list = DB::select("
-					select e.org_id, d.emp_id, e.org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm
+					select e.org_id, d.emp_id, e.org_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name, max(d.etl_dttm) etl_dttm
 					from monthly_appraisal_item_result a
 					left outer join appraisal_period b
 					on a.period_id = b.period_id
@@ -2420,7 +2595,7 @@ class DashboardController extends Controller
 					and b.appraisal_year = ?
 					and f.appraisal_type_id = ?
 					and (e.org_code = ? or e.parent_org_code = ?)
-					group by e.org_id, d.emp_id, e.org_name, f.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
+					group by e.org_id, d.emp_id, e.org_name, d.result_threshold_group_id, g.item_name, h.perspective_name,u.uom_name
 					order by d.percent_achievement desc
 				",array($period->period_no, $request->item_id, $request->year_id, $request->appraisal_type_id, $org->org_code, $org->org_code));
 			}
@@ -2527,36 +2702,6 @@ class DashboardController extends Controller
 					order by begin_threshold asc
 				", array($o->result_threshold_group_id));
 
-				//print_r($o);
-
-				//print_r($dual_chart);
-
-		/*
-    	if(empty($dual_chart)){
-    		$o->dual_chart = [
-					'data' => [
-					"target" => 0,
-					"forecast" => 0,
-					"actual_value" => null
-					],
-					'color_range' => $color
-				];
-
-
-    	}else{
-
-    		$o->dual_chart = [
-					'data' => [
-					"target" => $dual_chart[0]->target_value,
-					"forecast" => $dual_chart[0]->forecast_value,
-					"actual_value" => $dual_chart[0]->actual_value
-					],
-					'color_range' => $color
-				];
-
-
-    	}
-    	*/
 
 				if (empty($dual_chart)) {
 					$o->dual_chart = [
@@ -2726,10 +2871,11 @@ class DashboardController extends Controller
 			$latitude = $location[0]->latitude;			
 		}
 		
+		
 		if (empty($request->region_code)) {
 			if (empty($request->item_id)) {
 				$vector = DB::select("
-					select province_code, FORMAT(avg(b.result_score), 2) average
+					select province_code, FORMAT(avg(b.result_score), 2) average,b.result_threshold_group_id
 					#(select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 					#from result_threshold x
 					#left outer join result_threshold_group y on x.result_threshold_group_id = y.result_threshold_group_id
@@ -2749,7 +2895,7 @@ class DashboardController extends Controller
 						where y.district_flag = 1
 						and x.org_code = c.parent_org_code
 					)				
-					group by province_code
+					group by province_code,b.result_threshold_group_id
 				", array($request->period_id));
 				
 				foreach ($vector as $i) {
@@ -2757,7 +2903,7 @@ class DashboardController extends Controller
 						select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 						from result_threshold x
 						left outer join result_threshold_group y on x.result_threshold_group_id = y.result_threshold_group_id
-						where y.is_active = 1
+						where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 						and ? between x.begin_threshold and x.end_threshold
 					", array($i->average));
 					if (empty($color)) {
@@ -2765,7 +2911,7 @@ class DashboardController extends Controller
 							select min(begin_threshold) min_threshold, max(end_threshold) max_threshold
 							from result_threshold a left outer join result_threshold_group b
 							on a.result_threshold_group_id = b.result_threshold_group_id
-							where b.is_active = 1		
+							where b.result_threshold_group_id = {$i->result_threshold_group_id}		
 						");
 						
 						if (empty($minmax)) {
@@ -2776,7 +2922,7 @@ class DashboardController extends Controller
 									select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 									from result_threshold x left outer join result_threshold_group y
 									on x.result_threshold_group_id = y.result_threshold_group_id
-									where y.is_active = 1
+									where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 									and x.begin_threshold = ?
 								", array($minmax[0]->min_threshold));
 								$i->color_code = $get_color[0]->color_code;
@@ -2785,7 +2931,7 @@ class DashboardController extends Controller
 									select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 									from result_threshold x left outer join result_threshold_group y
 									on x.result_threshold_group_id = y.result_threshold_group_id
-									where y.is_active = 1
+									where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 									and x.end_threshold = ?
 								", array($minmax[0]->max_threshold));
 								$i->color_code = $get_color[0]->color_code;					
@@ -2800,7 +2946,7 @@ class DashboardController extends Controller
 				}
 			} else {
 				$vector = DB::select("
-					select province_code, FORMAT(if(ai.value_type_id = 1,(sum(a.actual_value)/sum(a.target_value))*100,(((sum(a.target_value)-sum(a.actual_value))/sum(a.target_value))*100)+100), 2)average
+					select province_code, FORMAT(if(ai.value_type_id = 1,(sum(a.actual_value)/sum(a.target_value))*100,(((sum(a.target_value)-sum(a.actual_value))/sum(a.target_value))*100)+100), 2)average,a.result_threshold_group_id
 					#province_code, avg(a.percent_achievement) average
 					#(select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 					#from result_threshold x
@@ -2823,7 +2969,7 @@ class DashboardController extends Controller
 						where y.district_flag = 1
 						and x.org_code = c.parent_org_code
 					)							
-					group by province_code
+					group by province_code,a.result_threshold_group_id
 				", array($request->period_id, $request->item_id));	
 
 				foreach ($vector as $i) {
@@ -2831,15 +2977,15 @@ class DashboardController extends Controller
 						select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 						from result_threshold x
 						left outer join result_threshold_group y on x.result_threshold_group_id = y.result_threshold_group_id
-						where y.is_active = 1
+						where y.result_threshold_group_id = ?
 						and ? between x.begin_threshold and x.end_threshold
-					", array($i->average));
+					", array($i->result_threshold_group_id,$i->average));
 					if (empty($color)) {
 						$minmax = DB::select("
 							select min(begin_threshold) min_threshold, max(end_threshold) max_threshold
 							from result_threshold a left outer join result_threshold_group b
 							on a.result_threshold_group_id = b.result_threshold_group_id
-							where b.is_active = 1		
+							where b.result_threshold_group_id = {$i->result_threshold_group_id}		
 						");
 						
 						if (empty($minmax)) {
@@ -2850,7 +2996,7 @@ class DashboardController extends Controller
 									select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 									from result_threshold x left outer join result_threshold_group y
 									on x.result_threshold_group_id = y.result_threshold_group_id
-									where y.is_active = 1
+									where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 									and x.begin_threshold = ?
 								", array($minmax[0]->min_threshold));
 								$i->color_code = $get_color[0]->color_code;
@@ -2859,7 +3005,7 @@ class DashboardController extends Controller
 									select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 									from result_threshold x left outer join result_threshold_group y
 									on x.result_threshold_group_id = y.result_threshold_group_id
-									where y.is_active = 1
+									where y.result_threshold_group_id = {$i->result_threshold_group_id}	
 									and x.end_threshold = ?
 								", array($minmax[0]->max_threshold));
 								$i->color_code = $get_color[0]->color_code;					
@@ -3235,6 +3381,365 @@ class DashboardController extends Controller
 		return response()->json($org_list);
 	}
 
+	public function branch_details2(Request $request)
+	{
+		# ใช้สำหรับเช็คระดับที่จะส่งให้กับ Front-End
+		# section:ส่วน -> division:ฝ่าย -> district:เขต -> branch:สาขา
+		$lv = DB::select("
+				SELECT ls.parent_id section_level_id, l.parent_id division_level_id, l.level_id district_level_id, lb.level_id branch_level_id 
+				FROM appraisal_level l
+				LEFT JOIN appraisal_level lb ON l.level_id = lb.parent_id
+				LEFT JOIN appraisal_level ls ON l.parent_id = ls.level_id 
+				WHERE l.district_flag = 1
+			");
+		//value_type_id
+		# กรณีที่ไม่ระบุ item_id ค่าที่เป็น Percent ไปเอาที่ emp_result.result_score
+		# กรณีที่ไม่ระบุ item_id ค่าที่เป็น result_threshold_group_id ไปเอาที่ emp_result.result_threshold_group_id
+		# กรณีที่ระบุ item_id ค่าที่เป็น Percent ไปเอาที่ appraisal_item_result.percent_achievement 
+		# กรณีที่ระบุ item_id ค่าที่เป็น result_threshold_group_id ไปเอาที่ appraisal_item_result.result_threshold_group_id
+		$select_org = empty($request->item_id) ?   ",b.result_score pct " : ",a.percent_achievement pct ";
+		$from_org = empty($request->item_id) ? " emp_result b " :  " appraisal_item_result a	LEFT OUTER JOIN emp_result b ON a.emp_result_id = b.emp_result_id";
+		$province_code = empty($request->province_code) ? "": (" and c.province_code = {$request->province_code}");
+		$item_id = empty($request->item_id) ? "" : (" and a.item_id = {$request->item_id} ");	
+		$period_id = empty($request->period_id) ? "": (" and b.period_id = {$request->period_id}");
+		$org_id = empty($request->org_id) ? "": (" and b.org_id = {$request->org_id}");
+
+		$sort_by = "DESC";
+		# เรียงตามค่าของประเภทตัวชี้วัด
+		# เรียงจากมากไปหาน้อย กรณีตัวชี้วัดเป็นแบบค่ามากดี (1),ค่าระดับ (5) 
+		# เรียงจากน้อยไปหามาก กรณีตัวชี้วัดเป็นแบบค่าน้อยดี (2),มากดีสลับสี (3),คำนวนผลเพิ่มเติมและสลับช่วงสี (4)
+		# กรณีเลือกทุกตัวชี้วัดระบบจะเรียงจากมากไปหาน้อย
+		if(!empty($request->item_id)){
+			$value_type = AppraisalItem::find($request->item_id);
+
+			if(!empty($request->item_id)){
+				
+				in_array($value_type->value_type_id, array(1,5)) ? $sort_by = "DESC" :  $sort_by = "ASC";;
+
+			}	
+
+		}
+
+		# Set รูปแบบการเรียงข้อมูลตาม ระดับ
+		if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : null )){
+			# ตรวจสอบว่าเป็นระดับ Section หรือ Parent ของ Division ?
+			$qfooter = " ORDER BY s.s_pct {$sort_by},b.section_name,p.dv_pct {$sort_by}, b.division_name, d.dt_pct {$sort_by}, b.district_name, b.pct {$sort_by}, b.org_name";
+		}elseif ($lv[0]->division_level_id == $request->level_id){
+			# ตรวจสอบว่าเป็นระดับ Division หรือ Parent ของ District ?
+			$qfooter = " ORDER BY p.dv_pct {$sort_by}, b.division_name, d.dt_pct {$sort_by}, b.district_name, b.pct {$sort_by}, b.org_name";
+		}elseif ($lv[0]->district_level_id == $request->level_id) {
+			# ตรวจสอบว่าเป็นระดับ District ?
+			$qfooter = " ORDER BY d.dt_pct {$sort_by}, b.district_name, b.pct {$sort_by}, b.org_name";
+
+		}elseif ($lv[0]->branch_level_id == $request->level_id) {
+			# ตรวจสอบว่าเป็นระดับ Branch ?
+			$qfooter = " ORDER BY b.pct {$sort_by}, b.org_name";
+		}
+		
+		Log::info('message');
+		
+		$org_list = DB::select("
+				SELECT
+				b.section_id,b.section_name,s.s_pct,
+				b.division_id,b.division_name,p.dv_pct,
+				b.district_id,b.district_name,d.dt_pct,
+				b.org_id,b.org_name,b.org_code,b.result_threshold_group_id,b.pct 
+			FROM
+				(
+				SELECT DISTINCT
+					so.org_id section_id,so.org_name section_name,so.org_code section_code,
+					pdto.org_id division_id,pdto.org_name division_name,pdto.org_code division_code,
+					dto.org_id district_id,dto.org_name district_name,dto.org_code district_code,
+					b.org_id,c.org_name,c.org_code,b.result_threshold_group_id
+					{$select_org}  
+				FROM
+					appraisal_item_result a
+					LEFT OUTER JOIN emp_result b ON a.emp_result_id = b.emp_result_id
+					LEFT OUTER JOIN org c ON b.org_id = c.org_id
+					LEFT OUTER JOIN appraisal_level d ON c.level_id = d.level_id
+					INNER JOIN org dto ON c.parent_org_code = dto.org_code
+					INNER JOIN org pdto ON dto.parent_org_code = pdto.org_code
+					INNER JOIN org so ON pdto.parent_org_code = so.org_code 
+				WHERE
+					b.appraisal_type_id = 1 
+					{$province_code}
+					{$period_id} 
+					{$item_id} 
+					{$org_id} 
+					AND EXISTS (
+							SELECT 1  FROM org x
+								LEFT OUTER JOIN appraisal_level y ON x.level_id = y.level_id 
+							WHERE y.district_flag = 1  AND x.org_code = c.parent_org_code ) 
+				) b,
+				(#หาค่าเฉลี่ย percent_achievement ของ district
+				SELECT o.district_id,avg( o.pct ) dt_pct 
+				FROM
+					(
+					SELECT  dto.org_id district_id {$select_org}  
+					FROM
+						appraisal_item_result a
+						LEFT OUTER JOIN emp_result b ON a.emp_result_id = b.emp_result_id
+						LEFT OUTER JOIN org c ON b.org_id = c.org_id
+						LEFT OUTER JOIN appraisal_level d ON c.level_id = d.level_id
+						INNER JOIN org dto ON c.parent_org_code = dto.org_code 
+					WHERE
+						b.appraisal_type_id = 1 
+						{$province_code}
+						{$period_id} 
+						{$item_id} 
+						{$org_id} 
+						AND EXISTS (
+								SELECT 1  FROM org x
+									LEFT OUTER JOIN appraisal_level y ON x.level_id = y.level_id 
+								WHERE y.district_flag = 1  AND x.org_code = c.parent_org_code ) 
+					) o 
+				GROUP BY
+					o.district_id 
+				) d,
+				(#หาค่าเฉลี่ย percent_achievement ของ division
+				SELECT o.division_id, avg( o.pct ) dv_pct 
+				FROM
+					(
+					SELECT  pdto.org_id division_id {$select_org}  
+					FROM appraisal_item_result a
+						LEFT OUTER JOIN emp_result b ON a.emp_result_id = b.emp_result_id
+						LEFT OUTER JOIN org c ON b.org_id = c.org_id
+						LEFT OUTER JOIN appraisal_level d ON c.level_id = d.level_id
+						INNER JOIN org dto ON c.parent_org_code = dto.org_code
+						INNER JOIN org pdto ON dto.parent_org_code = pdto.org_code 
+					WHERE
+						b.appraisal_type_id = 1 
+						{$province_code}
+						{$period_id} 
+						{$item_id}
+						{$org_id} 
+						AND EXISTS (
+								SELECT 1  FROM org x
+									LEFT OUTER JOIN appraisal_level y ON x.level_id = y.level_id 
+								WHERE y.district_flag = 1  AND x.org_code = c.parent_org_code ) 
+					) o 
+				GROUP BY
+					o.division_id 
+				) p,
+			(#หาค่าเฉลี่ย percent_achievement ของ section
+				SELECT o.section_id, avg( o.pct ) s_pct 
+				FROM
+					(
+					SELECT  so.org_id section_id {$select_org}  
+					FROM
+						appraisal_item_result a
+						LEFT OUTER JOIN emp_result b ON a.emp_result_id = b.emp_result_id
+						LEFT OUTER JOIN org c ON b.org_id = c.org_id
+						LEFT OUTER JOIN appraisal_level d ON c.level_id = d.level_id
+						INNER JOIN org dto ON c.parent_org_code = dto.org_code
+						INNER JOIN org pdto ON dto.parent_org_code = pdto.org_code
+						INNER JOIN org so ON pdto.parent_org_code = so.org_code 
+					WHERE
+						b.appraisal_type_id = 1 
+						{$province_code}
+						{$period_id} 
+						{$item_id} 
+						{$org_id} 
+						AND EXISTS (
+								SELECT 1  FROM org x
+									LEFT OUTER JOIN appraisal_level y ON x.level_id = y.level_id 
+								WHERE y.district_flag = 1  AND x.org_code = c.parent_org_code ) 
+					) o 
+				GROUP BY
+					o.section_id 
+				) s
+			WHERE
+				b.section_id = s.section_id
+				AND b.division_id = p.division_id 
+				AND b.district_id = d.district_id 
+			{$qfooter}
+			");
+			// return response()->json([
+			// 	"lv"=>$lv[0],
+			// 	"request"=>$request->level_id,
+			// 	"org"=>$org_list]);
+				// "section_level_id": 4,
+				// "division_level_id": 5,
+				// "district_level_id": 6,
+				// "branch_level_id": 7
+		$org_groups = [];
+		foreach ($org_list as $o) {
+			$key1 = $o->section_name;
+			$key2 = $o->division_name;
+			$key3 = $o->district_name;
+			$key4 = $o->org_name;
+
+			
+			if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : false )){
+				# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
+
+				# Create Section List
+				$org_groups[$key1]['org_id'] = $o->section_id;
+				$org_groups[$key1]['org_name'] = $o->section_name;
+				$org_groups[$key1]['pct'] = $o->s_pct;
+				$org_groups[$key1]['color_code'] = null;
+				
+				# Create Division List
+				$org_groups[$key1]['org_list'][$key2]['org_id'] =  $o->division_id;
+				$org_groups[$key1]['org_list'][$key2]['org_name'] =  $o->division_name;
+				$org_groups[$key1]['org_list'][$key2]['pct'] =  $o->dv_pct;
+				$org_groups[$key1]['org_list'][$key2]['color_code'] = null;
+
+				# Create District List
+				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['org_id'] =  $o->district_id;
+				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['org_name'] =  $o->district_name;
+				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['pct'] =  $o->dt_pct;
+				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['color_code'] = null;
+
+				# Create Branch List
+				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['org_list'][$key4]= $o;
+			}elseif($lv[0]->division_level_id == $request->level_id){
+				# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
+
+				# Create Division List
+				$org_groups[$key2]['org_id'] = $o->division_id;
+				$org_groups[$key2]['org_name'] = $o->division_name;
+				$org_groups[$key2]['pct'] = $o->dv_pct;
+				$org_groups[$key2]['color_code'] = null;
+				
+				# Create District List
+				$org_groups[$key2]['org_list'][$key3]['org_id'] =  $o->district_id;
+				$org_groups[$key2]['org_list'][$key3]['org_name'] =  $o->district_name;
+				$org_groups[$key2]['org_list'][$key3]['pct'] =  $o->dt_pct;
+				$org_groups[$key2]['org_list'][$key3]['color_code'] = null;
+
+				# Create Branch List
+				$org_groups[$key2]['org_list'][$key3]['org_list'][$key4]= $o;
+			}elseif ($lv[0]->district_level_id == $request->level_id) {
+				# ตรวจสอบว่าเป็นระดับ District ?
+
+				# Create District List
+				$org_groups[$key3]['org_id'] = $o->district_id;
+				$org_groups[$key3]['org_name'] = $o->district_name;
+				$org_groups[$key3]['pct'] = $o->dt_pct;
+				$org_groups[$key3]['color_code'] = null;
+
+				# Create Branch List
+				$org_groups[$key3]['org_list'][$key4]= $o;
+
+			}elseif ($lv[0]->branch_level_id == $request->level_id) {
+				# ตรวจสอบว่าเป็นระดับ Branch ?
+
+				# Create Branch List
+				$org_groups[$key4]= $o;
+			}
+			
+
+			$qinput = array();
+			$query = "
+				SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, air.result_threshold_group_id, air.etl_dttm,
+					air.target_value, air.forecast_value, air.actual_value,
+					#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
+					air.percent_achievement percent_target,
+					air.percent_forecast percent_forecast
+					#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+					#if(ai.value_type_id = 1,(air.actual_value/air.forecast_value)*100,(((air.forecast_value-air.actual_value)/air.forecast_value)*100)+100) percent_forecast
+				FROM appraisal_item_result air
+				INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
+				INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
+				INNER JOIN appraisal_period ap ON ap.period_id = air.period_id
+				INNER JOIN emp_result er on air.emp_result_id = er.emp_result_id
+				LEFT OUTER JOIN uom u ON u.uom_id = ai.uom_id
+				LEFT OUTER JOIN org o ON o.org_id = air.org_id
+				LEFT OUTER JOIN org ON org.org_id = air.org_id
+				WHERE air.period_id = ?
+				AND o.org_id = ? 
+			";
+			
+			$qinput[] = $request->period_id;
+			$qinput[] = $o->org_id;		
+			
+			$qfooter = " ORDER BY p.perspective_name, air.item_name, air.item_result_id, org.org_code ";
+						
+
+			
+			empty($request->item_id) ?: ($query .= " AND air.item_id = ? " AND $qinput[] = $request->item_id);
+			$items = DB::select($query.$qfooter,$qinput);
+			
+			$orgDetail = array();
+			
+			$branch_details = array();
+			foreach ($items as $i) {
+				$colorRanges = DB::select("
+					select begin_threshold, end_threshold, if(instr(color_code,'#') > 0,color_code,concat('#',color_code)) color_code
+					from result_threshold
+					where result_threshold_group_id = ?
+					order by end_threshold desc
+				", array($i->result_threshold_group_id));
+
+				$colors = array();
+				$ranges = array();
+				
+				foreach ($colorRanges as $c) {
+					$colors[] = $c->color_code;
+					$ranges[] = $c->end_threshold;
+				}
+				
+				$orgDetail = array(
+					"perspective_name" => $i->perspective_name,
+					"item_name" => $i->item_name,
+					"uom_name" => $i->uom_name,
+					"rangeColor" => $colors,
+					"target"=> $i->target_value,
+					"forecast" => $i->forecast_value,
+					"actual" => $i->actual_value,
+					"percent_target" => $i->percent_target,
+					"percent_forecast" => $i->percent_forecast,
+					"etl_dttm" => $i->etl_dttm,
+
+					// For Spackline JS //
+					"percent_target_str" => "100".",".$i->percent_target.",".implode($ranges, ","),
+					"percent_forecast_str" => "100".",".$i->percent_forecast.",".implode($ranges, ",")
+				);
+				$branch_details[] = $orgDetail;
+			}
+
+			# Set Color
+			if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : null )){
+				# ตรวจสอบว่าเป็นระดับ Section ?
+
+				// section color //
+				$org_groups[$key1]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->s_pct);				
+				// division color //
+				$org_groups[$key1]['org_list'][$key2]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dv_pct);	
+				// district color //
+				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
+			
+			}elseif($lv[0]->division_level_id == $request->level_id){
+				# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
+
+				// division color //
+				$org_groups[$key2]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dv_pct);	
+				// district color //
+				$org_groups[$key2]['org_list'][$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
+			
+			}elseif ($lv[0]->district_level_id == $request->level_id) {
+				# ตรวจสอบว่าเป็นระดับ District ?
+
+				// district color //
+				$org_groups[$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
+			
+			}
+
+			// branch color
+			$o->color_code = $this->get_color($o->result_threshold_group_id, $o->pct);			
+			
+			$o->branch_details = $branch_details;
+			
+
+		}
+		
+
+		return response()->json($org_groups);
+
+		//return response()->json($org_list);
+	}
+
 
 
 
@@ -3248,7 +3753,7 @@ class DashboardController extends Controller
 			if ($request->appraisal_type_id == 2) {//emp
 
 					$query = "
-							SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, er.result_threshold_group_id, air.etl_dttm,
+							SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, air.result_threshold_group_id, air.etl_dttm,
 								air.target_value, air.forecast_value, air.actual_value,
 								#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 								air.percent_achievement percent_target,
@@ -3280,7 +3785,7 @@ class DashboardController extends Controller
 
 
 			$query = "
-				SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, er.result_threshold_group_id, air.etl_dttm,
+				SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, air.result_threshold_group_id, air.etl_dttm,
 					air.target_value, air.forecast_value, air.actual_value,
 					#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 					air.percent_achievement percent_target,
@@ -3350,6 +3855,8 @@ class DashboardController extends Controller
 				);
 				$per_details[] = $orgDetail;
 			}
+
+
 			return response()->json($per_details);
 			
 	}
@@ -3642,4 +4149,5 @@ group by period_no
 
 	}
 	*/
+
 }

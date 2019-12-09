@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\EmpLevel;
+use App\EmpOrg;
 use App\Employee;
 use App\Position;
 use App\Org;
@@ -29,6 +30,8 @@ class ImportEmployeeController extends Controller
 	
 	public function import(Request $request)
 	{
+		set_time_limit(0);
+
 		$errors = array();
 		foreach ($request->file() as $f) {
 			$items = Excel::load($f, function($reader){})->get();	
@@ -102,7 +105,28 @@ class ImportEmployeeController extends Controller
 					}
 				}					
 			}
+
+			$count_user = Employee::where('is_active', 1)->count();
+			$empAssign = config("session.license_assign");
+			if ($count_user > $empAssign){
+				DB::rollback();
+				$error[] = ['ข้อมูลพนักงานที่นำเข้าเกินจำนวน License ที่ซื้ออยู่ '.$empAssign.' คน ' => 'ติดต่อพนักงานขาย หากต้องการซื้อจำนวน License เพิ่ม'];
+				return response()->json(['status' => 400, 'errors' => $error, "emp" => []]);
+			}else {
+				DB::commit();
+			}
+		}// end file
+
+		// License Verification //
+		try{
+			if((!empty($empAssign))&&$empAssign!=0){
+				$mail = new MailController();
+				$result = $mail->LicenseVerification();
+			}
+		} catch (Exception $e) {
 		}
+		
+
 		return response()->json(['status' => 200, 'errors' => $errors]);
 	}
 	
@@ -169,6 +193,37 @@ class ImportEmployeeController extends Controller
 		return response()->json($items);
 	}
    
+	public function org_list(Request $request)
+    {
+	/* Format
+	{
+		"results": [
+			{
+			"id": 1,
+			"text": "Option 1"
+			},
+			{
+			"id": 2,
+			"text": "Option 2",
+			"selected": true
+			},
+			{
+			"id": 3,
+			"text": "Option 3",
+			"disabled": true
+			}
+		]
+	} */
+
+		$items = DB::select("
+			SELECT org_id id , org_name text, IF(is_active=1, false, true)  as disabled
+			FROM org
+			ORDER BY org_code
+		");
+		return response()->json($items);
+		return response()->json(['results' => $items]);				
+	}
+	
     public function sec_list(Request $request)
     {
 
@@ -230,7 +285,15 @@ class ImportEmployeeController extends Controller
 			$item = Employee::findOrFail($emp_id);
 			$position= Position::find($item->position_id);
 			empty($position) ? $position_name = null : $position_name = $position->position_name;
+			$item->multi_org;
+			$emp_org = EmpOrg::select(DB::raw('group_concat(org_id) as org_id'))
+            			->where('emp_id',$item->emp_id)
+            			->get();
+			if(!empty($emp_org)){
+				$item->multi_org = $emp_org[0]['org_id'] ;
+			}
 			$item->position_name = $position_name;
+			
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Employee not found.']);
 		}
@@ -285,6 +348,18 @@ class ImportEmployeeController extends Controller
 			$item->is_active = $request->is_active;					
 			$item->updated_by = Auth::id();
 			$item->save();
+			
+			EmpOrg::where('emp_id',$item->emp_id)->delete();
+			if (!empty($request->multi_org)) {
+				foreach ($request->multi_org as $i) {
+					$org = new EmpOrg;
+					$org->emp_id = $item->emp_id;
+					$org->org_id = $i;
+					$org->created_by = Auth::id();
+					$org->updated_by = Auth::id();
+					$org->save();
+				}	
+			}
 		}		
 		
 		return response()->json(['status' => 200, 'data' => $item]);
@@ -350,6 +425,7 @@ class ImportEmployeeController extends Controller
 
 		try {
 			$item->delete();
+			EmpOrg::where('emp_id',$emp_id)->delete();
 		} catch (Exception $e) {
 			if ($e->errorInfo[1] == 1451) {
 				return response()->json(['status' => 400, 'data' => 'Cannot delete because this Employee is in use.']);

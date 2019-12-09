@@ -8,6 +8,7 @@ use App\AppraisalItemResult;
 use App\AppraisalLevel;
 use App\EmpResultStage;
 use App\Employee;
+use App\EmpOrg;
 use App\Org;
 use App\ActionPlan;
 use App\Reason;
@@ -22,6 +23,7 @@ use Excel;
 use Config;
 use Mail;
 use Exception;
+use Log;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -48,6 +50,7 @@ class AppraisalController extends Controller
 			appraisal_year
 			from appraisal_period
 			LEFT OUTER JOIN system_config on system_config.current_appraisal_year = appraisal_period.appraisal_year
+			ORDER BY appraisal_year DESC
 		");
 		return response()->json($items);
 	}
@@ -79,7 +82,7 @@ class AppraisalController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by level_id asc			
+				Order by appraisal_level_name asc			
 			");
 		} else {
 			
@@ -253,8 +256,21 @@ class AppraisalController extends Controller
 			} while (!empty($emp_list));		
 
 			$re_emp[] = $co->org_code;
-			$re_emp = array_unique($re_emp);
 
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
+			$re_emp = array_unique($re_emp);
+			
 				// Get array keys
 			$arrayKeys = array_keys($re_emp);
 				// Fetch last array key
@@ -278,7 +294,7 @@ class AppraisalController extends Controller
 				inner join appraisal_level al on al.level_id = org.level_id
 				where org_code in({$in_emp})
 				and al.is_hr = 0
-				order by al.level_id asc
+				order by al.appraisal_level_name asc
 			");
 			
 		}
@@ -308,10 +324,10 @@ class AppraisalController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by level_id asc			
+				Order by appraisal_level_name asc		
 			");
 		} else {
-			
+
 			// $re_emp = array();
 			
 			// $emp_list = array();
@@ -434,7 +450,7 @@ class AppraisalController extends Controller
 					$in_emp .= "'" . $v . "'" . ',';
 				}
 			}	
-
+			
 			do {				
 				empty($in_emp) ? $in_emp = "null" : null;
 
@@ -468,10 +484,24 @@ class AppraisalController extends Controller
 					} else {
 						$in_emp .= "'" . $v . "'" . ',';
 					}
-				}		
+				}	
+					
 			} while (!empty($emp_list));		
-
+			
 			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
 			$re_emp = array_unique($re_emp);
 
 					// Get array keys
@@ -487,11 +517,10 @@ class AppraisalController extends Controller
 				} else {
 					$in_emp .= "'" . $v . "'" . ',';
 				}
-			}				
+			}
 
 			empty($in_emp) ? $in_emp = "null" : null;
-			
-			//echo $in_emp;
+
 			if($all_org[0]->count_no > 0) {
 				// $items = DB::select("
 				// 	select *
@@ -521,9 +550,9 @@ class AppraisalController extends Controller
 					select distinct level_id, appraisal_level_name
 					from appraisal_level
 					where level_id = 2
-					and is_hr = 0
+					and (1 = {$emp->is_show_corporate})
 					)appralsai_level
-					order by level_id asc
+					order by appraisal_level_name
 				");
 			} else {
 				// $items = DB::select("
@@ -541,7 +570,7 @@ class AppraisalController extends Controller
 					inner join appraisal_level al on al.level_id = org.level_id
 					where org_code in({$in_emp})
 					and al.is_hr = 0
-					order by al.level_id asc
+					order by al.appraisal_level_name
 				");
 			}
 		}
@@ -799,7 +828,7 @@ class AppraisalController extends Controller
 				Where position_name like ?
 			";
 			
-			$qfooter = " Order by position_name limit 10";
+			$qfooter = " Order by position_code asc limit 10";
 			$qinput[] = '%'.$request->position_name.'%';
 			
 			$items = DB::select($query.$qfooter,$qinput);
@@ -1003,7 +1032,7 @@ class AppraisalController extends Controller
 				
 			";
 			
-			$qfooter = " Order by b.position_name limit 10";
+			$qfooter = " Order by b.position_code asc limit 10";
 			$qinput[] = '%'.$request->position_name.'%';
 			
 			$items = DB::select($query.$qfooter,$qinput);			
@@ -1032,7 +1061,7 @@ class AppraisalController extends Controller
 				Where emp_name like ?
 			";
 			
-			$qfooter = " Order by emp_name limit 10 ";
+			$qfooter = " Order by emp_code asc limit 10 ";
 			$qinput[] = '%'.$request->emp_name.'%';
 			empty($request->org_id) ?: ($query .= " and org_id = ? " AND $qinput[] = $request->section_code);
 			empty($request->position_id) ?: ($query .= " and position_id = ? " AND $qinput[] = $request->position_code);
@@ -1235,7 +1264,7 @@ class AppraisalController extends Controller
 				and org.org_code in ({$in_emp})
 			";
 			
-			$qfooter = " Order by e.emp_name limit 10 ";
+			$qfooter = " Order by e.emp_code asc limit 10 ";
 			$qinput[] = '%'.$request->emp_name.'%';
 			empty($request->org_id) ?: ($query .= " and e.org_id = ? " AND $qinput[] = $request->org_id);
 			empty($request->position_id) ?: ($query .= " and e.position_id = ? " AND $qinput[] = $request->position_id);
@@ -2182,10 +2211,8 @@ class AppraisalController extends Controller
 		$result_threshold_color = DB::select("
 			select begin_threshold, end_threshold, color_code
 			from appraisal_item_result a
-			left outer join emp_result b
-			on a.emp_result_id = b.emp_result_id
 			left outer join result_threshold c
-			on b.result_threshold_group_id = c.result_threshold_group_id
+			on a.result_threshold_group_id = c.result_threshold_group_id
 			where a.item_result_id = ?
 			order by begin_threshold desc		
 		", array($item_result_id));

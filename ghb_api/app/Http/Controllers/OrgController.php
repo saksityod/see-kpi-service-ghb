@@ -12,6 +12,7 @@ use File;
 use Validator;
 use Excel;
 use Exception;
+use Log;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -45,26 +46,22 @@ class OrgController extends Controller
 		
 		if ($all_emp[0]->count_no > 0) {
 			$items = DB::select("
-			select a.org_id,
-			a.org_name,
-			a.org_code,
-			a.org_abbr,
-			a.is_active,
-			b.org_name parent_org_name,
-			a.parent_org_code,
-			a.level_id,
-			c.appraisal_level_name,
-			case when a.longitude = 0 then '' else a.longitude end  longitude,
-			case when a.latitude = 0 then '' else a.latitude end  latitude,
-			a.province_code,
-			d.province_name
-	from org a left outer join
-	org b on b.org_code = a.parent_org_code
-	left outer join appraisal_level c
-	on a.level_id = c.level_id 
-	left outer join province d on a.province_code = d.province_code
-	where 1=1 " . $level . $org . " and a.is_active = 1
-	order by a.org_code asc
+			SELECT
+				a.org_id ,a.org_name ,a.org_code ,a.org_abbr ,a.is_active ,b.org_name parent_org_name,
+				a.parent_org_code ,a.level_id ,c.appraisal_level_name,
+				CASE WHEN a.longitude = 0 THEN '' ELSE a.longitude END longitude,
+				CASE WHEN a.latitude = 0 THEN '' ELSE a.latitude END latitude,
+				a.province_code ,d.province_name 
+			FROM
+				org a
+				LEFT OUTER JOIN org b ON b.org_code = a.parent_org_code
+				LEFT OUTER JOIN appraisal_level c ON a.level_id = c.level_id
+				LEFT OUTER JOIN province d ON a.province_code = d.province_code 
+			WHERE
+				1 = 1 " . $level . $org . " 
+				AND a.is_active = 1 
+			ORDER BY
+			a.org_name ASC
 			");
 		} else {
 			// $items = DB::select("
@@ -205,6 +202,19 @@ class OrgController extends Controller
 			} while (!empty($emp_list));		
 			
 			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
 			$re_emp = array_unique($re_emp);
 			
 			// Get array keys
@@ -226,25 +236,20 @@ class OrgController extends Controller
 
 			//echo $in_emp;
 			$items = DB::select("
-			select a.org_id,
-			a.org_name,
-			a.org_code,
-			a.org_abbr,
-			a.is_active,
-			b.org_name parent_org_name,
-			a.parent_org_code,
-			a.level_id,
-			c.appraisal_level_name,
-			a.longitude, a.latitude,
-			a.province_code,
-			d.province_name
-			from org a
-			left outer join org b on b.org_code = a.parent_org_code
-			left outer join appraisal_level c on a.level_id = c.level_id 
-			left outer join province d on a.province_code = d.province_code
-			where a.org_code in ({$in_emp})
-			".$level." and a.is_active = 1
-			order by a.org_id asc
+			SELECT
+				a.org_id ,a.org_name ,a.org_code ,a.org_abbr ,a.is_active ,b.org_name parent_org_name,
+				a.parent_org_code ,a.level_id ,c.appraisal_level_name ,a.longitude,
+				a.latitude ,a.province_code ,d.province_name 
+			FROM
+				org a
+				LEFT OUTER JOIN org b ON b.org_code = a.parent_org_code
+				LEFT OUTER JOIN appraisal_level c ON a.level_id = c.level_id
+				LEFT OUTER JOIN province d ON a.province_code = d.province_code 
+			WHERE
+				a.org_code IN ({$in_emp}) ".$level." 
+				AND a.is_active = 1 
+			ORDER BY
+				a.org_name ASC
 			");
 		}
 		return response()->json($items);
@@ -283,7 +288,7 @@ class OrgController extends Controller
 			WHERE
 				1 = 1 " . $level . $org . "
 			ORDER BY
-				a.org_code ASC
+				a.org_name ASC
 
 			");
 		} else {
@@ -324,7 +329,7 @@ class OrgController extends Controller
                     FROM
                         org 
                     WHERE
-                        parent_org_code IN ( { $in_emp } ) 
+                        parent_org_code IN ( {$in_emp} ) 
                         AND parent_org_code != org_code 
                         AND is_active = 1	
 				");
@@ -348,6 +353,19 @@ class OrgController extends Controller
 			} while (!empty($emp_list));		
 			
 			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
 			$re_emp = array_unique($re_emp);
 			
 			$arrayKeys = array_keys($re_emp);			// Get array keys
@@ -375,9 +393,9 @@ class OrgController extends Controller
 				LEFT OUTER JOIN appraisal_level c ON a.level_id = c.level_id
 				LEFT OUTER JOIN province d ON a.province_code = d.province_code 
 			WHERE 1=1
-				a.org_code IN ( { $in_emp } ) ".$level." 
+				AND a.org_code IN ( {$in_emp} ) ".$level." 
 			ORDER BY
-				a.org_id ASC
+				a.org_name ASC
 			
 			");
 		}
@@ -595,7 +613,7 @@ class OrgController extends Controller
 			WHERE
 				 1=1 " . $level . $org . "
 			ORDER BY
-			a.org_code ASC
+			a.org_name ASC
 
 			/*
 				select a.org_id,
@@ -691,6 +709,19 @@ class OrgController extends Controller
 			} while (!empty($emp_list));		
 
 			$re_emp[] = $co->org_code;
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
 			$re_emp = array_unique($re_emp);
 
 					// Get array keys
@@ -709,7 +740,7 @@ class OrgController extends Controller
 			}				
 
 			empty($in_emp) ? $in_emp = "null" : null;
-
+			
 			if($all_org[0]->count_no > 0) {
 				if(empty($request->level_id)) {
 					$items = DB::select("
@@ -734,7 +765,7 @@ class OrgController extends Controller
 						where 1=1 and a.is_active = 1
 						and a.level_id = 2
 						)d1
-						order by org_code asc
+						order by a.org_name asc
 					");
 				} else if($request->level_id==2) {
 					$items = DB::select("
@@ -745,7 +776,7 @@ class OrgController extends Controller
 						on a.level_id = c.level_id 
 						left outer join province d on a.province_code = d.province_code
 						where 1=1 " . $level . " and a.is_active = 1
-						order by a.org_code asc
+						order by a.org_name asc
 					");
 				} else {
 					$items = DB::select("
@@ -758,7 +789,7 @@ class OrgController extends Controller
 						where 1=1 " . $level . " and a.is_active = 1
 						#and (a.org_code = {$co->org_code} or a.parent_org_code = {$co->org_code})
 						and a.org_code in ({$in_emp})
-						order by a.org_code asc
+						order by a.org_name asc
 					");
 				}
 			} else {
@@ -772,7 +803,7 @@ class OrgController extends Controller
 					where 1=1 " . $level . " and a.is_active = 1
 					#and (a.org_code = {$co->org_code} or a.parent_org_code = {$co->org_code})
 					and a.org_code in ({$in_emp})
-					order by a.org_code asc
+					order by a.org_name asc
 				");			
 			}
 		}
