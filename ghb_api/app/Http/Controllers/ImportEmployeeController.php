@@ -360,6 +360,16 @@ class ImportEmployeeController extends Controller
 					$org->save();
 				}	
 			}
+			$count_user = Employee::where('is_active', 1)->count();
+			$empAssign = config("session.license_assign");
+			if ($count_user > $empAssign){
+				DB::rollback();
+				$error = '{"limit_license":["ข้อมูลพนักงานเกินจำนวน License ที่ซื้ออยู่ '.$empAssign.' คน ติดต่อพนักงานขาย หากต้องการซื้อจำนวน License เพิ่ม"]}';
+				$error = json_decode($error);
+				return response()->json(['status' => 400, 'data' => $error]);
+			}else {
+				DB::commit();
+			}
 		}		
 		
 		return response()->json(['status' => 200, 'data' => $item]);
