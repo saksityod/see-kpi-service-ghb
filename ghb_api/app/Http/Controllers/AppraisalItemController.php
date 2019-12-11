@@ -413,7 +413,7 @@ class AppraisalItemController extends Controller
 				select org_id
 				from appraisal_item_org
 				where item_id = ?
-			", array($item->item_id));			
+			", array($item->item_id));
 			
 			$item->cds_id = $cds_ar;
 			$item->cds_name = $cds_name_ar;
@@ -654,7 +654,87 @@ class AppraisalItemController extends Controller
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Appraisal Item not found.']);
 		}
-		
+		if($request->form_id == 1 && $request->value_type_id== 4){
+			$validator = Validator::make($request->all(), [
+				'item_name' => 'required|max:255|unique:appraisal_item,item_name,'.$item_id . ',item_id',
+				'kpi_type_id' => 'required|integer',
+				'perspective_id' => 'required|integer',
+				'structure_id' => 'required|integer',
+				'appraisal_level' => 'required',
+				'formula_cds_id' => 'required',
+				'uom_id' => 'required|integer',
+				'remind_condition_id' => 'integer',
+				'value_type_id' => 'integer',
+				'is_show_variance' => 'boolean',
+				'formula_desc' => 'max:1000',
+				'is_active' => 'required|boolean',
+				'kpi_id' => 'numeric',
+				'reference_target' => 'integer'
+			]);
+
+			if ($validator->fails()) {
+				return response()->json(['status' => 400, 'data' => $validator->errors()]);
+			} else {
+				if($request->reference_target == null || $request->reference_target == ''){
+					return response()->json(['status' => 400, 'Error' => 'Put your reference target']);
+				}
+				$item->fill($request->except(['form_id','cds','org','position','appraisal_level']));
+				$item->updated_by = Auth::id();
+				$item->save();
+				// $f_cds_id = array();
+				// $f_cds_name = array();
+				// $key = 0;
+				KPICDSMapping::where('item_id',$item->item_id)->delete();
+				preg_match_all('/cds(.*?)\]/', $request->formula_cds_id, $cds);
+				foreach ($cds[1] as $c) {
+					$checkmap = KPICDSMapping::where('item_id',$item->item_id)->where('cds_id',$c);
+					
+					if ($checkmap->count() == 0) {
+						$map = new KPICDSMapping;
+						$map->item_id = $item->item_id;
+						$map->cds_id = $c;
+						$map->created_by = Auth::id();
+						$map->save();
+					}
+				}
+				
+				ItemOrg::where('item_id',$item->item_id)->delete();
+				if (!empty($request->org)) {
+					foreach ($request->org as $i) {
+						$org = new ItemOrg;
+						$org->item_id = $item->item_id;
+						$org->org_id = $i;
+						$org->created_by = Auth::id();
+						$org->updated_by = Auth::id();
+						$org->save();
+					}
+				}
+				ItemPosition::where('item_id',$item->item_id)->delete();
+				if (!empty($request->position)) {
+					foreach ($request->position as $i) {
+						$org = new ItemPosition;
+						$org->item_id = $item->item_id;
+						$org->position_id = $i;
+						$org->created_by = Auth::id();
+						$org->updated_by = Auth::id();
+						$org->save();
+					}		
+				}
+					
+				ItemLevel::where('item_id',$item->item_id)->delete();
+				if (!empty($request->appraisal_level)) {
+					foreach ($request->appraisal_level as $i) {
+						$org = new ItemLevel;
+						$org->item_id = $item->item_id;
+						$org->level_id = $i;
+						$org->created_by = Auth::id();
+						$org->updated_by = Auth::id();
+						$org->save();
+					}								
+				}
+			}
+			return response()->json(['status' => 200, 'data'=>$item]);
+		}
 		if ($request->form_id == 1) {
 			$validator = Validator::make($request->all(), [
 				'item_name' => 'required|max:255|unique:appraisal_item,item_name,'.$item_id . ',item_id',
@@ -676,6 +756,7 @@ class AppraisalItemController extends Controller
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
 			} else {
 				$item->fill($request->except(['form_id','cds','org','position','appraisal_level']));
+				$item->reference_target = null;
 				$item->updated_by = Auth::id();
 				$item->save();
 				// $f_cds_id = array();
@@ -911,23 +992,17 @@ class AppraisalItemController extends Controller
 		return response()->json(['status' => 200]);
 	}
 	
-	public function autoCompleteReferenceTarget(Request $request){
-		!empty($request->input)?$input=$request->input:$input='';
-		$json = DB::select("
-			SELECT
-				item_id,
-				appraisal_item.item_name 
-			FROM
-				appraisal_item
-				LEFT JOIN appraisal_structure ON appraisal_item.structure_id = appraisal_structure.structure_id 
-			WHERE
-				form_id = 1 
-				AND appraisal_item.item_name LIKE '%".$input."%' 
-			ORDER BY
-				appraisal_item.item_name ASC
-		");
+	public function getReferenceTargetList(Request $request){
+		!empty($request->item_id)?$item_id=$request->item_id:$item_id='%';
+		$json = DB::table('appraisal_item')->select('item_id','item_name')
+				->leftjoin('appraisal_structure','appraisal_item.structure_id','=','appraisal_structure.structure_id')
+				->where('form_id','1')
+				->where('item_id','!=',$item_id)
+				->get();
 
 		return response()->json(['status' => 200,'data'=>$json]);
 	}
+
+	
 	
 }
