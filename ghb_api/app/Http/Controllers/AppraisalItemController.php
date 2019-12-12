@@ -443,14 +443,14 @@ class AppraisalItemController extends Controller
 			//	'formula_cds_name' => 'required|max:1000',
 				'is_active' => 'required|boolean',
 				'kpi_id' => 'numeric',
-				'reference_target' => 'integer'
+				'reference_target_id' => 'integer'
 			]);
 
 			if ($validator->fails()) {
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
 			} else {
-				if($request->reference_target== null && $request->reference_target== ''){
-					return response()->json(['status' => 400, 'ERROR' => 'Put your reference target']);
+				if($request->reference_target_id == null && $request->reference_target_id== ''){
+					return response()->json(['status' => 400, 'ERROR' => 'Put your reference target id']);
 				}
 				$item = new AppraisalItem;
 				$item->fill($request->except(['form_id','cds','org','position','appraisal_level']));
@@ -534,8 +534,8 @@ class AppraisalItemController extends Controller
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
 			} else {
 				$item = new AppraisalItem;
-				$item->fill($request->except(['form_id','cds','org','position','appraisal_level','reference_target']));
-				$item->reference_target = null;
+				$item->fill($request->except(['form_id','cds','org','position','appraisal_level','reference_target_id']));
+				$item->reference_target_id = null;
 				$item->created_by = Auth::id();
 				$item->updated_by = Auth::id();
 				$item->save();
@@ -754,14 +754,14 @@ class AppraisalItemController extends Controller
 				'formula_desc' => 'max:1000',
 				'is_active' => 'required|boolean',
 				'kpi_id' => 'numeric',
-				'reference_target' => 'integer'
+				'reference_target_id' => 'integer'
 			]);
 
 			if ($validator->fails()) {
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
 			} else {
-				if($request->reference_target == null || $request->reference_target == ''){
-					return response()->json(['status' => 400, 'Error' => 'Put your reference target']);
+				if($request->reference_target_id == null || $request->reference_target_id == ''){
+					return response()->json(['status' => 400, 'Error' => 'Put your reference target id']);
 				}
 				$item->fill($request->except(['form_id','cds','org','position','appraisal_level']));
 				$item->updated_by = Auth::id();
@@ -841,7 +841,7 @@ class AppraisalItemController extends Controller
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
 			} else {
 				$item->fill($request->except(['form_id','cds','org','position','appraisal_level']));
-				$item->reference_target = null;
+				$item->reference_target_id = null;
 				$item->updated_by = Auth::id();
 				$item->save();
 				// $f_cds_id = array();
