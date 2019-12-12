@@ -346,12 +346,15 @@ class MailController extends Controller
 			->orWhereNull('parent_org_code')
 			->first();
 		$org = (empty($org) ? $config->mail_username : $org);
-		$empActive = DB::table('employee')->count();
+		$empActive = DB::table('employee')->join('appraisal_level', 'appraisal_level.level_id', '=', 'employee.level_id')
+					->where('employee.is_active', 1)
+					->where('is_hr', '<>', 1)
+					->select("emp_code")->distinct()->count();
 
 		$data = [
 			"customer_name" => $org->org_name,
 			"assinged" => Config::get("session.license_assign"),
-			"active" => ($empActive-1)
+			"active" => ($empActive)
 		];
 
 		$error = '';

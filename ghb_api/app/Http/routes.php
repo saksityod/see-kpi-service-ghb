@@ -77,6 +77,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::patch('import_employee/{emp_id}', 'ImportEmployeeController@update');
 	Route::delete('import_employee/{emp_id}', 'ImportEmployeeController@destroy');
 	Route::post('import_employee', 'ImportEmployeeController@import');
+	Route::get('license/use', 'ImportEmployeeController@license_use');
 	
 	// CDS Result //
 	Route::get('cds_result/al_list','CDSResultController@al_list');

@@ -106,7 +106,7 @@ class ImportEmployeeController extends Controller
 				}					
 			}
 
-			$count_user = Employee::where('is_active', 1)->count();
+			$count_user = $this->license_use();
 			$empAssign = config("session.license_assign");
 			if ($count_user > $empAssign){
 				DB::rollback();
@@ -360,7 +360,7 @@ class ImportEmployeeController extends Controller
 					$org->save();
 				}	
 			}
-			$count_user = Employee::where('is_active', 1)->count();
+			$count_user = $this->license_use();
 			$empAssign = config("session.license_assign");
 			if ($count_user > $empAssign){
 				DB::rollback();
@@ -447,4 +447,13 @@ class ImportEmployeeController extends Controller
 		return response()->json(['status' => 200]);
 		
 	}	
+	public function license_use()
+	{
+		$count_user = Employee::join('appraisal_level', 'appraisal_level.level_id', '=', 'employee.level_id')
+		->where('employee.is_active', 1)
+		->where('is_hr', '<>', 1)
+		->select("emp_code")->distinct()->count();
+		
+		return $count_user;
+	}
 }
