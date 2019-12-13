@@ -1327,7 +1327,7 @@ class AppraisalAssignmentController extends Controller
 		
 		$qinput = array();
 		$query = "
-			select a.item_id, a.item_name, uom.uom_name,a.structure_id, b.structure_name, b.nof_target_score, f.form_id, f.form_name, f.app_url, 
+			select a.reference_target_id,a.item_id, a.item_name, uom.uom_name,a.structure_id, b.structure_name, b.nof_target_score, f.form_id, f.form_name, f.app_url, 
 			if(ar.structure_weight_percent is null,c.weight_percent,ar.structure_weight_percent) weight_percent, 
 			a.max_value, a.unit_deduct_score, e.no_weight, a.kpi_type_id, ar.structure_weight_percent
 			from appraisal_item a
@@ -1874,7 +1874,13 @@ class AppraisalAssignmentController extends Controller
 
 							if($check_item[0]->cnt > 0) {
 
-								if ($i['form_id'] == 1) {		
+								if ($i['form_id'] == 1) {	
+									if(empty($i['reference_target'])  || $i['reference_target']=='' || $i['reference_target']==null){
+										$reference_target = null;
+									}else{
+										$reference_target = $i['reference_target'];
+								}
+									
 									$aitem = new AppraisalItemResult;
 									$aitem->emp_result_id = $emp_result->emp_result_id;
 									$aitem->kpi_type_id = $i['kpi_type_id'];
@@ -1882,6 +1888,8 @@ class AppraisalAssignmentController extends Controller
 									$aitem->emp_id = $emp_id;
 									$aitem->chief_emp_id = $chief_emp_id;
 									$aitem->level_id = $level_id;
+									$aitem->reference_target_id = $i['reference_target_id'];
+									$aitem->reference_target = $reference_target;
 									$aitem->org_id = $org_id;
 									$aitem->position_id = $position_id;
 									$aitem->item_id = $i['item_id'];
@@ -2120,7 +2128,13 @@ class AppraisalAssignmentController extends Controller
 
 						if($check_item[0]->cnt > 0) {
 
-							if ($i['form_id'] == 1) {		
+							if ($i['form_id'] == 1) {	
+								if(empty($i['reference_target'])  || $i['reference_target']=='' || $i['reference_target']==null){
+									$reference_target = null;
+								}else{
+									$reference_target = $i['reference_target'];
+								}
+								
 								$aitem = new AppraisalItemResult;
 								$aitem->emp_result_id = $emp_result->emp_result_id;
 								$aitem->kpi_type_id = $i['kpi_type_id'];
@@ -2130,6 +2144,8 @@ class AppraisalAssignmentController extends Controller
 								$aitem->org_id = $org_id;
 								$aitem->position_id = $position_id;
 								$aitem->level_id = $level_id;
+								$aitem->reference_target_id = $i['reference_target_id'];
+								$aitem->reference_target = $reference_target;
 								$aitem->item_id = $i['item_id'];
 								$aitem->item_name = $i['item_name'];
 								$aitem->target_value = $i['target_value'];
@@ -2481,10 +2497,17 @@ class AppraisalAssignmentController extends Controller
 						$aitem->structure_weight_percent = $i['total_weight'];
 						$aitem->created_by = Auth::id();
 					}
+					if(empty($i['reference_target'])  || $i['reference_target']=='' || $i['reference_target']==null){
+						$reference_target = null;
+					}else{
+						$reference_target = $i['reference_target'];
+					}
 					$aitem->emp_result_id = $emp_result->emp_result_id;
 					$aitem->period_id = $request->head_params['period_id'];
 					$aitem->emp_id = $emp_result->emp_id;
 					$aitem->item_id = $i['item_id'];
+					$aitem->reference_target_id = $i['reference_target_id'];
+					$aitem->reference_target = $reference_target;
 					$aitem->item_name = $i['item_name'];
 					$aitem->target_value = $i['target_value'];
 					$aitem->weight_percent = $i['weight_percent'];
@@ -2689,5 +2712,6 @@ class AppraisalAssignmentController extends Controller
 		return response()->json(['status' => 200]);	
 		
 	}
+
 	
 }
