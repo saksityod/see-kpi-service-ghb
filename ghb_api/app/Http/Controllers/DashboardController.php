@@ -2225,6 +2225,16 @@ class DashboardController extends Controller
 				*/
 				//check threshold end
 				//not check
+				$val_type = DB::table('appraisal_item_result')->select('value_type_id')
+						->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
+						->where('appraisal_item_result.item_id',$request->item_id)
+						->get();
+
+				if($val_type[0] ->value_type_id == 5){
+					$val_score = DB::table('appraisal_item_result')->select('score')
+								->where('appraisal_item_result.item_id',$request->item_id)
+								->get();
+				}
 				
 				$color = DB::select("
 					SELECT begin_threshold min_val, end_threshold max_val, color_code color
@@ -2237,9 +2247,9 @@ class DashboardController extends Controller
 				$o->dual_chart = [
 					'data' => [
 					"target" => $items[0]->yearly_target,
-					"percent_achievement" => $items[0]->percent_achievement,
+					"percent_achievement" => $val_type[0]->value_type_id == 5 ? $val_score[0]->score:$items[0]->percent_achievement,
 					"forecast" => $items[0]->forecast_value,
-					"actual_value" => $items[0]->actual_value				
+					"actual_value" => $items[0]->actual_value		
 					],
 					'color_range' => $color
 				];
@@ -2834,12 +2844,16 @@ class DashboardController extends Controller
 				$result['group'.$counter] = $o;
 				$counter++;
 			}
+		
+
+			
 
 			usort($result, function($a, $b) {
 			    return $b->dual_chart['data']['percent_achievement'] > $a->dual_chart['data']['percent_achievement'] ? 1 : -1;
 			});
 		}
 		
+
 		return response()->json($result);
 		
 	}
