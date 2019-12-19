@@ -1,10 +1,10 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Model\SOItemModel;
+use App\Model\SOItem;
 use App\UOM;
-use App\Model\ValueTypeModel;
-use App\Model\StrategicObjectiveModel;
+use App\Model\ValueType;
+use App\Model\StrategicObjective;
 
 use Auth;
 use DB;
@@ -27,7 +27,7 @@ class SOItemController extends Controller
 	}
 	
 	public function getDropdownSOItemName(Request $request){
-        $DB = StrategicObjectiveModel::select('so_id','so_name')
+        $DB = StrategicObjective::select('so_id','so_name')
                         ->where('is_active',1)
                         ->orderBy('so_name')
                         ->get();
@@ -45,7 +45,7 @@ class SOItemController extends Controller
     }
 
     public function getDropdownSO(Request $request){
-        $DB = StrategicObjectiveModel::select('so_id','so_name')
+        $DB = StrategicObjective::select('so_id','so_name')
                                         ->where('is_active',1)
                                         ->orderBy('so_name')
                                         ->get();
@@ -66,7 +66,7 @@ class SOItemController extends Controller
     }
 
     public function getDropdownValueType(Request $request){
-        $DB = ValueTypeModel::select('value_type_id','value_type_name')
+        $DB = ValueType::select('value_type_id','value_type_name')
                             ->orderBy('value_type_id')
                             ->get();
 
@@ -123,7 +123,7 @@ class SOItemController extends Controller
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else{
 
-                $item = new SOItemModel;
+                $item = new SOItem;
 				$item->fill($request->all());
 				$item->created_by = Auth::id();
 				$item->updated_by = Auth::id();
@@ -135,7 +135,7 @@ class SOItemController extends Controller
 
     public function update(Request $request,$id){
         try {
-			$item = SOItemModel::findOrFail($id);
+			$item = SOItem::findOrFail($id);
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'SO Item not found.']);
 		}
@@ -164,7 +164,7 @@ class SOItemController extends Controller
 
     public function destroy(Request $request,$id){
         try {
-			$item = SOItemModel::findOrFail($id);
+			$item = SOItem::findOrFail($id);
 		}catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'SO Item not found.']);
         }

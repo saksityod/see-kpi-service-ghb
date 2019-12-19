@@ -432,7 +432,17 @@ Route::group(['middleware' => 'cors'], function()
 	Route::patch('job_log/{job_log_id}', 'JobLogController@update');
 	Route::get('job_log/run/{job_log_id}', 'JobLogController@run');
 
-	
+	//SO KPI Item
+	Route::get('so_item/dropdown_so_item_name', 'SOItemController@getDropdownSOItemName');
+	Route::get('so_item/dropdown_uom', 'SOItemController@getDropdownUOM');
+	Route::get('so_item/dropdown_so', 'SOItemController@getDropdownSO');
+	Route::get('so_item/dropdown_smart_kpi', 'SOItemController@getDropdownSmartKPI');
+	Route::get('so_item/dropdown_value_type', 'SOItemController@getDropdownValueType');
+	Route::get('so_item/autocomplete', 'SOItemController@autocomplete');//same code
+	Route::get('so_item/get_so_item_list', 'SOItemController@show');
+	Route::post('so_item', 'SOItemController@store');
+	Route::patch('so_item/{id}', 'SOItemController@update');
+	Route::delete('so_item/{id}', 'SOItemController@destroy');
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);
