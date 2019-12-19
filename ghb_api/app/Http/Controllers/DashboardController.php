@@ -3672,8 +3672,8 @@ class DashboardController extends Controller
 				// "district_level_id": 6,
 				// "branch_level_id": 7
 		$org_groups = [];
-		
-		if($request->drilldown){
+
+		if($request->drilldown == "false" ){
 			foreach ($org_list as $o) {
 				$key1 = $o->section_name;
 				$key2 = $o->division_name;
