@@ -32,6 +32,25 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('session', 'AuthenticateController@authenticate');
 	Route::get('session/debug', 'AuthenticateController@debug');
 	Route::delete('session', 'AuthenticateController@destroy');
+
+
+	//Strategic Objectiive//
+	Route::get('strategic_objective/objective_length', 'SO\StrategicObjectiveController@objective_length');
+	Route::get('strategic_objective', 'SO\StrategicObjectiveController@objective_list');
+	Route::post('strategic_objective', 'SO\StrategicObjectiveController@store');
+	Route::patch('strategic_objective/{so_id}', 'SO\StrategicObjectiveController@update');
+	Route::delete('strategic_objective/{so_id}', 'SO\StrategicObjectiveController@destroy');
+
+	//Project//
+	Route::post('project/search', 'SO\ProjectController@search_project');
+	Route::post('project/auto', 'SO\ProjectController@auto_project');
+	Route::post('project', 'SO\ProjectController@store');
+	Route::patch('project/{project_id}', 'SO\ProjectController@update');
+	Route::delete('project/{project_id}', 'SO\ProjectController@destroy');
+	Route::get('project/soitem', 'SO\ProjectController@dropDownSoItem');
+	Route::get('project/owner', 'SO\ProjectController@dropDownOwner');
+	Route::get('project/responsible', 'SO\ProjectController@dropDownResponsible');
+	
 	
 	// Common Data Set //
 	Route::get('cds/al_list','CommonDataSetController@al_list');
