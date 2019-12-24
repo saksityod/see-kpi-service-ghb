@@ -1946,6 +1946,7 @@ class CDSResultController extends Controller
 	}
 
 	public function index_v2 (Request $request) {
+		set_time_limit(0);
 		$emp = Employee::find(Auth::id());
 		$level = AppraisalLevel::find($emp->level_id);
 		$is_hr = $level->is_hr;

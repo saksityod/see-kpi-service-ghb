@@ -2884,6 +2884,22 @@ class DashboardController extends Controller
 			$longitude = $location[0]->longitude;
 			$latitude = $location[0]->latitude;			
 		}
+
+		$sort_by = "DESC";
+		# เรียงตามค่าของประเภทตัวชี้วัด
+		# เรียงจากมากไปหาน้อย กรณีตัวชี้วัดเป็นแบบค่ามากดี (1),ค่าระดับ (5) 
+		# เรียงจากน้อยไปหามาก กรณีตัวชี้วัดเป็นแบบค่าน้อยดี (2),มากดีสลับสี (3),คำนวนผลเพิ่มเติมและสลับช่วงสี (4)
+		# กรณีเลือกทุกตัวชี้วัดระบบจะเรียงจากมากไปหาน้อย
+		if(!empty($request->item_id)){
+			$value_type = AppraisalItem::find($request->item_id);
+
+			if(!empty($request->item_id)){
+				
+				in_array($value_type->value_type_id, array(1,5)) ? $sort_by = "DESC" :  $sort_by = "ASC";;
+
+			}	
+
+		}
 		
 		
 		if (empty($request->region_code)) {
@@ -2960,7 +2976,7 @@ class DashboardController extends Controller
 				}
 			} else {
 				$vector = DB::select("
-					select province_code, FORMAT(if(ai.value_type_id = 1,(sum(a.actual_value)/sum(a.target_value))*100,(((sum(a.target_value)-sum(a.actual_value))/sum(a.target_value))*100)+100), 2)average,a.result_threshold_group_id
+					select province_code, FORMAT(if(ai.value_type_id = 1,(sum(a.actual_value)/sum(a.target_value))*100,(((sum(a.target_value)-sum(a.actual_value))/sum(a.target_value))*100)+100), 2)average,a.threshold_group_id result_threshold_group_id
 					#province_code, avg(a.percent_achievement) average
 					#(select if(instr(x.color_code,'#') > 0,x.color_code,concat('#',x.color_code)) color_code
 					#from result_threshold x
@@ -2983,7 +2999,7 @@ class DashboardController extends Controller
 						where y.district_flag = 1
 						and x.org_code = c.parent_org_code
 					)							
-					group by province_code,a.result_threshold_group_id
+					group by province_code,a.threshold_group_id
 				", array($request->period_id, $request->item_id));	
 
 				foreach ($vector as $i) {
@@ -3035,8 +3051,9 @@ class DashboardController extends Controller
 			}
 		} else {
 			$org_input = array();
-			
+			$select_threshold_group = "";
 			if (empty($request->item_id)) {
+				$select_threshold_group = "er.result_threshold_group_id";
 				$org_query = "
 					select distinct b.org_id, c.org_name, c.longitude, c.latitude, b.result_threshold_group_id, b.result_score pct
 					from emp_result b
@@ -3054,10 +3071,11 @@ class DashboardController extends Controller
 					where appraisal_type_id = 1
 					and b.period_id = ?
 				";
-				$org_footer = "order by b.result_score desc, b.org_id";
+				$org_footer = "order by b.result_score desc, c.org_name";
 			} else {
+				$select_threshold_group = "air.threshold_group_id result_threshold_group_id";
 				$org_query = "
-					select distinct a.org_id, c.org_name, c.longitude, c.latitude, b.result_threshold_group_id, a.percent_achievement pct
+					select distinct a.org_id, c.org_name, c.longitude, c.latitude, a.threshold_group_id result_threshold_group_id, a.percent_achievement pct
 					from appraisal_item_result a
 					left outer join emp_result b
 					on a.emp_result_id = b.emp_result_id
@@ -3075,7 +3093,7 @@ class DashboardController extends Controller
 					where appraisal_type_id = 1
 					and a.period_id = ?
 				";			
-				$org_footer = "order by a.percent_achievement desc, a.org_id";
+				$org_footer = "order by a.percent_achievement {$sort_by}, c.org_name";
 			}
 			
 			$org_input[] = $request->region_code;
@@ -3089,7 +3107,7 @@ class DashboardController extends Controller
 			foreach ($org_list as $o) {
 				$qinput = array();
 				$query = "
-					SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, er.result_threshold_group_id, air.etl_dttm,
+					SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, {$select_threshold_group}, air.etl_dttm,
 						air.target_value, air.forecast_value, air.actual_value,
 						#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 						air.percent_achievement percent_target,
@@ -3225,7 +3243,15 @@ class DashboardController extends Controller
 
 	public function branch_details(Request $request)
 	{
+		$select_threshold_group="";
+		$sort_by = "DESC";
+		# เรียงตามค่าของประเภทตัวชี้วัด
+		# เรียงจากมากไปหาน้อย กรณีตัวชี้วัดเป็นแบบค่ามากดี (1),ค่าระดับ (5) 
+		# เรียงจากน้อยไปหามาก กรณีตัวชี้วัดเป็นแบบค่าน้อยดี (2),มากดีสลับสี (3),คำนวนผลเพิ่มเติมและสลับช่วงสี (4)
+		# กรณีเลือกทุกตัวชี้วัดระบบจะเรียงจากมากไปหาน้อย
+
 		if (empty($request->item_id)) {
+			$select_threshold_group = "er.result_threshold_group_id";
 			$org_list = DB::select("
 				select distinct b.org_id, c.org_name, c.org_code, b.result_threshold_group_id, b.result_score pct
 				from emp_result b
@@ -3244,11 +3270,21 @@ class DashboardController extends Controller
 					where y.district_flag = 1
 					and x.org_code = c.parent_org_code
 				)
-				order by b.result_score desc, c.org_name asc
+				order by b.result_score desc, c.org_name
 			", array($request->province_code, $request->period_id));
 		} else {
+
+			$select_threshold_group = "air.threshold_group_id";
+			$value_type = AppraisalItem::find($request->item_id);
+
+			if(!empty($request->item_id)){
+				
+				in_array($value_type->value_type_id, array(1,5)) ? $sort_by = "DESC" :  $sort_by = "ASC";;
+
+			}	
+
 			$org_list = DB::select("
-				select distinct a.org_id, c.org_name, c.org_code, b.result_threshold_group_id, a.percent_achievement pct
+				select distinct a.org_id, c.org_name, c.org_code, a.threshold_group_id result_threshold_group_id, a.percent_achievement pct
 				from appraisal_item_result a
 				left outer join emp_result b
 				on a.emp_result_id = b.emp_result_id
@@ -3268,14 +3304,14 @@ class DashboardController extends Controller
 					where y.district_flag = 1
 					and x.org_code = c.parent_org_code
 				)
-				order by a.percent_achievement desc, c.org_name asc
+				order by a.percent_achievement {$sort_by}, c.org_name
 			", array($request->province_code, $request->period_id, $request->item_id));
 		
 		}
 		foreach ($org_list as $o) {
 			$qinput = array();
 			$query = "
-				SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, er.result_threshold_group_id, air.etl_dttm,
+				SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, {$select_threshold_group} result_threshold_group_id, air.etl_dttm,
 					air.target_value, air.forecast_value, air.actual_value,
 					#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
 					air.percent_achievement percent_target,
@@ -3418,6 +3454,18 @@ class DashboardController extends Controller
 		$period_id = empty($request->period_id) ? "": (" and b.period_id = {$request->period_id}");
 		$org_id = empty($request->org_id) ? "": (" and b.org_id = {$request->org_id}");
 
+		# where หา percent_achievement ระดับ section
+		$sc_item_id = empty($request->item_id) ? "" : (" and sc.item_id = {$request->item_id} ");	
+		$sc_period_id = empty($request->period_id) ? "": (" and sc.period_id = {$request->period_id}");
+
+		# where หา percent_achievement ระดับ division
+		$dv_item_id = empty($request->item_id) ? "" : (" and dv.item_id = {$request->item_id} ");	
+		$dv_period_id = empty($request->period_id) ? "": (" and dv.period_id = {$request->period_id}");
+
+		# where หา percent_achievement ระดับ district
+		$dt_item_id = empty($request->item_id) ? "" : (" and dt.item_id = {$request->item_id} ");	
+		$dt_period_id = empty($request->period_id) ? "": (" and dt.period_id = {$request->period_id}");
+
 		$sort_by = "DESC";
 		# เรียงตามค่าของประเภทตัวชี้วัด
 		# เรียงจากมากไปหาน้อย กรณีตัวชี้วัดเป็นแบบค่ามากดี (1),ค่าระดับ (5) 
@@ -3437,24 +3485,70 @@ class DashboardController extends Controller
 		# Set รูปแบบการเรียงข้อมูลตาม ระดับ
 		if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : null )){
 			# ตรวจสอบว่าเป็นระดับ Section หรือ Parent ของ Division ?
-			$qfooter = " ORDER BY s.s_pct {$sort_by},b.section_name,p.dv_pct {$sort_by}, b.division_name, d.dt_pct {$sort_by}, b.district_name, b.pct {$sort_by}, b.org_name";
+			//$qfooter = " ORDER BY s.s_pct {$sort_by},b.section_name,p.dv_pct {$sort_by}, b.division_name, d.dt_pct {$sort_by}, b.district_name, b.pct {$sort_by}, b.org_name";
+			$qfooter = " ORDER BY 
+								sc.percent_achievement {$sort_by},so.org_name,
+								dv.percent_achievement {$sort_by},pdto.org_name,
+								dt.percent_achievement {$sort_by},dto.org_name,
+								a.percent_achievement {$sort_by},c.org_name";
+		
 		}elseif ($lv[0]->division_level_id == $request->level_id){
 			# ตรวจสอบว่าเป็นระดับ Division หรือ Parent ของ District ?
-			$qfooter = " ORDER BY p.dv_pct {$sort_by}, b.division_name, d.dt_pct {$sort_by}, b.district_name, b.pct {$sort_by}, b.org_name";
+			//$qfooter = " ORDER BY p.dv_pct {$sort_by}, b.division_name, d.dt_pct {$sort_by}, b.district_name, b.pct {$sort_by}, b.org_name";
+			$qfooter = " ORDER BY 
+								dv.percent_achievement {$sort_by},pdto.org_name,
+								dt.percent_achievement {$sort_by},dto.org_name,
+								a.percent_achievement {$sort_by},c.org_name";
 		}elseif ($lv[0]->district_level_id == $request->level_id) {
 			# ตรวจสอบว่าเป็นระดับ District ?
-			$qfooter = " ORDER BY d.dt_pct {$sort_by}, b.district_name, b.pct {$sort_by}, b.org_name";
-
+			//$qfooter = " ORDER BY d.dt_pct {$sort_by}, b.district_name, b.pct {$sort_by}, b.org_name";
+			$qfooter = " ORDER BY 
+								dt.percent_achievement {$sort_by},dto.org_name,
+								a.percent_achievement {$sort_by},c.org_name";
 		}elseif ($lv[0]->branch_level_id == $request->level_id) {
 			# ตรวจสอบว่าเป็นระดับ Branch ?
-			$qfooter = " ORDER BY b.pct {$sort_by}, b.org_name";
+			//$qfooter = " ORDER BY b.pct {$sort_by}, b.org_name";
+			$qfooter = " ORDER BY a.percent_achievement {$sort_by},c.org_name";
 		}
 		
 		Log::info('message');
+		$org_list = DB::select("
+				SELECT DISTINCT
+				so.org_id section_id,so.org_name section_name,so.org_code section_code, sc.percent_achievement s_pct,
+				pdto.org_id division_id,pdto.org_name division_name,pdto.org_code division_code, dv.percent_achievement dv_pct,
+				dto.org_id district_id,dto.org_name district_name,dto.org_code district_code, dt.percent_achievement dt_pct,
+				b.org_id,c.org_name,c.org_code,a.threshold_group_id result_threshold_group_id
+				,a.percent_achievement pct
+				FROM
+				appraisal_item_result a
+				LEFT OUTER JOIN emp_result b ON a.emp_result_id = b.emp_result_id
+				LEFT OUTER JOIN org c ON b.org_id = c.org_id
+				LEFT OUTER JOIN appraisal_level d ON c.level_id = d.level_id
+				INNER JOIN org dto ON c.parent_org_code = dto.org_code
+				INNER JOIN org pdto ON dto.parent_org_code = pdto.org_code
+				INNER JOIN org so ON pdto.parent_org_code = so.org_code
+				LEFT JOIN appraisal_item_result sc on sc.org_id = so.org_id and sc.emp_id IS NULL {$sc_item_id} {$sc_period_id}
+				LEFT JOIN appraisal_item_result dv on dv.org_id = pdto.org_id and dv.emp_id IS NULL {$dv_item_id} {$dv_period_id}
+				LEFT JOIN appraisal_item_result dt on dt.org_id = dto.org_id and dt.emp_id IS NULL {$dt_item_id} {$dt_period_id}
+				WHERE
+				b.appraisal_type_id = 1
+				
+				{$item_id}
+				{$period_id}
+				
+				AND EXISTS (
+				SELECT 1 FROM org x
+				LEFT OUTER JOIN appraisal_level y ON x.level_id = y.level_id
+				WHERE y.district_flag = 1 AND x.org_code = c.parent_org_code )
+				{$qfooter}
+		");
 		
+		
+
+/*	
 		$org_list = DB::select("
 				SELECT
-				b.section_id,b.section_name,s.s_pct,
+				b.section_id,b.section_name,s.s_pct++++,
 				b.division_id,b.division_name,p.dv_pct,
 				b.district_id,b.district_name,d.dt_pct,
 				b.org_id,b.org_name,b.org_code,b.result_threshold_group_id,b.pct 
@@ -3568,6 +3662,7 @@ class DashboardController extends Controller
 				AND b.district_id = d.district_id 
 			{$qfooter}
 			");
+			*/
 			// return response()->json([
 			// 	"lv"=>$lv[0],
 			// 	"request"=>$request->level_id,
@@ -3577,176 +3672,332 @@ class DashboardController extends Controller
 				// "district_level_id": 6,
 				// "branch_level_id": 7
 		$org_groups = [];
-		foreach ($org_list as $o) {
-			$key1 = $o->section_name;
-			$key2 = $o->division_name;
-			$key3 = $o->district_name;
-			$key4 = $o->org_name;
 
-			
-			if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : false )){
-				# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
+		if($request->drilldown == "false" ){
+			foreach ($org_list as $o) {
+				$key1 = $o->section_name;
+				$key2 = $o->division_name;
+				$key3 = $o->district_name;
+				$key4 = $o->org_name;
 
-				# Create Section List
-				$org_groups[$key1]['org_id'] = $o->section_id;
-				$org_groups[$key1]['org_name'] = $o->section_name;
-				$org_groups[$key1]['pct'] = $o->s_pct;
-				$org_groups[$key1]['color_code'] = null;
+				$select_key="";
+
 				
-				# Create Division List
-				$org_groups[$key1]['org_list'][$key2]['org_id'] =  $o->division_id;
-				$org_groups[$key1]['org_list'][$key2]['org_name'] =  $o->division_name;
-				$org_groups[$key1]['org_list'][$key2]['pct'] =  $o->dv_pct;
-				$org_groups[$key1]['org_list'][$key2]['color_code'] = null;
+				if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : false )){
+					# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
 
-				# Create District List
-				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['org_id'] =  $o->district_id;
-				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['org_name'] =  $o->district_name;
-				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['pct'] =  $o->dt_pct;
-				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['color_code'] = null;
+					# Create Section List
+					$select_key=$key1;
+					$org_groups[$key1]['org_id'] = $o->section_id;
+					$org_groups[$key1]['org_name'] = $o->section_name;
+					$org_groups[$key1]['pct'] = $o->s_pct;
+					$org_groups[$key1]['color_code'] = null;
+					
+				}elseif($lv[0]->division_level_id == $request->level_id){
+					# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
 
-				# Create Branch List
-				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['org_list'][$key4]= $o;
-			}elseif($lv[0]->division_level_id == $request->level_id){
-				# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
+					# Create Division List
+					$select_key=$key2;
+					$org_groups[$key2]['org_id'] = $o->division_id;
+					$org_groups[$key2]['org_name'] = $o->division_name;
+					$org_groups[$key2]['pct'] = $o->dv_pct;
+					$org_groups[$key2]['color_code'] = null;
 
-				# Create Division List
-				$org_groups[$key2]['org_id'] = $o->division_id;
-				$org_groups[$key2]['org_name'] = $o->division_name;
-				$org_groups[$key2]['pct'] = $o->dv_pct;
-				$org_groups[$key2]['color_code'] = null;
+				}elseif ($lv[0]->district_level_id == $request->level_id) {
+					# ตรวจสอบว่าเป็นระดับ District ?
+
+					# Create District List
+					$select_key=$key3;
+					$org_groups[$key3]['org_id'] = $o->district_id;
+					$org_groups[$key3]['org_name'] = $o->district_name;
+					$org_groups[$key3]['pct'] = $o->dt_pct;
+					$org_groups[$key3]['color_code'] = null;
+
+
+				}elseif ($lv[0]->branch_level_id == $request->level_id) {
+					# ตรวจสอบว่าเป็นระดับ Branch ?
+
+					# Create Branch List
+					$select_key=$key4;
+					$org_groups[$key4]['org_id'] = $o->org_id;
+					$org_groups[$key4]['org_name'] = $o->org_name;
+					$org_groups[$key4]['pct'] = $o->pct;
+					$org_groups[$key4]['color_code'] = null;
+				}
+				$qinput = array();
+				$query = "
+					SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, air.result_threshold_group_id, air.etl_dttm,
+						air.target_value, air.forecast_value, air.actual_value,
+						#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
+						air.percent_achievement percent_target,
+						air.percent_forecast percent_forecast
+						#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+						#if(ai.value_type_id = 1,(air.actual_value/air.forecast_value)*100,(((air.forecast_value-air.actual_value)/air.forecast_value)*100)+100) percent_forecast
+					FROM appraisal_item_result air
+					INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
+					INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
+					INNER JOIN appraisal_period ap ON ap.period_id = air.period_id
+					INNER JOIN emp_result er on air.emp_result_id = er.emp_result_id
+					LEFT OUTER JOIN uom u ON u.uom_id = ai.uom_id
+					LEFT OUTER JOIN org o ON o.org_id = air.org_id
+					LEFT OUTER JOIN org ON org.org_id = air.org_id
+					WHERE air.period_id = ?
+					AND o.org_id = ? 
+				";
 				
-				# Create District List
-				$org_groups[$key2]['org_list'][$key3]['org_id'] =  $o->district_id;
-				$org_groups[$key2]['org_list'][$key3]['org_name'] =  $o->district_name;
-				$org_groups[$key2]['org_list'][$key3]['pct'] =  $o->dt_pct;
-				$org_groups[$key2]['org_list'][$key3]['color_code'] = null;
-
-				# Create Branch List
-				$org_groups[$key2]['org_list'][$key3]['org_list'][$key4]= $o;
-			}elseif ($lv[0]->district_level_id == $request->level_id) {
-				# ตรวจสอบว่าเป็นระดับ District ?
-
-				# Create District List
-				$org_groups[$key3]['org_id'] = $o->district_id;
-				$org_groups[$key3]['org_name'] = $o->district_name;
-				$org_groups[$key3]['pct'] = $o->dt_pct;
-				$org_groups[$key3]['color_code'] = null;
-
-				# Create Branch List
-				$org_groups[$key3]['org_list'][$key4]= $o;
-
-			}elseif ($lv[0]->branch_level_id == $request->level_id) {
-				# ตรวจสอบว่าเป็นระดับ Branch ?
-
-				# Create Branch List
-				$org_groups[$key4]= $o;
-			}
-			
-
-			$qinput = array();
-			$query = "
-				SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, air.result_threshold_group_id, air.etl_dttm,
-					air.target_value, air.forecast_value, air.actual_value,
-					#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
-					air.percent_achievement percent_target,
-					air.percent_forecast percent_forecast
-					#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
-					#if(ai.value_type_id = 1,(air.actual_value/air.forecast_value)*100,(((air.forecast_value-air.actual_value)/air.forecast_value)*100)+100) percent_forecast
-				FROM appraisal_item_result air
-				INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
-				INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
-				INNER JOIN appraisal_period ap ON ap.period_id = air.period_id
-				INNER JOIN emp_result er on air.emp_result_id = er.emp_result_id
-				LEFT OUTER JOIN uom u ON u.uom_id = ai.uom_id
-				LEFT OUTER JOIN org o ON o.org_id = air.org_id
-				LEFT OUTER JOIN org ON org.org_id = air.org_id
-				WHERE air.period_id = ?
-				AND o.org_id = ? 
-			";
-			
-			$qinput[] = $request->period_id;
-			$qinput[] = $o->org_id;		
-			
-			$qfooter = " ORDER BY p.perspective_name, air.item_name, air.item_result_id, org.org_code ";
-						
-
-			
-			empty($request->item_id) ?: ($query .= " AND air.item_id = ? " AND $qinput[] = $request->item_id);
-			$items = DB::select($query.$qfooter,$qinput);
-			
-			$orgDetail = array();
-			
-			$branch_details = array();
-			foreach ($items as $i) {
-				$colorRanges = DB::select("
-					select begin_threshold, end_threshold, if(instr(color_code,'#') > 0,color_code,concat('#',color_code)) color_code
-					from result_threshold
-					where result_threshold_group_id = ?
-					order by end_threshold desc
-				", array($i->result_threshold_group_id));
-
-				$colors = array();
-				$ranges = array();
+				$qinput[] = $request->period_id;
+				$qinput[] = $org_groups[$select_key]['org_id'];		
 				
-				foreach ($colorRanges as $c) {
-					$colors[] = $c->color_code;
-					$ranges[] = $c->end_threshold;
+				$qfooter = " ORDER BY p.perspective_name, air.item_name, air.item_result_id, org.org_code ";
+							
+
+				
+				empty($request->item_id) ?: ($query .= " AND air.item_id = ? " AND $qinput[] = $request->item_id);
+				$items = DB::select($query.$qfooter,$qinput);
+				
+				$orgDetail = array();
+				
+				$branch_details = array();	
+				foreach ($items as $i) {
+					$colorRanges = DB::select("
+						select begin_threshold, end_threshold, if(instr(color_code,'#') > 0,color_code,concat('#',color_code)) color_code
+						from result_threshold
+						where result_threshold_group_id = ?
+						order by end_threshold desc
+					", array($i->result_threshold_group_id));
+
+					$colors = array();
+					$ranges = array();
+					
+					foreach ($colorRanges as $c) {
+						$colors[] = $c->color_code;
+						$ranges[] = $c->end_threshold;
+					}
+					
+					$orgDetail = array(
+						"perspective_name" => $i->perspective_name,
+						"item_name" => $i->item_name,
+						"uom_name" => $i->uom_name,
+						"rangeColor" => $colors,
+						"target"=> $i->target_value,
+						"forecast" => $i->forecast_value,
+						"actual" => $i->actual_value,
+						"percent_target" => $i->percent_target,
+						"percent_forecast" => $i->percent_forecast,
+						"etl_dttm" => $i->etl_dttm,
+
+						// For Spackline JS //
+						"percent_target_str" => "100".",".$i->percent_target.",".implode($ranges, ","),
+						"percent_forecast_str" => "100".",".$i->percent_forecast.",".implode($ranges, ",")
+					);
+					$branch_details[] = $orgDetail;
+				}
+
+				# Set Color
+				if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : null )){
+					# ตรวจสอบว่าเป็นระดับ Section ?
+
+					// section color //
+					$org_groups[$key1]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->s_pct);				
+					$org_groups[$key1]['branch_details'] = $branch_details;
+				
+				}elseif($lv[0]->division_level_id == $request->level_id){
+					# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
+
+					// division color //
+					$org_groups[$key2]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dv_pct);	
+					$org_groups[$key2]['branch_details'] = $branch_details;
+
+				}elseif ($lv[0]->district_level_id == $request->level_id) {
+					# ตรวจสอบว่าเป็นระดับ District ?
+
+					// district color //
+					$org_groups[$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
+					$org_groups[$key3]['branch_details'] = $branch_details;
+
+				}else{
+					//branch
+					$org_groups[$key4]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->pct);
+					$org_groups[$key4]['branch_details'] = $branch_details;
+				}
+			}	
+
+		}else {
+			
+			foreach ($org_list as $o) {
+				$key1 = $o->section_name;
+				$key2 = $o->division_name;
+				$key3 = $o->district_name;
+				$key4 = $o->org_name;
+	
+				
+				if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : false )){
+					# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
+	
+					# Create Section List
+					$org_groups[$key1]['org_id'] = $o->section_id;
+					$org_groups[$key1]['org_name'] = $o->section_name;
+					$org_groups[$key1]['pct'] = $o->s_pct;
+					$org_groups[$key1]['color_code'] = null;
+					
+					# Create Division List
+					$org_groups[$key1]['org_list'][$key2]['org_id'] =  $o->division_id;
+					$org_groups[$key1]['org_list'][$key2]['org_name'] =  $o->division_name;
+					$org_groups[$key1]['org_list'][$key2]['pct'] =  $o->dv_pct;
+					$org_groups[$key1]['org_list'][$key2]['color_code'] = null;
+	
+					# Create District List
+					$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['org_id'] =  $o->district_id;
+					$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['org_name'] =  $o->district_name;
+					$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['pct'] =  $o->dt_pct;
+					$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['color_code'] = null;
+	
+					# Create Branch List
+					$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['org_list'][$key4]= $o;
+				}elseif($lv[0]->division_level_id == $request->level_id){
+					# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
+	
+					# Create Division List
+					$org_groups[$key2]['org_id'] = $o->division_id;
+					$org_groups[$key2]['org_name'] = $o->division_name;
+					$org_groups[$key2]['pct'] = $o->dv_pct;
+					$org_groups[$key2]['color_code'] = null;
+					
+					# Create District List
+					$org_groups[$key2]['org_list'][$key3]['org_id'] =  $o->district_id;
+					$org_groups[$key2]['org_list'][$key3]['org_name'] =  $o->district_name;
+					$org_groups[$key2]['org_list'][$key3]['pct'] =  $o->dt_pct;
+					$org_groups[$key2]['org_list'][$key3]['color_code'] = null;
+	
+					# Create Branch List
+					$org_groups[$key2]['org_list'][$key3]['org_list'][$key4]= $o;
+				}elseif ($lv[0]->district_level_id == $request->level_id) {
+					# ตรวจสอบว่าเป็นระดับ District ?
+	
+					# Create District List
+					$org_groups[$key3]['org_id'] = $o->district_id;
+					$org_groups[$key3]['org_name'] = $o->district_name;
+					$org_groups[$key3]['pct'] = $o->dt_pct;
+					$org_groups[$key3]['color_code'] = null;
+	
+					# Create Branch List
+					$org_groups[$key3]['org_list'][$key4]= $o;
+	
+				}elseif ($lv[0]->branch_level_id == $request->level_id) {
+					# ตรวจสอบว่าเป็นระดับ Branch ?
+	
+					# Create Branch List
+					$org_groups[$key4]= $o;
 				}
 				
-				$orgDetail = array(
-					"perspective_name" => $i->perspective_name,
-					"item_name" => $i->item_name,
-					"uom_name" => $i->uom_name,
-					"rangeColor" => $colors,
-					"target"=> $i->target_value,
-					"forecast" => $i->forecast_value,
-					"actual" => $i->actual_value,
-					"percent_target" => $i->percent_target,
-					"percent_forecast" => $i->percent_forecast,
-					"etl_dttm" => $i->etl_dttm,
-
-					// For Spackline JS //
-					"percent_target_str" => "100".",".$i->percent_target.",".implode($ranges, ","),
-					"percent_forecast_str" => "100".",".$i->percent_forecast.",".implode($ranges, ",")
-				);
-				$branch_details[] = $orgDetail;
+	
+				$qinput = array();
+				$query = "
+					SELECT air.item_result_id, p.perspective_id, p.perspective_name, air.item_id, air.item_name, u.uom_name, air.org_id, org.org_code, o.org_name, air.result_threshold_group_id, air.etl_dttm,
+						air.target_value, air.forecast_value, air.actual_value,
+						#ifnull(if(air.target_value = 0, 0, (air.actual_value/air.target_value)*100), 0) percent_target,
+						air.percent_achievement percent_target,
+						air.percent_forecast percent_forecast
+						#ifnull(if(air.forecast_value = 0, 0, (air.actual_value/air.forecast_value)*100), 0) percent_forecast
+						#if(ai.value_type_id = 1,(air.actual_value/air.forecast_value)*100,(((air.forecast_value-air.actual_value)/air.forecast_value)*100)+100) percent_forecast
+					FROM appraisal_item_result air
+					INNER JOIN appraisal_item ai ON ai.item_id = air.item_id
+					INNER JOIN perspective p ON p.perspective_id = ai.perspective_id
+					INNER JOIN appraisal_period ap ON ap.period_id = air.period_id
+					INNER JOIN emp_result er on air.emp_result_id = er.emp_result_id
+					LEFT OUTER JOIN uom u ON u.uom_id = ai.uom_id
+					LEFT OUTER JOIN org o ON o.org_id = air.org_id
+					LEFT OUTER JOIN org ON org.org_id = air.org_id
+					WHERE air.period_id = ?
+					AND o.org_id = ? 
+				";
+				
+				$qinput[] = $request->period_id;
+				$qinput[] = $o->org_id;		
+				
+				$qfooter = " ORDER BY p.perspective_name, air.item_name, air.item_result_id, org.org_code ";
+							
+	
+				
+				empty($request->item_id) ?: ($query .= " AND air.item_id = ? " AND $qinput[] = $request->item_id);
+				$items = DB::select($query.$qfooter,$qinput);
+				
+				$orgDetail = array();
+				
+				$branch_details = array();
+				foreach ($items as $i) {
+					$colorRanges = DB::select("
+						select begin_threshold, end_threshold, if(instr(color_code,'#') > 0,color_code,concat('#',color_code)) color_code
+						from result_threshold
+						where result_threshold_group_id = ?
+						order by end_threshold desc
+					", array($i->result_threshold_group_id));
+	
+					$colors = array();
+					$ranges = array();
+					
+					foreach ($colorRanges as $c) {
+						$colors[] = $c->color_code;
+						$ranges[] = $c->end_threshold;
+					}
+					
+					$orgDetail = array(
+						"perspective_name" => $i->perspective_name,
+						"item_name" => $i->item_name,
+						"uom_name" => $i->uom_name,
+						"rangeColor" => $colors,
+						"target"=> $i->target_value,
+						"forecast" => $i->forecast_value,
+						"actual" => $i->actual_value,
+						"percent_target" => $i->percent_target,
+						"percent_forecast" => $i->percent_forecast,
+						"etl_dttm" => $i->etl_dttm,
+	
+						// For Spackline JS //
+						"percent_target_str" => "100".",".$i->percent_target.",".implode($ranges, ","),
+						"percent_forecast_str" => "100".",".$i->percent_forecast.",".implode($ranges, ",")
+					);
+					$branch_details[] = $orgDetail;
+				}
+	
+				# Set Color
+				if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : null )){
+					# ตรวจสอบว่าเป็นระดับ Section ?
+	
+					// section color //
+					$org_groups[$key1]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->s_pct);				
+					// division color //
+					$org_groups[$key1]['org_list'][$key2]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dv_pct);	
+					// district color //
+					$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
+				
+				}elseif($lv[0]->division_level_id == $request->level_id){
+					# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
+	
+					// division color //
+					$org_groups[$key2]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dv_pct);	
+					// district color //
+					$org_groups[$key2]['org_list'][$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
+				
+				}elseif ($lv[0]->district_level_id == $request->level_id) {
+					# ตรวจสอบว่าเป็นระดับ District ?
+	
+					// district color //
+					$org_groups[$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
+				
+				}
+	
+				// branch color
+				$o->color_code = $this->get_color($o->result_threshold_group_id, $o->pct);			
+				
+				$o->branch_details = $branch_details;
+				
+	
 			}
-
-			# Set Color
-			if(empty($request->level_id) || empty($lv) || (!empty($lv)? $lv[0]->section_level_id == $request->level_id : null )){
-				# ตรวจสอบว่าเป็นระดับ Section ?
-
-				// section color //
-				$org_groups[$key1]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->s_pct);				
-				// division color //
-				$org_groups[$key1]['org_list'][$key2]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dv_pct);	
-				// district color //
-				$org_groups[$key1]['org_list'][$key2]['org_list'][$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
-			
-			}elseif($lv[0]->division_level_id == $request->level_id){
-				# ตรวจสอบว่าเป็นระดับ Parent ของ District ?
-
-				// division color //
-				$org_groups[$key2]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dv_pct);	
-				// district color //
-				$org_groups[$key2]['org_list'][$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
-			
-			}elseif ($lv[0]->district_level_id == $request->level_id) {
-				# ตรวจสอบว่าเป็นระดับ District ?
-
-				// district color //
-				$org_groups[$key3]['color_code'] = $this->get_color($o->result_threshold_group_id, $o->dt_pct);	
-			
-			}
-
-			// branch color
-			$o->color_code = $this->get_color($o->result_threshold_group_id, $o->pct);			
-			
-			$o->branch_details = $branch_details;
-			
-
 		}
+		
+
+		
 		
 
 		return response()->json($org_groups);
