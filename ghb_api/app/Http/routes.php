@@ -443,6 +443,14 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('so_item', 'SOItemController@store');
 	Route::patch('so_item/{id}', 'SOItemController@update');
 	Route::delete('so_item/{id}', 'SOItemController@destroy');
+
+	//Project KPI Item
+	Route::get('project_kpi_item/dropdown_project_kpi_name', 'ProjectKPIController@dropdownProjectKPIName');
+	Route::get('project_kpi_item/dropdown_project_name', 'ProjectKPIController@dropdownProjectName');
+	Route::get('project_kpi_item', 'ProjectKPIController@show');
+	Route::delete('project_kpi_item/{project_item_id}', 'ProjectKPIController@destroy');
+	Route::post('project_kpi_item', 'ProjectKPIController@store');
+	Route::patch('project_kpi_item/{project_item_id}', 'ProjectKPIController@update');
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);

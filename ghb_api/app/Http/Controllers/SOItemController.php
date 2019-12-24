@@ -88,12 +88,51 @@ class SOItemController extends Controller
                     ->where('appraisal_structure.form_id',1)
                     ->where('appraisal_item.is_active',1)
                     ->where('appraisal_structure.is_active',1)
-                    ->where('so_item.is_active',1)
                     ->where('strategic_objective.is_active',1)
                     ->orderBy('so_item_name')
                     ->get();
 
-        return response()->json(['status' => 200, 'data' => $DB]);   
+        $DB_so_id_zero = DB::table('so_item')->select('so_item_id','so_item_name','item_id','uom_id',
+                                    'value_type_id','function_type',
+                                    'so_item.is_active','strategic_objective.so_name','so_item.so_id')
+                                ->join('strategic_objective','strategic_objective.so_id','=','so_item.so_id')
+                                ->where('item_id',0)
+                                ->get();
+
+        $data=[];
+        foreach($DB as $item){
+            $t_data = array(
+                "so_item_id" => $item->so_item_id,
+                "so_item_name" => $item->so_item_name,
+                "item_id" => $item->item_id,
+                "uom_id" =>  $item->uom_id,
+                "value_type_id" => $item->value_type_id,
+                "function_type" => $item->function_type,
+                "is_active" => $item->is_active,
+                "so_name" => $item->so_name,
+                "so_id" => $item->so_id,
+                "item_name" => $item->item_name,
+            );
+            array_push($data,$t_data);
+        }
+
+        foreach($DB_so_id_zero as $item){
+            $t_data = array(
+                "so_item_id" => $item->so_item_id,
+                "so_item_name" => $item->so_item_name,
+                "item_id" => $item->item_id,
+                "uom_id" =>  $item->uom_id,
+                "value_type_id" => $item->value_type_id,
+                "function_type" => $item->function_type,
+                "is_active" => $item->is_active,
+                "so_name" => $item->so_name,
+                "so_id" => $item->so_id,
+                "item_name" =>" ",
+            );
+            array_push($data,$t_data);
+        }
+        
+        return response()->json(['status' => 200, 'data' => $data]);   
     }
 
     public function autocomplete(Request $request){
