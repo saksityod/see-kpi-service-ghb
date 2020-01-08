@@ -2226,9 +2226,12 @@ class DashboardController extends Controller
 				//check threshold end
 				//not check
 				$val_type = DB::table('appraisal_item_result')->select('value_type_id')
-						->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
-						->where('appraisal_item_result.item_id',$request->item_id)
-						->get();
+			      ->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
+			      ->where('appraisal_item_result.item_id',$request->item_id)
+			      ->where('appraisal_item_result.period_id',$request->period_id)
+			      ->where('appraisal_item_result.level_id',$request->level_id)
+			      ->where('appraisal_item_result.org_id',$request->org_id)
+			      ->get();
 
 				if($val_type[0] ->value_type_id == 5){
 					$val_score = DB::table('appraisal_item_result')->select('score')
