@@ -422,15 +422,12 @@ class CDSResultController extends Controller
 						// manage data ตามสิทธิ์ user
 						if ($is_hr == 1){
 							array_push($field_data, $i->forecast, $i->forecast_bu, $i->cds_value);
-						// }else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
-						// 	array_push($field_data, $i->forecast_bu);
-						// }else if ($emp->level_id == 2){
-						// 	array_push($field_data, $i->forecast, $i->cds_value);
-						// }
-						
-						}else {
-							array_push($field_data, $i->forecast_bu, $i->cds_value);
+						}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
+							array_push($field_data, $i->forecast_bu);
+						}else if ($emp->level_id == 2){
+							array_push($field_data, $i->forecast, $i->cds_value);
 						}
+					
 						
 						$sheet->appendRow($field_data);
 					}
@@ -439,16 +436,20 @@ class CDSResultController extends Controller
 					$field = array('Appraisal Type ID', 'Level ID', 'Level Name', 'Organization ID', 'Organization Name', 'CDS ID', 'CDS Name', 'UOM','Year', 'Month');
 
 					// manage header name ตามสิทธิ์ user
-					if ($is_hr == 1){
-						array_push($field, 'Forecast', 'Forecast BU', 'CDS Value');
+					// if ($is_hr == 1){
+					// 	array_push($field, 'Forecast', 'Forecast BU', 'CDS Value');
 					// }else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
 					// 	array_push($field,'Forecast BU');
 					// }else if ($emp->level_id == 2){
 					// 	array_push($field, 'Forecast', 'CDS Value');
 					// }
-
-					} else {
-						array_push($field, 'Forecast BU', 'CDS Value');
+					// manage header name ตามสิทธิ์ user
+					if ($is_hr == 1){
+						array_push($field, 'Forecast', 'Forecast BU', 'CDS Value');
+					}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
+						array_push($field,'Forecast BU');
+					}else if ($emp->level_id == 2){
+						array_push($field, 'Forecast', 'CDS Value');
 					}
 
 
@@ -1850,10 +1851,10 @@ class CDSResultController extends Controller
 					$cds_result->appraisal_month_no = $cds['appraisal_month_no'];
 					$cds_result->appraisal_month_name = $cds['appraisal_month_name'];
 					$cds_result->cds_value = $cds['cds_value'];
-					// $cds_result->corporate_forecast_value  = $cds['forecast'];
-					$cds_result->forecast = $cds['forecast'];
-					// $cds_result->bu_forecast_value = $cds['forecast_bu'];
-					$cds_result->forecast_bu = $cds['forecast_bu'];
+					$cds_result->corporate_forecast_value  = $cds['forecast'];
+					// $cds_result->forecast = $cds['forecast'];
+					$cds_result->bu_forecast_value = $cds['forecast_bu'];
+					// $cds_result->forecast_bu = $cds['forecast_bu'];
 					if ($cds['appraisal_type_id'] == "1"){
 						$cds_result->org_id = $cds['org_id'];
 					}else if ($cds['appraisal_type_id'] == "2"){
@@ -1866,7 +1867,9 @@ class CDSResultController extends Controller
 				} else {
 
 						$item->corporate_forecast_value = $cds['forecast'];
+						// $item->forecast = $cds['forecast'];
 						$item->bu_forecast_value = $cds['forecast_bu'];
+						// $item->forecast_bu = $cds['forecast_bu'];
 						$item->cds_value = $cds['cds_value'];
 						$item->updated_by = Auth::id();
 						$item->save();
@@ -2343,20 +2346,32 @@ class CDSResultController extends Controller
 					$cds_result->appraisal_month_no = $cds['appraisal_month_no'];
 					$cds_result->appraisal_month_name = $cds['appraisal_month_name'];
 					$cds_result->cds_value = $cds['cds_value'];
-					$cds_result->corporate_forecast_value = $cds['corporate_forecast_value'];
-					$cds_result->bu_forecast_value = $cds['bu_forecast_value'];
+					// Rock : swap corporate_forecast_value  <---> forcast
+					// $cds_result->corporate_forecast_value = $cds['corporate_forecast_value'];
+					// $cds_result->bu_forecast_value = $cds['bu_forecast_value'];
+					$cds_result->forecast = $cds['corporate_forecast_value'];
+					$cds_result->forecast_bu = $cds['bu_forecast_value'];
 					if ($cds['appraisal_type_id'] == "1"){
 						$cds_result->org_id = $cds['org_id'];
 					}else if ($cds['appraisal_type_id'] == "2"){
 						$cds_result->emp_id = $cds['emp_id'];
 					}
+					// Rock : fixed etl_dttm
+					$a_date = $cds_result->year . "-" . $cds_result->appraisal_month_no . "-" . cal_days_in_month(CAL_GREGORIAN, $cds_result->appraisal_month_no, $cds_result->year);
+					$cds_result->etl_dttm = date("Y-m-t", strtotime($a_date));
 					$cds_result->created_by = Auth::id();
 					$cds_result->updated_by = Auth::id();
 					$cds_result->save();
 				} else {
-					$item->corporate_forecast_value = $cds['corporate_forecast_value'];
-					$item->bu_forecast_value = $cds['bu_forecast_value'];
+					// Rock : swap corporate_forecast_value  <---> forcast
+					// $item->corporate_forecast_value = $cds['corporate_forecast_value'];
+					// $item->bu_forecast_value = $cds['bu_forecast_value'];
+					$item->forecast = $cds['corporate_forecast_value'];
+					$item->forecast_bu = $cds['bu_forecast_value'];
 					$item->cds_value = $cds['cds_value'];
+					// Rock : fixed etl_dttm
+					$a_date = $item->year . "-" . $item->appraisal_month_no . "-" . cal_days_in_month(CAL_GREGORIAN, $item->appraisal_month_no, $item->year);
+					$item->etl_dttm = date("Y-m-t", strtotime($a_date));
 					$item->updated_by = Auth::id();
 					$item->save();
 				}
