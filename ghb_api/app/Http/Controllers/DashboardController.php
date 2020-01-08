@@ -4104,6 +4104,7 @@ class DashboardController extends Controller
 				
 				$orgDetail = array(
 					"perspective_name" => $i->perspective_name,
+					'item_id' => $i->item_id,
 					"item_name" => $i->item_name,
 					"uom_name" => $i->uom_name,
 					"rangeColor" => $colors,
