@@ -1766,8 +1766,10 @@ class AppraisalAssignmentController extends Controller
 					//empty($request->head_params['appraisal_type_id']) ?: ($query_unassign .= " and appraisal_type_id = ? " AND $qinput[] = $request->head_params['appraisal_type_id']);	
 					
 					$check_unassign = DB::select($query_unassign,$qinput);	
-					$rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
+					// $rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
+					$rtg_id = ResultThresholdGroup::where('is_active',1)->first();
 					empty($rtg_id) ? $rtg_id = null : $rtg_id = $rtg_id->result_threshold_group_id; 
+				    // return response()->json($rtg_id);
 					if (empty($check_unassign)) {
 						$stage = WorkflowStage::find($request->head_params['action_to']);
 						
@@ -1854,9 +1856,10 @@ class AppraisalAssignmentController extends Controller
 						$tg_id = ThresholdGroup::where('is_active',1)->first();
 						empty($tg_id) ? $tg_id = null : $tg_id = $tg_id->threshold_group_id;
 						
-						$rstg_id = ResultThresholdGroup::where('is_active',1)->first();
-						empty($rstg_id) ? $rstg_id = null : $rstg_id = $rstg_id->result_threshold_group_id;
-
+						// $rstg_id = ResultThresholdGroup::where('is_active',1)->first();
+						// empty($rstg_id) ? $rstg_id = null : $rstg_id = $rstg_id->result_threshold_group_id;
+						
+				        // return response()->json($rstg_id);
 						foreach ($request->appraisal_items as $i) {
 							$check_item = DB::select("
 								select count(1) cnt
@@ -1871,7 +1874,20 @@ class AppraisalAssignmentController extends Controller
 								and org.org_id = {$org_id}
 								and al.level_id = {$level_id}
 							");
-
+							
+							$rstg_id = 0;
+							$rtg = DB::select("
+				                SELECT rtg.result_threshold_group_id
+				                FROM result_threshold_group rtg
+				                inner join appraisal_item ai on rtg.value_type_id = ai.value_type_id
+				                WHERE rtg.is_active = 1
+				                and ai.item_id = '".$i['item_id']."'
+				                and rtg.value_type_id = ai.value_type_id "
+				              );
+							foreach ($rtg as $value) {
+					                $rstg_id = $value->result_threshold_group_id;
+					              }
+					              /*return response()->json($rstg_id);*/
 							if($check_item[0]->cnt > 0) {
 
 								if ($i['form_id'] == 1) {	
@@ -1998,7 +2014,8 @@ class AppraisalAssignmentController extends Controller
 				//empty($request->head_params['appraisal_type_id']) ?: ($query_unassign .= " and appraisal_type_id = ? " AND $qinput[] =  $request->head_params['appraisal_type_id']);	
 				
 				$check_unassign = DB::select($query_unassign,$qinput);	
-				$rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
+				// $rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
+				$rtg_id = ResultThresholdGroup::where('is_active',1)->first();
 				empty($rtg_id) ? $rtg_id = null : $rtg_id = $rtg_id->result_threshold_group_id; 				
 				if (empty($check_unassign)) {
 					$stage = WorkflowStage::find($request->head_params['action_to']);
