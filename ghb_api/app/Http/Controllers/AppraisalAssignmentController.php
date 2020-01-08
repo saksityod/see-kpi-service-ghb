@@ -6,6 +6,7 @@ use App\AppraisalItemResult;
 use App\AppraisalFrequency;
 use App\AppraisalPeriod;
 use App\EmpResult;
+use App\EmpOrg;
 use App\EmpResultStage;
 use App\WorkflowStage;
 use App\Employee;
@@ -462,6 +463,17 @@ class AppraisalAssignmentController extends Controller
 		$emp_code = empty($request->emp_code) ? " ": "and e.emp_code = '{$request->emp_code}'";
 		$position_id = empty($request->position_id) ? " ": "and er.position_id = {$request->position_id}";
 
+
+		$emp = Employee::find(Auth::id());
+		$muti_org =  DB::select("
+				select GROUP_CONCAT(o.org_code) org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+		
+		$muti_org_code = empty($muti_org[0]->org_code) ? "" : "OR FIND_IN_SET(o.org_code,'".$muti_org[0]->org_code."')";
+
 		if ($all_emp[0]->count_no > 0) {
 
 			if ($request->appraisal_type_id == 2) {
@@ -594,7 +606,7 @@ class AppraisalAssignmentController extends Controller
 					and ir.item_id = I.item_id		
 					and er.period_id = p.period_id
 					and er.stage_id = ast.stage_id
-					and (o.org_code = '{$emp_org->org_code}' or o.parent_org_code = '{$emp_org->org_code}')
+					and (o.org_code = '{$emp_org->org_code}' or o.parent_org_code = '{$emp_org->org_code}' {$muti_org_code})
 					and o.is_active = 1
 					and I.is_active = 1
 					".$org_level."
@@ -625,6 +637,17 @@ class AppraisalAssignmentController extends Controller
 			on a.level_id = b.level_id
 			where emp_code = ?
 		", array(Auth::id()));
+
+		$emp = Employee::find(Auth::id());
+		$muti_org =  DB::select("
+				select GROUP_CONCAT(o.org_code) org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+		
+		$muti_org_code = empty($muti_org[0]->org_code) ? "" : "OR FIND_IN_SET(o.org_code,'".$muti_org[0]->org_code."')";
+
 
 		$qinput = array();
 		$query_unassign = "";
@@ -1234,7 +1257,7 @@ class AppraisalAssignmentController extends Controller
 										   AND er.period_id = p.period_id
 										   AND p.appraisal_year = z.appraisal_year
 										   AND p.appraisal_frequency_id = z.appraisal_frequency_id
-										   and (o.org_code = ? or o.parent_org_code = ?)
+										   and (o.org_code = ? or o.parent_org_code = ? {$muti_org_code})
 					";
 					$qinput[] = $emp_org->org_code;
 					$qinput[] = $emp_org->org_code;
@@ -1262,7 +1285,7 @@ class AppraisalAssignmentController extends Controller
 						and er.period_id = p.period_id
 						and er.stage_id = ast.stage_id
 						and er.level_id = al.level_id
-						and (o.org_code = ? or o.parent_org_code = ?)
+						and (o.org_code = ? or o.parent_org_code = ? {$muti_org_code})
 					";
 					$qinput[] = $emp_org->org_code;
 					$qinput[] = $emp_org->org_code;

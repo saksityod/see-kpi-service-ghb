@@ -1286,6 +1286,8 @@ class AppraisalController extends Controller
 			where emp_code = ?
 		", array(Auth::id()));
 
+		
+
 		$qinput = array();
 		
 		
@@ -1432,6 +1434,20 @@ class AppraisalController extends Controller
 				$emp_list[] = $e->org_code;
 				$re_emp[] = $e->org_code;
 			}
+
+			//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+			$muti_org =  DB::select("
+				select o.org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+			
+			foreach ($muti_org as $e) {
+				$re_emp[] = $e->org_code;
+			}
+
+			$re_emp = array_unique($re_emp);
 			
 			$emp_list = array_unique($emp_list);
 
