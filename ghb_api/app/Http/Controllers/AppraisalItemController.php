@@ -79,7 +79,8 @@ class AppraisalItemController extends Controller
 		empty($request->item_id) ?: ($query .= " And i.item_id = ? " AND $qinput[] = $request->item_id);
 		empty($request->org_id) ?: ($query .= " and exists ( select 1 from appraisal_item_org lv where lv.item_id = i.item_id and lv.org_id = ? ) " AND $qinput[] = $request->org_id);		
 		
-		$qfooter = " Order by isnull(i.kpi_id), i.kpi_id asc, i.item_id asc";
+		//$qfooter = " Order by isnull(i.kpi_id), i.kpi_id asc, i.item_id asc";
+		$qfooter = " Order by  i.kpi_id asc, i.item_name asc";
 		
 		$items = DB::select($query . $qfooter, $qinput);
 		
@@ -292,7 +293,7 @@ class AppraisalItemController extends Controller
 			From appraisal_level 
 			Where is_active = 1 
 			and is_hr = 0
-			order by level_id
+			order by level_id asc
 		");
 		return response()->json($items);
     }

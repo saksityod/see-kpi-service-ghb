@@ -40,7 +40,7 @@ class KPITypeController extends Controller
 			select kpi_type_id, kpi_type_name, is_active
 			from kpi_type
 			where is_active = 1
-			order by kpi_type_id asc
+			order by kpi_type_name asc
 		");
 		return response()->json($items);
 	}

@@ -87,7 +87,7 @@ class AppraisalController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by appraisal_level_name asc			
+				Order by level_id asc			
 			");
 		} else {
 			
@@ -312,7 +312,7 @@ class AppraisalController extends Controller
 				inner join appraisal_level al on al.level_id = org.level_id
 				where org_code in({$in_emp})
 				and al.is_hr = 0
-				order by al.appraisal_level_name asc
+				order by al.level_id asc
 			");
 
 			
@@ -343,7 +343,7 @@ class AppraisalController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by appraisal_level_name asc		
+				Order by level_id asc		
 			");
 		} else {
 
@@ -571,7 +571,7 @@ class AppraisalController extends Controller
 					where level_id = 2
 					and (1 = {$emp->is_show_corporate})
 					)appralsai_level
-					order by appraisal_level_name
+					order by level_id asc
 				");
 			} else {
 				// $items = DB::select("
@@ -589,7 +589,7 @@ class AppraisalController extends Controller
 					inner join appraisal_level al on al.level_id = org.level_id
 					where org_code in({$in_emp})
 					and al.is_hr = 0
-					order by al.appraisal_level_name
+					order by al.level_id asc
 				");
 			}
 		}
@@ -1348,7 +1348,7 @@ class AppraisalController extends Controller
 			echo $query. " order by period_id,emp_code,org_code  asc ";
 			print_r($qinput);
 			*/
-			$items = DB::select($query. " order by period_id,emp_code,org_code  asc ", $qinput);
+			$items = DB::select($query. " order by period_id,emp_name asc ,org_name asc ", $qinput);
 			
 		} else {
 
@@ -1595,7 +1595,7 @@ class AppraisalController extends Controller
 				print_r($qinput);
 				*/
 				
-				$items = DB::select($query. " order by period_id,emp_code,org_code  asc ", $qinput);	
+				$items = DB::select($query. " order by period_id,emp_name asc ,org_name asc ", $qinput);	
 				
 			} else {
 				// $emp = Employee::find(Auth::id());
@@ -1633,7 +1633,7 @@ class AppraisalController extends Controller
 				//empty($request->position_id) ?: ($query .= " and a.position_id = ? " AND $qinput[] = $request->position_id);
 				//empty($request->emp_id) ?: ($query .= " And a.emp_id = ? " AND $qinput[] = $request->emp_id);
 				
-				$items = DB::select($query. " order by period_id,org_code  asc ", $qinput);			
+				$items = DB::select($query. " order by period_id,emp_name asc ,org_name asc", $qinput);			
 			
 			}
 	
@@ -1707,7 +1707,7 @@ class AppraisalController extends Controller
 		", array($emp_result_id));
 		
 		$items = DB::select("
-			select DISTINCT b.item_name,uom.uom_name, b.structure_id, c.structure_name, d.form_id, d.app_url, c.nof_target_score, a.*, e.perspective_name, a.weigh_score, f.weigh_score total_weigh_score, a.weight_percent, g.weight_percent total_weight_percent, al.no_weight,
+			select DISTINCT b.item_name,uom.uom_name, b.structure_id, c.structure_name, d.form_id, d.app_url, c.nof_target_score, a.*, e.perspective_id,e.perspective_name, a.weigh_score, f.weigh_score total_weigh_score, a.weight_percent, g.weight_percent total_weight_percent, al.no_weight,
 			if(ifnull(a.target_value,0) = 0,0,(ifnull(a.actual_value,0)/a.target_value)*100) achievement, a.percent_achievement, h.result_threshold_group_id, (select count(1) from appraisal_item_result_doc where a.item_result_id = item_result_id) files_amount
 			from appraisal_item_result a
 			left outer join appraisal_item b
@@ -1730,7 +1730,7 @@ class AppraisalController extends Controller
 			on a.emp_result_id = h.emp_result_id
 			left join uom on  b.uom_id= uom.uom_id
 			where a.emp_result_id = ?
-			order by b.item_id
+			order by e.perspective_id asc ,b.item_name asc
 		", array($emp_result_id));
 		
 		$groups = array();

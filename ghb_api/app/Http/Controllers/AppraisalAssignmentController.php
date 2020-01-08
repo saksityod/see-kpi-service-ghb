@@ -356,7 +356,7 @@ class AppraisalAssignmentController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by appraisal_level_name asc			
+				Order by level_id asc			
 			");
 		} else {
 			$items = DB::select("
@@ -366,7 +366,7 @@ class AppraisalAssignmentController extends Controller
 				and (e.chief_emp_code = ? or e.emp_code = ?)
 				and e.is_active = 1			
 				and al.is_hr = 0
-				Order by appraisal_level_name asc	
+				Order by level_id asc	
 			", array($emp->emp_code,$emp->emp_code));
 		}
 		
@@ -1304,7 +1304,7 @@ class AppraisalAssignmentController extends Controller
 			}
 		}	
 		
-		$items = DB::select($query_unassign . " order by period_id,emp_code,org_code asc ", $qinput);
+		$items = DB::select($query_unassign . " order by period_id,emp_name asc ,org_name asc ", $qinput);
 		
 		// Get the current page from the url if it's not set default to 1
 		empty($request->page) ? $page = 1 : $page = $request->page;
