@@ -702,14 +702,23 @@ class ImportAssignmentController extends Controller
 
       // Get active threshold group id
       $thresholdGroupId = 0;
-      $thresholdGroup = DB::select("
+      /*$thresholdGroup = DB::select("
         SELECT rtg.result_threshold_group_id
         FROM result_threshold_group rtg
         inner join value_type v on rtg.value_type_id = v.value_type_id
         WHERE rtg.is_active = 1
         and v.value_type_id = 1
         LIMIT 1"
+      );*/
+      $thresholdGroup = DB::select("
+        SELECT rt.result_threshold_group_id
+        FROM
+        result_threshold_group rt
+        where rt.value_type_id =1
+        and rt.is_active =1"
       );
+
+      // return response()->json($thresholdGroup);
       foreach ($thresholdGroup as $value) {
         $thresholdGroupId = $value->result_threshold_group_id;
       }
@@ -905,8 +914,8 @@ class ImportAssignmentController extends Controller
                 FROM result_threshold_group rtg
                 inner join appraisal_item ai on rtg.value_type_id = ai.value_type_id
                 WHERE rtg.is_active = 1
-                and rtg.value_type_id = ai.value_type_id
-                LIMIT 1"
+                and ai.item_id = {$row->appraisal_item_id}
+                and rtg.value_type_id = ai.value_type_id "
               );
               foreach ($itemthresholdGroup as $value) {
                 $itemthresholdGroupId = $value->result_threshold_group_id;
