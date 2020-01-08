@@ -6,6 +6,7 @@ use App\AppraisalItemResult;
 use App\AppraisalFrequency;
 use App\AppraisalPeriod;
 use App\EmpResult;
+use App\EmpOrg;
 use App\EmpResultStage;
 use App\WorkflowStage;
 use App\Employee;
@@ -355,7 +356,7 @@ class AppraisalAssignmentController extends Controller
 				From appraisal_level 
 				Where is_active = 1 
 				and is_hr = 0
-				Order by appraisal_level_name asc			
+				Order by level_id asc			
 			");
 		} else {
 			$items = DB::select("
@@ -365,7 +366,7 @@ class AppraisalAssignmentController extends Controller
 				and (e.chief_emp_code = ? or e.emp_code = ?)
 				and e.is_active = 1			
 				and al.is_hr = 0
-				Order by appraisal_level_name asc	
+				Order by level_id asc	
 			", array($emp->emp_code,$emp->emp_code));
 		}
 		
@@ -461,6 +462,17 @@ class AppraisalAssignmentController extends Controller
 		$appraisal_type_id = empty($request->appraisal_type_id) ? " ": "and er.appraisal_type_id = {$request->appraisal_type_id}";
 		$emp_code = empty($request->emp_code) ? " ": "and e.emp_code = '{$request->emp_code}'";
 		$position_id = empty($request->position_id) ? " ": "and er.position_id = {$request->position_id}";
+
+
+		$emp = Employee::find(Auth::id());
+		$muti_org =  DB::select("
+				select GROUP_CONCAT(o.org_code) org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+		
+		$muti_org_code = empty($muti_org[0]->org_code) ? "" : "OR FIND_IN_SET(o.org_code,'".$muti_org[0]->org_code."')";
 
 		if ($all_emp[0]->count_no > 0) {
 
@@ -594,7 +606,7 @@ class AppraisalAssignmentController extends Controller
 					and ir.item_id = I.item_id		
 					and er.period_id = p.period_id
 					and er.stage_id = ast.stage_id
-					and (o.org_code = '{$emp_org->org_code}' or o.parent_org_code = '{$emp_org->org_code}')
+					and (o.org_code = '{$emp_org->org_code}' or o.parent_org_code = '{$emp_org->org_code}' {$muti_org_code})
 					and o.is_active = 1
 					and I.is_active = 1
 					".$org_level."
@@ -625,6 +637,17 @@ class AppraisalAssignmentController extends Controller
 			on a.level_id = b.level_id
 			where emp_code = ?
 		", array(Auth::id()));
+
+		$emp = Employee::find(Auth::id());
+		$muti_org =  DB::select("
+				select GROUP_CONCAT(o.org_code) org_code
+				from emp_org e
+				inner join org o on e.org_id = o.org_id
+				where emp_id = ?
+				", array($emp->emp_id));
+		
+		$muti_org_code = empty($muti_org[0]->org_code) ? "" : "OR FIND_IN_SET(o.org_code,'".$muti_org[0]->org_code."')";
+
 
 		$qinput = array();
 		$query_unassign = "";
@@ -1234,7 +1257,7 @@ class AppraisalAssignmentController extends Controller
 										   AND er.period_id = p.period_id
 										   AND p.appraisal_year = z.appraisal_year
 										   AND p.appraisal_frequency_id = z.appraisal_frequency_id
-										   and (o.org_code = ? or o.parent_org_code = ?)
+										   and (o.org_code = ? or o.parent_org_code = ? {$muti_org_code})
 					";
 					$qinput[] = $emp_org->org_code;
 					$qinput[] = $emp_org->org_code;
@@ -1262,7 +1285,7 @@ class AppraisalAssignmentController extends Controller
 						and er.period_id = p.period_id
 						and er.stage_id = ast.stage_id
 						and er.level_id = al.level_id
-						and (o.org_code = ? or o.parent_org_code = ?)
+						and (o.org_code = ? or o.parent_org_code = ? {$muti_org_code})
 					";
 					$qinput[] = $emp_org->org_code;
 					$qinput[] = $emp_org->org_code;
@@ -1281,7 +1304,7 @@ class AppraisalAssignmentController extends Controller
 			}
 		}	
 		
-		$items = DB::select($query_unassign . " order by period_id,emp_code,org_code asc ", $qinput);
+		$items = DB::select($query_unassign . " order by period_id,emp_name asc ,org_name asc ", $qinput);
 		
 		// Get the current page from the url if it's not set default to 1
 		empty($request->page) ? $page = 1 : $page = $request->page;
@@ -1766,8 +1789,10 @@ class AppraisalAssignmentController extends Controller
 					//empty($request->head_params['appraisal_type_id']) ?: ($query_unassign .= " and appraisal_type_id = ? " AND $qinput[] = $request->head_params['appraisal_type_id']);	
 					
 					$check_unassign = DB::select($query_unassign,$qinput);	
-					$rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
+					// $rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
+					$rtg_id = ResultThresholdGroup::where('is_active',1)->first();
 					empty($rtg_id) ? $rtg_id = null : $rtg_id = $rtg_id->result_threshold_group_id; 
+				    // return response()->json($rtg_id);
 					if (empty($check_unassign)) {
 						$stage = WorkflowStage::find($request->head_params['action_to']);
 						
@@ -1854,9 +1879,10 @@ class AppraisalAssignmentController extends Controller
 						$tg_id = ThresholdGroup::where('is_active',1)->first();
 						empty($tg_id) ? $tg_id = null : $tg_id = $tg_id->threshold_group_id;
 						
-						$rstg_id = ResultThresholdGroup::where('is_active',1)->first();
-						empty($rstg_id) ? $rstg_id = null : $rstg_id = $rstg_id->result_threshold_group_id;
-
+						// $rstg_id = ResultThresholdGroup::where('is_active',1)->first();
+						// empty($rstg_id) ? $rstg_id = null : $rstg_id = $rstg_id->result_threshold_group_id;
+						
+				        // return response()->json($rstg_id);
 						foreach ($request->appraisal_items as $i) {
 							$check_item = DB::select("
 								select count(1) cnt
@@ -1871,7 +1897,20 @@ class AppraisalAssignmentController extends Controller
 								and org.org_id = {$org_id}
 								and al.level_id = {$level_id}
 							");
-
+							
+							$rstg_id = 0;
+							$rtg = DB::select("
+				                SELECT rtg.result_threshold_group_id
+				                FROM result_threshold_group rtg
+				                inner join appraisal_item ai on rtg.value_type_id = ai.value_type_id
+				                WHERE rtg.is_active = 1
+				                and ai.item_id = '".$i['item_id']."'
+				                and rtg.value_type_id = ai.value_type_id "
+				              );
+							foreach ($rtg as $value) {
+					                $rstg_id = $value->result_threshold_group_id;
+					              }
+					              /*return response()->json($rstg_id);*/
 							if($check_item[0]->cnt > 0) {
 
 								if ($i['form_id'] == 1) {	
@@ -1998,7 +2037,8 @@ class AppraisalAssignmentController extends Controller
 				//empty($request->head_params['appraisal_type_id']) ?: ($query_unassign .= " and appraisal_type_id = ? " AND $qinput[] =  $request->head_params['appraisal_type_id']);	
 				
 				$check_unassign = DB::select($query_unassign,$qinput);	
-				$rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
+				// $rtg_id = ResultThresholdGroup::where('is_active',1)->where('value_type_id',1)->first();
+				$rtg_id = ResultThresholdGroup::where('is_active',1)->first();
 				empty($rtg_id) ? $rtg_id = null : $rtg_id = $rtg_id->result_threshold_group_id; 				
 				if (empty($check_unassign)) {
 					$stage = WorkflowStage::find($request->head_params['action_to']);

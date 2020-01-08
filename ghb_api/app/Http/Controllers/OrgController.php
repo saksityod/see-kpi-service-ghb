@@ -270,6 +270,12 @@ class OrgController extends Controller
             WHERE
                 emp_code = ?
 		", array(Auth::id()));
+
+		$all_org = DB::select("
+			SELECT sum(is_show_corporate) count_no
+			from employee
+			where emp_code = ?
+		", array(Auth::id()));
 		
 		empty($request->level_id) ? $level = "" : $level = " and a.level_id = " . $request->level_id . " ";
 		empty($request->org_code) ? $org = "" : $org = " and a.org_code = " . $request->org_code . " ";
@@ -366,6 +372,17 @@ class OrgController extends Controller
 				$re_emp[] = $e->org_code;
 			}
 
+			if($all_org[0]->count_no > 0){
+				$co = DB::select("
+					select o.org_code
+					from org o
+					where level_id = 2
+					");
+				foreach ($co as $o) {
+					$re_emp[] = $o->org_code;
+				}
+			}
+
 			$re_emp = array_unique($re_emp);
 			
 			$arrayKeys = array_keys($re_emp);			// Get array keys
@@ -439,7 +456,7 @@ class OrgController extends Controller
 				on a.level_id = c.level_id 
 				left outer join province d on a.province_code = d.province_code
 				where 1=1 " . $level . $org . " 
-				order by a.org_code asc
+				order by a.org_name asc
 			");
 		} else {
 
@@ -551,7 +568,7 @@ class OrgController extends Controller
 				left outer join province d on a.province_code = d.province_code
 				where a.org_code in ({$in_emp})
 				".$level."
-				order by a.org_id asc
+				order by a.org_name asc
 			");
 		}
 		return response()->json($items);
