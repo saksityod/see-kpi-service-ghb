@@ -80,7 +80,7 @@ SELECT air.emp_result_id,
 		inner join appraisal_level al on al.level_id = air.level_id
 		inner join org on org.org_id = air.org_id
 		inner join emp_result ere on ere.emp_result_id = air.emp_result_id
-		inner join structure_result sr on ere.emp_result_id = sr.emp_result_id
+		left join structure_result sr on air.emp_result_id = sr.emp_result_id
 		INNER JOIN (SELECT (SUM(air.weigh_score)/100)sumscore,air.emp_result_id, per.perspective_id,air.org_id , air.level_id
 								FROM appraisal_item_result air 
 								inner join appraisal_item ai on ai.item_id = air.item_id
