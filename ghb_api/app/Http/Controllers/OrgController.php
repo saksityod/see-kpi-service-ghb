@@ -372,7 +372,7 @@ class OrgController extends Controller
 				$re_emp[] = $e->org_code;
 			}
 
-			if(!empty($all_org)){
+			if($all_org[0]->count_no > 0){
 				$co = DB::select("
 					select o.org_code
 					from org o
@@ -456,7 +456,7 @@ class OrgController extends Controller
 				on a.level_id = c.level_id 
 				left outer join province d on a.province_code = d.province_code
 				where 1=1 " . $level . $org . " 
-				order by a.org_code asc
+				order by a.org_name asc
 			");
 		} else {
 
@@ -568,7 +568,7 @@ class OrgController extends Controller
 				left outer join province d on a.province_code = d.province_code
 				where a.org_code in ({$in_emp})
 				".$level."
-				order by a.org_id asc
+				order by a.org_name asc
 			");
 		}
 		return response()->json($items);

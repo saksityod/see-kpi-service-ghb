@@ -274,7 +274,7 @@ class AppraisalController extends Controller
 				$re_emp[] = $e->org_code;
 			}
 
-			if(!empty($all_org)){
+			if($all_org[0]->count_no > 0){
 				$co = DB::select("
 					select o.org_code
 					from org o
@@ -1470,7 +1470,7 @@ class AppraisalController extends Controller
 				$re_emp[] = $e->org_code;
 			}
 
-			if(!empty($all_org)){
+			if($all_org[0]->count_no > 0){
 				$show_corporate = DB::select("
 					select o.org_code
 					from org o
