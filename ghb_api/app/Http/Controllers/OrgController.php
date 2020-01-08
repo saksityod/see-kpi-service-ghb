@@ -270,6 +270,12 @@ class OrgController extends Controller
             WHERE
                 emp_code = ?
 		", array(Auth::id()));
+
+		$all_org = DB::select("
+			SELECT sum(is_show_corporate) count_no
+			from employee
+			where emp_code = ?
+		", array(Auth::id()));
 		
 		empty($request->level_id) ? $level = "" : $level = " and a.level_id = " . $request->level_id . " ";
 		empty($request->org_code) ? $org = "" : $org = " and a.org_code = " . $request->org_code . " ";
@@ -364,6 +370,17 @@ class OrgController extends Controller
 			
 			foreach ($muti_org as $e) {
 				$re_emp[] = $e->org_code;
+			}
+
+			if(!empty($all_org)){
+				$co = DB::select("
+					select o.org_code
+					from org o
+					where level_id = 2
+					");
+				foreach ($co as $o) {
+					$re_emp[] = $o->org_code;
+				}
 			}
 
 			$re_emp = array_unique($re_emp);

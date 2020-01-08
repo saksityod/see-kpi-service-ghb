@@ -75,6 +75,11 @@ class AppraisalController extends Controller
 			on a.level_id = b.level_id
 			where emp_code = ?
 		", array(Auth::id()));
+		$all_org = DB::select("
+			SELECT sum(is_show_corporate) count_no
+			from employee
+			where emp_code = ?
+		", array(Auth::id()));
 		
 		if ($all_emp[0]->count_no > 0) {
 			$items = DB::select("
@@ -269,6 +274,19 @@ class AppraisalController extends Controller
 				$re_emp[] = $e->org_code;
 			}
 
+			if(!empty($all_org)){
+				$co = DB::select("
+					select o.org_code
+					from org o
+					where level_id = 2
+					");
+				foreach ($co as $o) {
+					$re_emp[] = $o->org_code;
+				}
+			}
+
+
+
 			$re_emp = array_unique($re_emp);
 			
 				// Get array keys
@@ -296,6 +314,7 @@ class AppraisalController extends Controller
 				and al.is_hr = 0
 				order by al.appraisal_level_name asc
 			");
+
 			
 		}
 		
@@ -1286,7 +1305,11 @@ class AppraisalController extends Controller
 			where emp_code = ?
 		", array(Auth::id()));
 
-		
+		$all_org = DB::select("
+			SELECT sum(is_show_corporate) count_no
+			from employee
+			where emp_code = ?
+		", array(Auth::id()));
 
 		$qinput = array();
 		
@@ -1445,6 +1468,17 @@ class AppraisalController extends Controller
 			
 			foreach ($muti_org as $e) {
 				$re_emp[] = $e->org_code;
+			}
+
+			if(!empty($all_org)){
+				$show_corporate = DB::select("
+					select o.org_code
+					from org o
+					where level_id = 2
+					");
+				foreach ($show_corporate as $so) {
+					$re_emp[] = $so->org_code;
+				}
 			}
 
 			$re_emp = array_unique($re_emp);
