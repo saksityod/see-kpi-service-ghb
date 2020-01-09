@@ -24,6 +24,7 @@ use Validator;
 use Excel;
 use Mail;
 use Config;
+use Log;
 use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -2148,8 +2149,9 @@ class AppraisalAssignmentController extends Controller
 					$tg_id = ThresholdGroup::where('is_active',1)->first();
 					empty($tg_id) ? $tg_id = null : $tg_id = $tg_id->threshold_group_id;	
 					
-					$rstg_id = ResultThresholdGroup::where('is_active',1)->first();
-						empty($rstg_id) ? $rstg_id = null : $rstg_id = $rstg_id->result_threshold_group_id;
+					//$rstg_id = ResultThresholdGroup::where('is_active',1)->first();
+					//empty($rstg_id) ? $rstg_id = null : $rstg_id = $rstg_id->result_threshold_group_id;
+					
 					foreach ($request->appraisal_items as $i) {
 
 						$check_item = DB::select("
@@ -2165,7 +2167,17 @@ class AppraisalAssignmentController extends Controller
 							and org.org_id = {$org_id}
 							and al.level_id = {$level_id}
 						");
-
+						$rtg = DB::select("
+				                SELECT rtg.result_threshold_group_id
+				                FROM result_threshold_group rtg
+				                inner join appraisal_item ai on rtg.value_type_id = ai.value_type_id
+				                WHERE rtg.is_active = 1
+				                and ai.item_id = '".$i['item_id']."'
+				                and rtg.value_type_id = ai.value_type_id "
+				              );
+					
+						$rstg_id = empty($rtg) ? 0 : $rtg[0]->result_threshold_group_id;
+						
 						if($check_item[0]->cnt > 0) {
 
 							if ($i['form_id'] == 1) {	
