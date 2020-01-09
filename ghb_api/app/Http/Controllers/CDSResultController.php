@@ -2038,6 +2038,19 @@ class CDSResultController extends Controller
 		} while (!empty($emp_list));
 
 		$re_emp[] = $co->org_code;
+
+		//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+		$muti_org =  DB::select("
+		select o.org_code
+		from emp_org e
+		inner join org o on e.org_id = o.org_id
+		where emp_id = ?
+		", array($emp->emp_id));
+	
+		foreach ($muti_org as $e) {
+			$re_emp[] = $e->org_code;
+		}
+
 		$re_emp = array_unique($re_emp);
 
 		// Get array keys
@@ -2182,7 +2195,8 @@ class CDSResultController extends Controller
 		$qfooter = "
 			WHERE c.is_sql = 0 {$is_hr_sql}
 			ORDER BY 
-				c.cds_id 
+				res.org_name,
+				c.cds_name
 			LIMIT {$perPage} 
 			OFFSET {$offset}
 		";
