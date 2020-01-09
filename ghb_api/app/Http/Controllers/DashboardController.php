@@ -902,16 +902,7 @@ class DashboardController extends Controller
 				
 				$target_ranges = $valueRanges;
 				$forecast_ranges = $valueRanges;
-				
-				if ($dataListObj->percent_target > $valueRanges[0]) {
-					$target_ranges[0] = floor($dataListObj->percent_target) + 1;
-				}
-				
-				if ($dataListObj->percent_forecast > $valueRanges[0]) {
-					$forecast_ranges[0] = floor($dataListObj->percent_forecast) + 1;
-				}				
-				
-				
+
 				$val_type = DB::table('appraisal_item_result')->select('value_type_id')
 						->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
 						->where('appraisal_item_result.item_result_id',$dataListObj->item_result_id)
@@ -923,6 +914,15 @@ class DashboardController extends Controller
 								->get();
 				}
 				$result_target = $val_type[0]->value_type_id == 5 ? $val_score[0]->score:$dataListObj->percent_target;
+				
+				if ($dataListObj->percent_target > $valueRanges[0]) {
+					$target_ranges[0] = floor($dataListObj->percent_target) + 1;
+				}
+				
+				if ($dataListObj->percent_forecast > $valueRanges[0]) {
+					$forecast_ranges[0] = floor($dataListObj->percent_forecast) + 1;
+				}				
+				
 				$orgDetail = array(
 					"org" => $dataListObj->org_name,
 					"org_id" => $dataListObj->org_id,
@@ -931,11 +931,11 @@ class DashboardController extends Controller
 					"forecast" => $dataListObj->forecast_value,
 					"actual" => $dataListObj->actual_value,
 					"etl_dttm" => $dataListObj->etl_dttm,
-					"percent_target" =>  $result_target,
+					"percent_target" => $result_target,
 					"percent_forecast" => $dataListObj->percent_forecast,
 
 					// For Spackline JS //
-					"percent_target_str" => "100".",".$result_target.",".implode($target_ranges, ","),
+					"percent_target_str" => ($val_type[0]->value_type_id == 5 ?"3":"100").",".$result_target.",".implode($target_ranges, ","),
 					"percent_forecast_str" => "100".",".$dataListObj->percent_forecast.",".implode($forecast_ranges, ",")
 				);
 
@@ -2248,8 +2248,12 @@ class DashboardController extends Controller
 				if($val_type[0] ->value_type_id == 5){
 					$val_score = DB::table('appraisal_item_result')->select('score')
 								->where('appraisal_item_result.item_id',$request->item_id)
+								->where('appraisal_item_result.period_id',$request->period_id)
+								->where('appraisal_item_result.level_id',$request->level_id)
+								->where('appraisal_item_result.org_id',$request->org_id)
 								->get();
 				}
+				$result_target = $val_type[0]->value_type_id == 5 ? $val_score[0]->score:$items[0]->percent_achievement;
 				
 				$color = DB::select("
 					SELECT begin_threshold min_val, end_threshold max_val, color_code color
@@ -2262,7 +2266,7 @@ class DashboardController extends Controller
 				$o->dual_chart = [
 					'data' => [
 					"target" => $items[0]->yearly_target,
-					"percent_achievement" => $val_type[0]->value_type_id == 5 ? $val_score[0]->score:$items[0]->percent_achievement,
+					"percent_achievement" => $result_target,
 					"forecast" => $items[0]->forecast_value,
 					"actual_value" => $items[0]->actual_value		
 					],
@@ -4116,7 +4120,7 @@ class DashboardController extends Controller
 					$colors[] = $c->color_code;
 					$ranges[] = $c->end_threshold;
 				}
-				
+
 				$val_type = DB::table('appraisal_item_result')->select('value_type_id')
 						->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
 						->where('appraisal_item_result.item_result_id',$i->item_result_id)
@@ -4128,9 +4132,10 @@ class DashboardController extends Controller
 								->get();
 				}
 				$result_target = $val_type[0]->value_type_id == 5 ? $val_score[0]->score:$i->percent_target;
-
+				
 				$orgDetail = array(
 					"perspective_name" => $i->perspective_name,
+					'item_id' => $i->item_id,
 					"item_name" => $i->item_name,
 					"uom_name" => $i->uom_name,
 					"rangeColor" => $colors,
@@ -4142,7 +4147,7 @@ class DashboardController extends Controller
 					"etl_dttm" => $i->etl_dttm,
 
 					// For Spackline JS //
-					"percent_target_str" => "100".",".$result_target.",".implode($ranges, ","),
+					"percent_target_str" => ($val_type[0]->value_type_id == 5 ? "3":"100").",".$result_target.",".implode($ranges, ","),
 					"percent_forecast_str" => "100".",".$i->percent_forecast.",".implode($ranges, ",")
 				);
 				$per_details[] = $orgDetail;
