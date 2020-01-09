@@ -101,7 +101,6 @@ class DashboardController extends Controller
 			appraisal_year
 			from appraisal_period
 			LEFT OUTER JOIN system_config on system_config.current_appraisal_year = appraisal_period.appraisal_year
-			order by appraisal_year desc
 		");
 		return response()->json($items);
 	}
@@ -678,7 +677,7 @@ class DashboardController extends Controller
 				AND (e.emp_code = ? or e.chief_emp_code = ?)
 				AND ai.item_id in({$in_emp})
 				GROUP BY p.perspective_id, air.item_id
-				ORDER BY p.perspective_id, air.item_name
+				ORDER BY p.perspective_name, air.item_name, air.item_result_id
 			", array($request->appraisal_type_id, $request->year_id, $request->period_id, $emp->emp_code, $emp->emp_code));	
 			
 			
@@ -696,7 +695,7 @@ class DashboardController extends Controller
 				AND air.period_id = ?
 				AND (e.emp_code = ? or e.chief_emp_code = ?)
 				AND ai.item_id in({$in_emp})
-				ORDER BY e.emp_name
+				ORDER BY e.emp_code
 			", array($request->appraisal_type_id, $request->year_id, $request->period_id, $emp->emp_code, $emp->emp_code));	
 			
 		} else { //org
@@ -768,7 +767,7 @@ class DashboardController extends Controller
 				AND (org.parent_org_code = ? or org.org_code = ?)
 				AND ai.item_id in({$in_item})
 				GROUP BY p.perspective_id, air.item_id
-				ORDER BY p.perspective_id, air.item_name
+				ORDER BY p.perspective_name, air.item_name, air.item_result_id
 			", array($request->appraisal_type_id, $request->year_id, $request->period_id, $org->org_code, $org->org_code));
 			
 			$OrgListQry = DB::select("
@@ -783,7 +782,7 @@ class DashboardController extends Controller
 				AND air.period_id = ?
 				AND (org.parent_org_code = ? or org.org_code = ?)
 				AND ai.item_id in({$in_item})
-				ORDER BY org.org_name
+				ORDER BY org.org_code
 			", array($request->appraisal_type_id, $request->year_id, $request->period_id, $org->org_code, $org->org_code));			
 		}
 
@@ -871,7 +870,7 @@ class DashboardController extends Controller
 					AND air.period_id = ?
 					AND (e.emp_code = ? or e.chief_emp_code = ?)
 					AND air.item_id = ?
-					ORDER BY p.perspective_id, air.item_name, e.emp_name
+					ORDER BY p.perspective_name, air.item_name, air.item_result_id, e.emp_code
 				", array($request->appraisal_type_id, $request->year_id, $request->period_id, $emp->emp_code, $emp->emp_code, $chartObj->item_id));			
 			} else { //org
 				$dataListQry = DB::select("
@@ -895,7 +894,7 @@ class DashboardController extends Controller
 					AND (org.parent_org_code = ? or org.org_code = ?)
 					AND air.item_id = ?
 					GROUP BY p.perspective_id, air.item_id, air.org_id
-					ORDER BY p.perspective_id, air.item_name, org.org_name
+					ORDER BY p.perspective_name, air.item_name, air.item_result_id, org.org_code
 				", array($request->appraisal_type_id, $request->year_id, $request->period_id, $org->org_code, $org->org_code, $chartObj->item_id));
 			}
 
@@ -912,6 +911,18 @@ class DashboardController extends Controller
 					$forecast_ranges[0] = floor($dataListObj->percent_forecast) + 1;
 				}				
 				
+				
+				$val_type = DB::table('appraisal_item_result')->select('value_type_id')
+						->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
+						->where('appraisal_item_result.item_result_id',$dataListObj->item_result_id)
+						->get();
+				
+				if($val_type[0] ->value_type_id == 5){
+					$val_score = DB::table('appraisal_item_result')->select('score')
+								->where('appraisal_item_result.item_result_id',$dataListObj->item_result_id)
+								->get();
+				}
+				$result_target = $val_type[0]->value_type_id == 5 ? $val_score[0]->score:$dataListObj->percent_target;
 				$orgDetail = array(
 					"org" => $dataListObj->org_name,
 					"org_id" => $dataListObj->org_id,
@@ -920,11 +931,11 @@ class DashboardController extends Controller
 					"forecast" => $dataListObj->forecast_value,
 					"actual" => $dataListObj->actual_value,
 					"etl_dttm" => $dataListObj->etl_dttm,
-					"percent_target" => $dataListObj->percent_target,
+					"percent_target" =>  $result_target,
 					"percent_forecast" => $dataListObj->percent_forecast,
 
 					// For Spackline JS //
-					"percent_target_str" => "100".",".$dataListObj->percent_target.",".implode($target_ranges, ","),
+					"percent_target_str" => "100".",".$result_target.",".implode($target_ranges, ","),
 					"percent_forecast_str" => "100".",".$dataListObj->percent_forecast.",".implode($forecast_ranges, ",")
 				);
 
@@ -2227,13 +2238,13 @@ class DashboardController extends Controller
 				//check threshold end
 				//not check
 				$val_type = DB::table('appraisal_item_result')->select('value_type_id')
-			      ->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
-			      ->where('appraisal_item_result.item_id',$request->item_id)
-			      ->where('appraisal_item_result.period_id',$request->period_id)
-			      ->where('appraisal_item_result.level_id',$request->level_id)
-			      ->where('appraisal_item_result.org_id',$request->org_id)
-			      ->get();
-
+						->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
+						->where('appraisal_item_result.item_id',$request->item_id)
+						->where('appraisal_item_result.period_id',$request->period_id)
+						->where('appraisal_item_result.level_id',$request->level_id)
+						->where('appraisal_item_result.org_id',$request->org_id)
+						->get();
+				
 				if($val_type[0] ->value_type_id == 5){
 					$val_score = DB::table('appraisal_item_result')->select('score')
 								->where('appraisal_item_result.item_id',$request->item_id)
@@ -4047,7 +4058,7 @@ class DashboardController extends Controller
 						$qinput[] = $request->emp_id;		
 						$qinput[] = $request->appraisal_type_id;	
 						
-						$qfooter = " ORDER BY p.perspective_id, air.item_name, er.emp_id ";
+						$qfooter = " ORDER BY p.perspective_name, air.item_name, air.item_result_id, er.emp_id ";
 						empty($request->perspective_id) ?: ($query .= " AND p.perspective_id = ? " AND $qinput[] = $request->perspective_id);
 
 			}else{//org
@@ -4077,7 +4088,7 @@ class DashboardController extends Controller
 			$qinput[] = $request->org_id;	
 			$qinput[] = $request->appraisal_type_id;		
 			
-			$qfooter = " ORDER BY p.perspective_id, air.item_name, org.org_name ";
+			$qfooter = " ORDER BY p.perspective_name, air.item_name, air.item_result_id, org.org_code ";
 			empty($request->perspective_id) ?: ($query .= " AND p.perspective_id = ? " AND $qinput[] = $request->perspective_id);
 			
 
@@ -4106,21 +4117,32 @@ class DashboardController extends Controller
 					$ranges[] = $c->end_threshold;
 				}
 				
+				$val_type = DB::table('appraisal_item_result')->select('value_type_id')
+						->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
+						->where('appraisal_item_result.item_result_id',$i->item_result_id)
+						->get();
+				
+				if($val_type[0] ->value_type_id == 5){
+					$val_score = DB::table('appraisal_item_result')->select('score')
+								->where('appraisal_item_result.item_result_id',$i->item_result_id)
+								->get();
+				}
+				$result_target = $val_type[0]->value_type_id == 5 ? $val_score[0]->score:$i->percent_target;
+
 				$orgDetail = array(
 					"perspective_name" => $i->perspective_name,
-					'item_id' => $i->item_id,
 					"item_name" => $i->item_name,
 					"uom_name" => $i->uom_name,
 					"rangeColor" => $colors,
 					"target"=> $i->target_value,
 					"forecast" => $i->forecast_value,
 					"actual" => $i->actual_value,
-					"percent_target" => $i->percent_target,
+					"percent_target" => $result_target,
 					"percent_forecast" => $i->percent_forecast,
 					"etl_dttm" => $i->etl_dttm,
 
 					// For Spackline JS //
-					"percent_target_str" => "100".",".$i->percent_target.",".implode($ranges, ","),
+					"percent_target_str" => "100".",".$result_target.",".implode($ranges, ","),
 					"percent_forecast_str" => "100".",".$i->percent_forecast.",".implode($ranges, ",")
 				);
 				$per_details[] = $orgDetail;
