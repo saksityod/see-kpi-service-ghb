@@ -907,6 +907,7 @@ class DashboardController extends Controller
 						->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
 						->where('appraisal_item_result.item_result_id',$dataListObj->item_result_id)
 						->get();
+
 				
 				if($val_type[0] ->value_type_id == 5){
 					$val_score = DB::table('appraisal_item_result')->select('score')
@@ -914,9 +915,9 @@ class DashboardController extends Controller
 								->get();
 				}
 				$result_target = $val_type[0]->value_type_id == 5 ? $val_score[0]->score:$dataListObj->percent_target;
-				
-				if ($dataListObj->percent_target > $valueRanges[0]) {
-					$target_ranges[0] = floor($dataListObj->percent_target) + 1;
+				$result_forecast = $dataListObj->percent_forecast == null ? 0:$dataListObj->percent_forecast;
+				if ($result_target > $valueRanges[0]) {
+					$target_ranges[0] = floor($result_target) + 1;
 				}
 				
 				if ($dataListObj->percent_forecast > $valueRanges[0]) {
@@ -932,11 +933,12 @@ class DashboardController extends Controller
 					"actual" => $dataListObj->actual_value,
 					"etl_dttm" => $dataListObj->etl_dttm,
 					"percent_target" => $result_target,
-					"percent_forecast" => $dataListObj->percent_forecast,
+
+					"percent_forecast" => $result_forecast,
 
 					// For Spackline JS //
 					"percent_target_str" => ($val_type[0]->value_type_id == 5 ?"3":"100").",".$result_target.",".implode($target_ranges, ","),
-					"percent_forecast_str" => "100".",".$dataListObj->percent_forecast.",".implode($forecast_ranges, ",")
+					"percent_forecast_str" => ($val_type[0]->value_type_id == 5 ?"3":"100").",".$result_forecast.",".implode($forecast_ranges, ",")
 				);
 
 				$RespData[$loopCnt]["org"]["id_".$dataListObj->org_id] = $orgDetail;
@@ -4148,7 +4150,9 @@ class DashboardController extends Controller
 
 					// For Spackline JS //
 					"percent_target_str" => ($val_type[0]->value_type_id == 5 ? "3":"100").",".$result_target.",".implode($ranges, ","),
-					"percent_forecast_str" => "100".",".$i->percent_forecast.",".implode($ranges, ",")
+
+					"percent_forecast_str" => ($val_type[0]->value_type_id == 5 ? "3":"100").",".$i->percent_forecast.",".implode($ranges, ",")
+
 				);
 				$per_details[] = $orgDetail;
 			}

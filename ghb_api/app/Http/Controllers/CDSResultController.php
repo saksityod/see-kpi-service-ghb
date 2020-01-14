@@ -18,6 +18,7 @@ use File;
 use Validator;
 use Excel;
 use Exception;
+use Log;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -61,7 +62,8 @@ class CDSResultController extends Controller
 						$errors[] = ['employee_id' => $i->employee_id, 'errors' => $validator->errors()];
 					} else {
 						$month_name = PeriodMonth::find($i->month);
-						$a_date = $i->year . "-" . $i->month . "-01";
+						// $a_date = $i['year'] . "-" . $i['month'] . "-01";
+						$a_date = $i['year'] . "-" . $i['month'] . "-" . cal_days_in_month(CAL_GREGORIAN, $i['month'], $i['year']);
 						if (empty($month_name)) {
 							$errors[] = ['employee_id' => $i->employee_id, 'errors' => 'Invalid Month.'];
 						} else {
@@ -89,13 +91,25 @@ class CDSResultController extends Controller
 									$cds_result->appraisal_month_name = $month_name->month_name;
 
 									if ($is_hr == 1){
-										$cds_result->corporate_forecast_value = $i->forecast;
-										$cds_result->bu_forecast_value = $i->forecast_bu;
+										$cds_result->forecast = $i->forecast;
+										$cds_result->forecast_bu = $i->forecast_bu;
+										$cds_result->cds_value = $i->cds_value;
+									}else if ($is_hr == 1 && $i->level_id == 2 ){
+										$cds_result->forecast = $i->forecast;
+										$cds_result->forecast_bu = $i->forecast_bu;
+										$cds_result->cds_value = $i->cds_value;
+									}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3 && $i->level_id == 2 ){
+										$cds_result->forecast_bu = $i->forecast_bu;
+									}else if ($emp->level_id == 2 && $i->level_id == 2 ){
+										$cds_result->forecast = $i->forecast;
+										$cds_result->cds_value = $i->cds_value;
+									}else if ($is_hr == 0 ){
+										$cds_result->forecast_bu = $i->forecast_bu;
 										$cds_result->cds_value = $i->cds_value;
 									}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
-										$cds_result->bu_forecast_value = $i->forecast_bu;
+										$cds_result->forecast_bu = $i->forecast_bu;
 									}else if ($emp->level_id == 2){
-										$cds_result->corporate_forecast_value = $i->forecast;
+										$cds_result->forecast = $i->forecast;
 										$cds_result->cds_value = $i->cds_value;
 									}
 
@@ -108,21 +122,49 @@ class CDSResultController extends Controller
 									$update_data = array();
 									if ($is_hr == 1){
 										$update_data = [
-											'corporate_forecast_value' => $i->forecast
-											,'bu_forecast_value' => $i->forecast_bu
+											'forecast' => $i->forecast
+											,'forecast_bu' => $i->forecast_bu
+											,'cds_value' => $i->cds_value
+											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
+											,'updated_by' => Auth::id()
+										];
+									}else if ($is_hr == 1 && $i->level_id == 2 ){
+										$update_data = [
+											'forecast' => $i->forecast
+											,'forecast_bu' => $i->forecast_bu
+											,'cds_value' => $i->cds_value
+											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
+											,'updated_by' => Auth::id()
+										];
+									}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3 && $i->level_id == 2 ){
+										$update_data = [
+											'forecast_bu' => $i->forecast_bu
+											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
+											,'updated_by' => Auth::id()
+										];
+									}else if ($emp->level_id == 2 && $i->level_id == 2 ){
+										$update_data = [
+											'forecast' => $i->forecast
+											,'cds_value' => $i->cds_value
+											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
+											,'updated_by' => Auth::id()
+										];
+									}else if ($is_hr == 0 ){
+										$update_data = [
+											'forecast_bu' => $i->forecast_bu
 											,'cds_value' => $i->cds_value
 											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
 											,'updated_by' => Auth::id()
 										];
 									}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
 										$update_data = [
-											'bu_forecast_value' => $i->forecast_bu
+											'forecast_bu' => $i->forecast_bu
 											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
 											,'updated_by' => Auth::id()
 										];
 									}else if ($emp->level_id == 2){
 										$update_data = [
-											'corporate_forecast_value' => $i->forecast
+											'forecast' => $i->forecast
 											,'cds_value' => $i->cds_value
 											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
 											,'updated_by' => Auth::id()
@@ -159,7 +201,8 @@ class CDSResultController extends Controller
 						$errors[] = ['org_id' => $i->organization_id, 'errors' => $validator->errors()];
 					} else {
 						$month_name = PeriodMonth::find($i->month);
-						$a_date = $i->year . "-" . $i->month . "-01";
+						// $a_date = $i['year'] . "-" . $i['month'] . "-01";
+						$a_date = $i['year'] . "-" . $i['month'] . "-" . cal_days_in_month(CAL_GREGORIAN, $i['month'], $i['year']);
 						if (empty($month_name)) {
 							$errors[] = ['org_id' => $i->organization_id, 'errors' => 'Invalid Month.'];
 						} else {
@@ -169,6 +212,7 @@ class CDSResultController extends Controller
 								->where('year',$i->year)
 								->where('appraisal_month_no',$i->month)
 								->where('appraisal_type_id',$i->appraisal_type_id);
+								
 								
 								if ($result_check->count() == 0) {
 
@@ -182,13 +226,25 @@ class CDSResultController extends Controller
 									$cds_result->appraisal_month_name = $month_name->month_name;
 
 									if ($is_hr == 1){
-										$cds_result->corporate_forecast_value = $i->forecast;
-										$cds_result->bu_forecast_value = $i->forecast_bu;
+										$cds_result->forecast = $i->forecast;
+										$cds_result->forecast_bu = $i->forecast_bu;
+										$cds_result->cds_value = $i->cds_value;
+									}else if ($is_hr == 1 && $i->level_id == 2 ){
+										$cds_result->forecast = $i->forecast;
+										$cds_result->forecast_bu = $i->forecast_bu;
+										$cds_result->cds_value = $i->cds_value;
+									}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3 && $i->level_id == 2 ){
+										$cds_result->forecast_bu = $i->forecast_bu;
+									}else if ($emp->level_id == 2 && $i->level_id == 2 ){
+										$cds_result->forecast = $i->forecast;
+										$cds_result->cds_value = $i->cds_value;
+									}else if ($is_hr == 0 ){
+										$cds_result->forecast_bu = $i->forecast_bu;
 										$cds_result->cds_value = $i->cds_value;
 									}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
-										$cds_result->bu_forecast_value = $i->forecast_bu;
+										$cds_result->forecast_bu = $i->forecast_bu;
 									}else if ($emp->level_id == 2){
-										$cds_result->corporate_forecast_value = $i->forecast;
+										$cds_result->forecast = $i->forecast;
 										$cds_result->cds_value = $i->cds_value;
 									}
 									
@@ -200,21 +256,49 @@ class CDSResultController extends Controller
 									$update_data = array();
 									if ($is_hr == 1){
 										$update_data = [
-											'corporate_forecast_value' => $i->forecast
-											,'bu_forecast_value' => $i->forecast_bu
+											'forecast' => $i->forecast
+											,'forecast_bu' => $i->forecast_bu
+											,'cds_value' => $i->cds_value
+											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
+											,'updated_by' => Auth::id()
+										];
+									}else if ($is_hr == 1 && $i->level_id == 2 ){
+										$update_data = [
+											'forecast' => $i->forecast
+											,'forecast_bu' => $i->forecast_bu
+											,'cds_value' => $i->cds_value
+											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
+											,'updated_by' => Auth::id()
+										];
+									}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3 && $i->level_id == 2 ){
+										$update_data = [
+											'forecast_bu' => $i->forecast_bu
+											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
+											,'updated_by' => Auth::id()
+										];
+									}else if ($emp->level_id == 2 && $i->level_id == 2 ){
+										$update_data = [
+											'forecast' => $i->forecast
+											,'cds_value' => $i->cds_value
+											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
+											,'updated_by' => Auth::id()
+										];
+									}else if ($is_hr == 0 ){
+										$update_data = [
+											'forecast_bu' => $i->forecast_bu
 											,'cds_value' => $i->cds_value
 											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
 											,'updated_by' => Auth::id()
 										];
 									}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
 										$update_data = [
-											'bu_forecast_value' => $i->forecast_bu
+											'forecast_bu' => $i->forecast_bu
 											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
 											,'updated_by' => Auth::id()
 										];
 									}else if ($emp->level_id == 2){
 										$update_data = [
-											'corporate_forecast_value' => $i->forecast
+											'forecast' => $i->forecast
 											,'cds_value' => $i->cds_value
 											,'etl_dttm'=>date("Y-m-t", strtotime($a_date))
 											,'updated_by' => Auth::id()
@@ -266,13 +350,38 @@ class CDSResultController extends Controller
 			where emp_code = ?
 		", array(Auth::id()));
 
+		$all_org = DB::select("
+			SELECT sum(is_show_corporate) count_no
+			from employee
+			where emp_code = ?
+		", array(Auth::id()));
+		if($all_org[0]->count_no > 0){
+			$co = DB::select("
+				select group_concat(o.org_code) org_code
+				from org o
+				where level_id = 2
+				");
+			
+		}
+		$is_show_corporate = empty($co[0]->org_code) ? '' : " OR FIND_IN_SET(org.org_code,'".$co[0]->org_code."') ";
+
+		//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+		$muti_org =  DB::select("
+		select group_concat(o.org_code) org_code
+		from emp_org e
+		inner join org o on e.org_id = o.org_id
+		where emp_id = ?
+		", array($emp->emp_id));
+
+		$is_muti_org = empty($muti_org[0]->org_code) ? '' : " OR FIND_IN_SET(org.org_code,'".$muti_org[0]->org_code."') ";
+
 
 		if ($all_emp[0]->count_no > 0) {
 			$is_all_sql = "";
 			$is_all_sql_org = "";
 		} else {
 			$is_all_sql = " and (e.emp_code = '{$emp->emp_code}' or e.chief_emp_code = '{$emp->emp_code}') ";
-			$is_all_sql_org = " and (org.org_code = '{$org->org_code}' or org.parent_org_code = '{$org->org_code}') ";
+			$is_all_sql_org = " and (org.org_code = '{$org->org_code}' or org.parent_org_code = '{$org->org_code}' {$is_show_corporate} {$is_muti_org} ) ";
 		}
 
 		if ($is_hr == 0) {
@@ -297,8 +406,8 @@ class CDSResultController extends Controller
 			$query = "
 				select distinct r.level_id, al.appraisal_level_name, r.org_id, org.org_name, r.emp_id, e.emp_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom.uom_name
 					, ifnull(cr.cds_value,'') as cds_value
-					, ifnull(cr.corporate_forecast_value,'') as forecast
-					, ifnull(cr.bu_forecast_value,'') as forecast_bu
+					, ifnull(cr.forecast,'') as forecast
+					, ifnull(cr.forecast_bu,'') as forecast_bu
 					, ap.appraisal_year
 				from appraisal_item_result r
 				left outer join employee e on r.emp_id = e.emp_id 
@@ -318,6 +427,7 @@ class CDSResultController extends Controller
 				and r.org_id = cr.org_id
 				and r.position_id = cr.position_id
 			";
+			
 			empty($request->org_id) ?: ($query .= " And cr.org_id = " . $request->org_id);
 			$query .= "
 				and cr.year = {$request->current_appraisal_year}
@@ -335,8 +445,8 @@ class CDSResultController extends Controller
 			$query = "
 				select distinct r.level_id, al.appraisal_level_name, r.org_id, org.org_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom.uom_name
 					, ifnull(cr.cds_value,'') as cds_value
-					, ifnull(cr.corporate_forecast_value,'') as forecast
-					, ifnull(cr.bu_forecast_value,'') as forecast_bu
+					, ifnull(cr.forecast,'') as forecast
+					, ifnull(cr.forecast_bu,'') as forecast_bu
 					, ap.appraisal_year
 				from appraisal_item_result r
 				inner join appraisal_item i on r.item_id = i.item_id
@@ -376,7 +486,7 @@ class CDSResultController extends Controller
 		$qfooter = " Order by r.emp_id, cds.cds_id ";
 
 		$items = DB::select($query . $qfooter, $qinput);
-
+				
 		$filename = "CDS_Result";  //. date('dm') .  substr(date('Y') + 543,2,2);
 		$x = Excel::create($filename, function($excel) use($items, $filename, $request
 			, $emp, $is_hr) {
@@ -388,7 +498,16 @@ class CDSResultController extends Controller
 					$field = array('Appraisal Type ID', 'Level ID', 'Level Name', 'Organization ID', 'Organization Name', 'Employee ID', 'Employee Name', 'Position ID', 'Position Name', 'CDS ID', 'CDS Name', 'UOM','Year', 'Month');
 
 					// manage header name ตามสิทธิ์ user
-					if ($is_hr == 1){
+					
+					if ($is_hr == 1 && $request->level_id == 2 ){
+						array_push($field, 'Forecast', 'Forecast BU', 'CDS Value');
+					}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3 && $request->level_id == 2 ){
+						array_push($field, 'Forecast BU');
+					}else if ($emp->level_id == 2 && $request->level_id == 2 ){
+						array_push($field, 'Forecast', 'CDS Value');
+					}else if ($is_hr == 0 ){
+						array_push($field, 'Forecast BU', 'CDS Value');
+					}else if ($is_hr == 1){
 						array_push($field, 'Forecast', 'Forecast BU', 'CDS Value');
 					}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
 						array_push($field,'Forecast BU');
@@ -418,13 +537,22 @@ class CDSResultController extends Controller
 						);
 
 						// manage data ตามสิทธิ์ user
-						if ($is_hr == 1){
+						if ($is_hr == 1 && $request->level_id == 2 ){
+							array_push($field_data, $i->forecast, $i->forecast_bu, $i->cds_value);
+						}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3 && $request->level_id == 2 ){
+							array_push($field_data,$i->forecast_bu);
+						}else if ($emp->level_id == 2 && $request->level_id == 2 ){
+							array_push($field_data, $i->forecast, $i->cds_value);
+						}else if ($is_hr == 0 ){
+							array_push($field_data, $i->forecast_bu, $i->cds_value);
+						}else if ($is_hr == 1){
 							array_push($field_data, $i->forecast, $i->forecast_bu, $i->cds_value);
 						}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
 							array_push($field_data, $i->forecast_bu);
 						}else if ($emp->level_id == 2){
 							array_push($field_data, $i->forecast, $i->cds_value);
 						}
+					
 						
 						$sheet->appendRow($field_data);
 					}
@@ -433,13 +561,30 @@ class CDSResultController extends Controller
 					$field = array('Appraisal Type ID', 'Level ID', 'Level Name', 'Organization ID', 'Organization Name', 'CDS ID', 'CDS Name', 'UOM','Year', 'Month');
 
 					// manage header name ตามสิทธิ์ user
-					if ($is_hr == 1){
+					// if ($is_hr == 1){
+					// 	array_push($field, 'Forecast', 'Forecast BU', 'CDS Value');
+					// }else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
+					// 	array_push($field,'Forecast BU');
+					// }else if ($emp->level_id == 2){
+					// 	array_push($field, 'Forecast', 'CDS Value');
+					// }
+					// manage header name ตามสิทธิ์ user
+					if ($is_hr == 1 && $request->level_id == 2 ){
+						array_push($field, 'Forecast', 'Forecast BU', 'CDS Value');
+					}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3 && $request->level_id == 2 ){
+						array_push($field, 'Forecast BU');
+					}else if ($emp->level_id == 2 && $request->level_id == 2 ){
+						array_push($field, 'Forecast', 'CDS Value');
+					}else if ($is_hr == 0 ){
+						array_push($field, 'Forecast BU', 'CDS Value');
+					}else if ($is_hr == 1){
 						array_push($field, 'Forecast', 'Forecast BU', 'CDS Value');
 					}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
 						array_push($field,'Forecast BU');
 					}else if ($emp->level_id == 2){
 						array_push($field, 'Forecast', 'CDS Value');
 					}
+
 
 					$sheet->appendRow($field);
 
@@ -459,7 +604,15 @@ class CDSResultController extends Controller
 						);
 
 						// manage data ตามสิทธิ์ user
-						if ($is_hr == 1){
+						if ($is_hr == 1 && $request->level_id == 2 ){
+							array_push($field_data, $i->forecast, $i->forecast_bu, $i->cds_value);
+						}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3 && $request->level_id == 2 ){
+							array_push($field_data,$i->forecast_bu);
+						}else if ($emp->level_id == 2 && $request->level_id == 2 ){
+							array_push($field_data, $i->forecast, $i->cds_value);
+						}else if ($is_hr == 0 ){
+							array_push($field_data, $i->forecast_bu, $i->cds_value);
+						}else if ($is_hr == 1){
 							array_push($field_data, $i->forecast, $i->forecast_bu, $i->cds_value);
 						}else if ($emp->is_show_corporate == 1 && $emp->level_id == 3){
 							array_push($field_data, $i->forecast_bu);
@@ -1344,8 +1497,8 @@ class CDSResultController extends Controller
 		if ($request->appraisal_type_id == 2) {
 			$query = "
 				select distinct r.level_id, al.appraisal_level_name, r.org_id, org.org_name, r.emp_id, e.emp_code, e.emp_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom_name, cr.cds_result_id, ifnull(cr.cds_value,'') as cds_value
-					, ifnull(cr.corporate_forecast_value,'') as forecast
-					, ifnull(cr.bu_forecast_value,'') as forecast_bu
+					, ifnull(cr.forecast,'') as forecast
+					, ifnull(cr.forecast_bu,'') as forecast_bu
 					, {$request->current_appraisal_year} year, {$request->month_id} month
 					, ".$is_edit_forecast." as is_edit_forecast
 					, ".$is_edit_forecast_bu." as is_edit_forecast_bu
@@ -1390,13 +1543,13 @@ class CDSResultController extends Controller
 			empty($request->level_id) ?: ($query .= " And r.level_id = ? " AND $qinput[] = $request->level_id);
 			empty($request->emp_id) ?: ($query .= " And e.emp_id = ? " AND $qinput[] = $request->emp_id);
 
-			$qgroup = "GROUP BY r.level_id, al.appraisal_level_name, r.org_id, org.org_name, r.emp_id, e.emp_code, e.emp_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom_name, cr.cds_result_id, ifnull(cr.cds_value,''), ifnull(cr.corporate_forecast_value,''), ifnull(cr.bu_forecast_value,'')";					
+			$qgroup = "GROUP BY r.level_id, al.appraisal_level_name, r.org_id, org.org_name, r.emp_id, e.emp_code, e.emp_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom_name, cr.cds_result_id, ifnull(cr.cds_value,''), ifnull(cr.forecast,''), ifnull(cr.forecast_bu,'')";					
 			
 		} else {
 			$query = "
 				select distinct r.level_id, al.appraisal_level_name, r.org_id, org.org_code, org.org_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom.uom_name, cr.cds_result_id, ifnull(cr.cds_value,'') as cds_value
-					, ifnull(cr.corporate_forecast_value,'') as forecast
-					, ifnull(cr.bu_forecast_value,'') as forecast_bu
+					, ifnull(cr.forecast,'') as forecast
+					, ifnull(cr.forecast_bu,'') as forecast_bu
 					, {$request->current_appraisal_year} year
 					, {$request->month_id} month
 					, ".$is_edit_forecast." as is_edit_forecast
@@ -1437,7 +1590,7 @@ class CDSResultController extends Controller
 				where cds.is_sql = 0	
 			" . $is_all_sql_org . $is_hr_sql;
 
-			$qgroup = "GROUP BY r.level_id, al.appraisal_level_name, r.org_id, org.org_code, org.org_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom.uom_name, cr.cds_result_id, ifnull(cr.cds_value,''), ifnull(cr.corporate_forecast_value,''), ifnull(cr.bu_forecast_value,'')";
+			$qgroup = "GROUP BY r.level_id, al.appraisal_level_name, r.org_id, org.org_code, org.org_name, r.position_id, po.position_name, cds.cds_id, cds.cds_name, uom.uom_name, cr.cds_result_id, ifnull(cr.cds_value,''), ifnull(cr.forecast,''), ifnull(cr.forecast_bu,'')";
 		
 		}
 
@@ -1717,7 +1870,9 @@ class CDSResultController extends Controller
 					$errors[] = ['emp_id' => $i['emp_id'], 'errors' => $validator->errors()];
 				} else {
 					$month_name = PeriodMonth::find($i['month']);
-					$a_date = $i['year'] . "-" . $i['month'] . "-01";
+					// $a_date = $i['year'] . "-" . $i['month'] . "-01";
+					$a_date = $i['year'] . "-" . $i['month'] . "-" . cal_days_in_month(CAL_GREGORIAN, $i['month'], $i['year']);
+
 					if (empty($month_name)) {
 						$errors[] = ['emp_id' => $i['emp_id'], 'errors' => 'Invalid Month.'];
 					} else {
@@ -1837,8 +1992,10 @@ class CDSResultController extends Controller
 					$cds_result->appraisal_month_no = $cds['appraisal_month_no'];
 					$cds_result->appraisal_month_name = $cds['appraisal_month_name'];
 					$cds_result->cds_value = $cds['cds_value'];
-					$cds_result->corporate_forecast_value = $cds['forecast'];
-					$cds_result->bu_forecast_value = $cds['forecast_bu'];
+					$cds_result->forecast  = $cds['forecast'];
+					// $cds_result->forecast = $cds['forecast'];
+					$cds_result->forecast_bu = $cds['forecast_bu'];
+					// $cds_result->forecast_bu = $cds['forecast_bu'];
 					if ($cds['appraisal_type_id'] == "1"){
 						$cds_result->org_id = $cds['org_id'];
 					}else if ($cds['appraisal_type_id'] == "2"){
@@ -1850,8 +2007,10 @@ class CDSResultController extends Controller
 
 				} else {
 
-						$item->corporate_forecast_value = $cds['forecast'];
-						$item->bu_forecast_value = $cds['forecast_bu'];
+						$item->forecast = $cds['forecast'];
+						// $item->forecast = $cds['forecast'];
+						$item->forecast_bu = $cds['forecast_bu'];
+						// $item->forecast_bu = $cds['forecast_bu'];
 						$item->cds_value = $cds['cds_value'];
 						$item->updated_by = Auth::id();
 						$item->save();
@@ -1894,7 +2053,7 @@ class CDSResultController extends Controller
 
 		$result = array();
 
-		$path = $_SERVER['DOCUMENT_ROOT'] . '/see_api/public/cds_result_files/' . $cds_result_id . '/';
+		$path = $_SERVER['DOCUMENT_ROOT'] . '/ghb_api/public/cds_result_files/' . $cds_result_id . '/';
 		foreach ($request->file() as $f) {
 			$filename = iconv('UTF-8', 'windows-874', $f->getClientOriginalName());
 			$f->move($path, $filename);
@@ -1939,14 +2098,13 @@ class CDSResultController extends Controller
 		}
 		//$_SERVER['DOCUMENT_ROOT'] . '/see_api/public/attach_files/' . $item_result_id . '/';
 		$filename = iconv('UTF-8', 'windows-874', $item->doc_path);
-		File::Delete($_SERVER['DOCUMENT_ROOT'] . '/see_api/public/' . $filename);
+		File::Delete($_SERVER['DOCUMENT_ROOT'] . '/ghb_api/public/' . $filename);
 		$item->delete();
 
 		return response()->json(['status' => 200]);
 	}
 
 	public function index_v2 (Request $request) {
-		set_time_limit(0);
 		$emp = Employee::find(Auth::id());
 		$level = AppraisalLevel::find($emp->level_id);
 		$is_hr = $level->is_hr;
@@ -2021,6 +2179,19 @@ class CDSResultController extends Controller
 		} while (!empty($emp_list));
 
 		$re_emp[] = $co->org_code;
+
+		//# สิทธิ์ โดยเมื่อ User Login เข้ามาแล้วส่วนของหน่วยงานที่แสดงใน Parameter ให้เช็ค org_id ที่ table emp_multi_org_mapping เพิ่ม
+		$muti_org =  DB::select("
+		select o.org_code
+		from emp_org e
+		inner join org o on e.org_id = o.org_id
+		where emp_id = ?
+		", array($emp->emp_id));
+	
+		foreach ($muti_org as $e) {
+			$re_emp[] = $e->org_code;
+		}
+
 		$re_emp = array_unique($re_emp);
 
 		// Get array keys
@@ -2165,7 +2336,8 @@ class CDSResultController extends Controller
 		$qfooter = "
 			WHERE c.is_sql = 0 {$is_hr_sql}
 			ORDER BY 
-				c.cds_id 
+				res.org_name,
+				c.cds_name
 			LIMIT {$perPage} 
 			OFFSET {$offset}
 		";
@@ -2246,8 +2418,8 @@ class CDSResultController extends Controller
 			cr.level_id,
 			cr.cds_id,
 			cr.cds_value,
-			cr.corporate_forecast_value,
-			cr.bu_forecast_value,
+			cr.forecast corporate_forecast_value,
+			cr.forecast_bu bu_forecast_value,
 			cr.appraisal_type_id,
 			cr.position_id,
 			cr.level_id,
@@ -2303,6 +2475,9 @@ class CDSResultController extends Controller
 	public function update_cdsResult_v2(Request $request)
 	{
 		foreach ($request->cdsResult as $cds) {
+			
+			
+			
 			$item = null;
 			if (!empty($cds['cds_result_id'])) {
 				$item = CDSResult::find($cds['cds_result_id']);
@@ -2329,20 +2504,32 @@ class CDSResultController extends Controller
 					$cds_result->appraisal_month_no = $cds['appraisal_month_no'];
 					$cds_result->appraisal_month_name = $cds['appraisal_month_name'];
 					$cds_result->cds_value = $cds['cds_value'];
-					$cds_result->corporate_forecast_value = $cds['corporate_forecast_value'];
-					$cds_result->bu_forecast_value = $cds['bu_forecast_value'];
+					// Rock : swap corporate_forecast_value  <---> forcast
+					// $cds_result->forecast = $cds['forecast_bu'];
+					// $cds_result->forecast_bu = $cds['bu_forecast_value'];
+					$cds_result->forecast = $cds['corporate_forecast_value'];
+					$cds_result->forecast_bu = $cds['bu_forecast_value'];
 					if ($cds['appraisal_type_id'] == "1"){
 						$cds_result->org_id = $cds['org_id'];
 					}else if ($cds['appraisal_type_id'] == "2"){
 						$cds_result->emp_id = $cds['emp_id'];
 					}
+					// Rock : fixed etl_dttm
+					$a_date = $cds_result->year . "-" . $cds_result->appraisal_month_no . "-" . cal_days_in_month(CAL_GREGORIAN, $cds_result->appraisal_month_no, $cds_result->year);
+					$cds_result->etl_dttm = date("Y-m-t", strtotime($a_date));
 					$cds_result->created_by = Auth::id();
 					$cds_result->updated_by = Auth::id();
 					$cds_result->save();
 				} else {
-					$item->corporate_forecast_value = $cds['corporate_forecast_value'];
-					$item->bu_forecast_value = $cds['bu_forecast_value'];
+					// Rock : swap corporate_forecast_value  <---> forcast
+					// $item->corporate_forecast_value = $cds['forecast_bu'];
+					// $item->bu_forecast_value = $cds['bu_forecast_value'];
+					$item->forecast = $cds['corporate_forecast_value'];
+					$item->forecast_bu = $cds['bu_forecast_value'];
 					$item->cds_value = $cds['cds_value'];
+					// Rock : fixed etl_dttm
+					$a_date = $item->year . "-" . $item->appraisal_month_no . "-" . cal_days_in_month(CAL_GREGORIAN, $item->appraisal_month_no, $item->year);
+					$item->etl_dttm = date("Y-m-t", strtotime($a_date));
 					$item->updated_by = Auth::id();
 					$item->save();
 				}

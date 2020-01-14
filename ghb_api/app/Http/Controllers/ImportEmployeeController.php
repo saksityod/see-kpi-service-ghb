@@ -14,6 +14,7 @@ use File;
 use Validator;
 use Excel;
 use Exception;
+use Log;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -31,12 +32,15 @@ class ImportEmployeeController extends Controller
 	public function import(Request $request)
 	{
 		set_time_limit(0);
-
+		Log::info("import");
 		$errors = array();
 		foreach ($request->file() as $f) {
-			$items = Excel::load($f, function($reader){})->get();	
+			
+			$items = Excel::load($f, function($reader){})->get();
+			DB::beginTransaction();
+			
 			foreach ($items as $i) {
-						
+
 				$validator = Validator::make($i->toArray(), [
 					'employee_code' => 'required|max:255',
 					'employee_name' => 'required|max:255',
@@ -314,8 +318,8 @@ class ImportEmployeeController extends Controller
 			'working_start_date' => 'date|date_format:Y-m-d',
 			'probation_end_date' => 'date|date_format:Y-m-d',
 			'acting_end_date' => 'date|date_format:Y-m-d',
-			'org_id' => 'integer',
-			'position_id' => 'integer',
+			'org_id' => 'integer|required',
+			'position_id' => 'integer|required',
 			'chief_emp_code' => 'max:255',
 			'level_id' => 'integer',
 			//'s_amount' => 'required|numeric|digits_between:1,10',
@@ -449,11 +453,16 @@ class ImportEmployeeController extends Controller
 	}	
 	public function license_use()
 	{
-		$count_user = Employee::join('appraisal_level', 'appraisal_level.level_id', '=', 'employee.level_id')
+		$count_user = Employee::leftJoin('appraisal_level', 'appraisal_level.level_id', '=', 'employee.level_id')
 		->where('employee.is_active', 1)
-		->where('is_hr', '<>', 1)
+		//->where('is_hr', '<>', 1)
+		->select("emp_code")->distinct()->count();
+
+		$is_hr = Employee::leftJoin('appraisal_level', 'appraisal_level.level_id', '=', 'employee.level_id')
+		->where('employee.is_active', 1)
+		->where('is_hr', 1)
 		->select("emp_code")->distinct()->count();
 		
-		return $count_user;
+		return $count_user-$is_hr;
 	}
 }
