@@ -32,6 +32,25 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('session', 'AuthenticateController@authenticate');
 	Route::get('session/debug', 'AuthenticateController@debug');
 	Route::delete('session', 'AuthenticateController@destroy');
+
+
+	//Strategic Objectiive//
+	Route::get('strategic_objective/objective_length', 'SO\StrategicObjectiveController@objective_length');
+	Route::get('strategic_objective', 'SO\StrategicObjectiveController@objective_list');
+	Route::post('strategic_objective', 'SO\StrategicObjectiveController@store');
+	Route::patch('strategic_objective/{so_id}', 'SO\StrategicObjectiveController@update');
+	Route::delete('strategic_objective/{so_id}', 'SO\StrategicObjectiveController@destroy');
+
+	//Project//
+	Route::post('project/search', 'SO\ProjectController@search_project');
+	Route::post('project/auto', 'SO\ProjectController@auto_project');
+	Route::post('project', 'SO\ProjectController@store');
+	Route::patch('project/{project_id}', 'SO\ProjectController@update');
+	Route::delete('project/{project_id}', 'SO\ProjectController@destroy');
+	Route::get('project/soitem', 'SO\ProjectController@dropDownSoItem');
+	Route::get('project/owner', 'SO\ProjectController@dropDownOwner');
+	Route::get('project/responsible', 'SO\ProjectController@dropDownResponsible');
+	
 	
 	// Common Data Set //
 	Route::get('cds/al_list','CommonDataSetController@al_list');
@@ -413,6 +432,34 @@ Route::group(['middleware' => 'cors'], function()
 	Route::patch('job_log/{job_log_id}', 'JobLogController@update');
 	Route::get('job_log/run/{job_log_id}', 'JobLogController@run');
 
+	//SO KPI Item
+	Route::get('so_item/dropdown_so_item_name', 'SOItemController@getDropdownSOItemName');
+	Route::get('so_item/dropdown_uom', 'SOItemController@getDropdownUOM');
+	Route::get('so_item/dropdown_so', 'SOItemController@getDropdownSO');
+	Route::get('so_item/dropdown_smart_kpi', 'SOItemController@getDropdownSmartKPI');
+	Route::get('so_item/dropdown_value_type', 'SOItemController@getDropdownValueType');
+	Route::get('so_item/autocomplete', 'SOItemController@autocomplete');//same code
+	Route::get('so_item/get_so_item_list', 'SOItemController@show');
+	Route::post('so_item', 'SOItemController@store');
+	Route::patch('so_item/{id}', 'SOItemController@update');
+	Route::delete('so_item/{id}', 'SOItemController@destroy');
+
+	//Project KPI Item
+	Route::get('project_kpi_item/dropdown_project_kpi_name', 'ProjectKPIController@dropdownProjectKPIName');
+	Route::get('project_kpi_item/dropdown_project_name', 'ProjectKPIController@dropdownProjectName');
+	Route::get('project_kpi_item', 'ProjectKPIController@show');
+	Route::delete('project_kpi_item/{project_item_id}', 'ProjectKPIController@destroy');
+	Route::post('project_kpi_item', 'ProjectKPIController@store');
+	Route::patch('project_kpi_item/{project_item_id}', 'ProjectKPIController@update');
+
+	//SO Assignment
+	Route::get('so_assignment/year_and_desc_list', 'SOAssignmentController@dropdownYearAndDesc');
+	Route::get('so_assignment/strategic_objective_list', 'SOAssignmentController@dropdownStrategicObjective');
+	Route::get('so_assignment/frequency_list', 'SOAssignmentController@dropDownFrequency');
+	Route::get('so_assignment', 'SOAssignmentController@show');
+
+	//Smart-Goal-Dashboard
+	Route::get('smart_goal_dashboard/SmartColor', 'SmartGoalDashboard@getSmartColor');
 	
 	
 	Route::get('404', ['as' => 'notfound', function () {

@@ -907,6 +907,7 @@ class DashboardController extends Controller
 						->leftjoin('result_threshold_group','result_threshold_group.result_threshold_group_id','=','appraisal_item_result.result_threshold_group_id')
 						->where('appraisal_item_result.item_result_id',$dataListObj->item_result_id)
 						->get();
+
 				
 				if($val_type[0] ->value_type_id == 5){
 					$val_score = DB::table('appraisal_item_result')->select('score')
@@ -932,6 +933,7 @@ class DashboardController extends Controller
 					"actual" => $dataListObj->actual_value,
 					"etl_dttm" => $dataListObj->etl_dttm,
 					"percent_target" => $result_target,
+
 					"percent_forecast" => $result_forecast,
 
 					// For Spackline JS //
@@ -4148,7 +4150,9 @@ class DashboardController extends Controller
 
 					// For Spackline JS //
 					"percent_target_str" => ($val_type[0]->value_type_id == 5 ? "3":"100").",".$result_target.",".implode($ranges, ","),
+
 					"percent_forecast_str" => ($val_type[0]->value_type_id == 5 ? "3":"100").",".$i->percent_forecast.",".implode($ranges, ",")
+
 				);
 				$per_details[] = $orgDetail;
 			}
