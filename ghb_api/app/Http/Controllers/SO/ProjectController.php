@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\SO;
 
 use App\Model\Project;
-use App\Model\SOItemModel;
+use App\Model\SOItem;
 use App\Org;
 use App\Employee;
 
@@ -75,7 +75,7 @@ class ProjectController extends Controller
 	}
 
 	public function dropDownSoItem(){
-		$items = SOItemModel::select('so_item_id', 'so_item_name')->get();
+		$items = SOItem::select('so_item_id', 'so_item_name')->get();
 		return response()->json($items);
 	}
 

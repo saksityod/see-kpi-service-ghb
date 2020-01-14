@@ -96,6 +96,7 @@ class SOItemController extends Controller
                                     'value_type_id','function_type',
                                     'so_item.is_active','strategic_objective.so_name','so_item.so_id')
                                 ->join('strategic_objective','strategic_objective.so_id','=','so_item.so_id')
+                                ->where('strategic_objective.so_id','like',$SO)  
                                 ->where('item_id',0)
                                 ->get();
 

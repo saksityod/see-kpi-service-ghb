@@ -451,6 +451,16 @@ Route::group(['middleware' => 'cors'], function()
 	Route::delete('project_kpi_item/{project_item_id}', 'ProjectKPIController@destroy');
 	Route::post('project_kpi_item', 'ProjectKPIController@store');
 	Route::patch('project_kpi_item/{project_item_id}', 'ProjectKPIController@update');
+
+	//SO Assignment
+	Route::get('so_assignment/year_and_desc_list', 'SOAssignmentController@dropdownYearAndDesc');
+	Route::get('so_assignment/strategic_objective_list', 'SOAssignmentController@dropdownStrategicObjective');
+	Route::get('so_assignment/frequency_list', 'SOAssignmentController@dropDownFrequency');
+	Route::get('so_assignment', 'SOAssignmentController@show');
+
+	//Smart-Goal-Dashboard
+	Route::get('smart_goal_dashboard/SmartColor', 'SmartGoalDashboard@getSmartColor');
+	
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);

@@ -28,7 +28,6 @@ class ProjectKPIController extends Controller
     public function dropdownProjectKPIName(Request $request){
         $DB = ProjectItem::select('project_item_id','project_item_name')
                 ->orderBy('project_item_name')
-                ->where('is_active',1)
                 ->get();
         
         return response()->json(['status' => 200, 'data' => $DB]); 
