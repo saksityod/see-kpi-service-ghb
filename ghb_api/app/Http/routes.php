@@ -35,11 +35,11 @@ Route::group(['middleware' => 'cors'], function()
 
 
 	//Strategic Objectiive//
-	Route::get('strategic_objective/objective_length', 'SO\StrategicObjectiveController@objective_length');
-	Route::get('strategic_objective', 'SO\StrategicObjectiveController@objective_list');
-	Route::post('strategic_objective', 'SO\StrategicObjectiveController@store');
-	Route::patch('strategic_objective/{so_id}', 'SO\StrategicObjectiveController@update');
-	Route::delete('strategic_objective/{so_id}', 'SO\StrategicObjectiveController@destroy');
+	Route::get('so/objective_length', 'SO\SOController@objective_length');
+	Route::get('so', 'SO\SOController@objective_list');
+	Route::post('so', 'SO\SOController@store');
+	Route::patch('so/{id}', 'SO\SOController@update');
+	Route::delete('so/{id}', 'SO\SOController@destroy');
 
 	//Project//
 	Route::post('project/search', 'SO\ProjectController@search_project');
