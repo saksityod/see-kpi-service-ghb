@@ -32,4 +32,6 @@ class SmartGoalDashboard extends Controller
         return response()->json(["status" => 200,"data" => $PerspectiveData]);
     }
 
+    
+
 }
