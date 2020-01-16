@@ -64,7 +64,6 @@ class SOController extends Controller
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else{
 				$item->fill($request->all());
-				$item->created_by = Auth::id();
 				$item->updated_by = Auth::id();
 				$item->save();
         }

@@ -12,13 +12,13 @@ class Project extends Model
      * @var string
      */
 	 
-	const CREATED_AT = 'created_dttm';
-	const UPDATED_AT = 'updated_dttm';	 
-    protected $table = 'project';
-	protected $primaryKey = 'project_id';
+	const CREATED_AT = 'created_at';
+	const UPDATED_AT = 'updated_at';	 
+    protected $table = 'projects';
+	protected $primaryKey = 'id';
 	// public $incrementing = false;
 	//public $timestamps = false;
 	// protected $guarded = array();
-	protected $fillable = ['project_name', 'objective', 'org_id', 'emp_id', 'project_start_date', 'project_end_date', 'project_value', 'project_risk',  'is_active'];
-	protected $hidden = ['created_by', 'updated_by', 'created_dttm', 'updated_dttm'];
+	protected $fillable = ['name', 'objective', 'org_id', 'emp_id', 'date_start', 'date_end', 'value', 'risk',  'is_active'];
+	protected $hidden = ['created_by', 'updated_by', 'created_at', 'updated_at'];
 }

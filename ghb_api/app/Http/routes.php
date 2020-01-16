@@ -42,7 +42,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::delete('so/{id}', 'SO\SOController@destroy');
 
 	//Project//
-	Route::post('project/search', 'SO\ProjectController@search_project');
+	Route::get('project/search', 'SO\ProjectController@search_project');
 	Route::post('project/auto', 'SO\ProjectController@auto_project');
 	Route::post('project', 'SO\ProjectController@store');
 	Route::patch('project/{project_id}', 'SO\ProjectController@update');
