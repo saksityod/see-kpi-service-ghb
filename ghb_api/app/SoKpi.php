@@ -8,6 +8,8 @@ class SoKpi extends Model
 {
     protected $casts = [
         'name' => 'string',
+        'so_id' => 'int',
+        'perspective_criteria_id' => 'int',
         'item_id' => 'int',
         'uom_id' => 'int',
         'value_type_id' => 'int',
@@ -19,6 +21,8 @@ class SoKpi extends Model
 
     protected $fillable = [
         'name', 
+        'so_id',
+        'perspective_criteria_id',
         'item_id', 
         'uom_id',
         'value_type_id', 

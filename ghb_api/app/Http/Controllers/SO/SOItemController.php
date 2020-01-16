@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
-use App\Model\SOItem;
+namespace App\Http\Controllers\SO;
+
 use App\UOM;
 use App\Model\ValueType;
-use App\Model\StrategicObjective;
+use App\So;
+use App\AppraisalItem;
+use App\SoKpi;
 
 use Auth;
 use DB;
@@ -27,10 +29,10 @@ class SOItemController extends Controller
 	}
 	
 	public function getDropdownSOItemName(Request $request){
-        $DB = StrategicObjective::select('so_id','so_name')
-                        ->where('is_active',1)
-                        ->orderBy('so_name')
-                        ->get();
+        $DB = So::select('id','name')
+                ->where('is_active',1)
+                ->orderBy('name')
+                ->get();
         
         return response()->json(['status' => 200, 'data' => $DB]);
     }
@@ -45,16 +47,16 @@ class SOItemController extends Controller
     }
 
     public function getDropdownSO(Request $request){
-        $DB = StrategicObjective::select('so_id','so_name')
-                                        ->where('is_active',1)
-                                        ->orderBy('so_name')
-                                        ->get();
+        $DB = So::select('id','name')
+                ->where('is_active',1)
+                ->orderBy('name')
+                ->get();
 
         return response()->json(['status' => 200, 'data' => $DB]);
     }
 
     public function getDropdownSmartKPI(Request $request){
-        $DB = DB::table('appraisal_item')->select('item_id','item_name')
+        $DB = AppraisalItem::select('item_id','item_name')
                     ->join('appraisal_structure','appraisal_structure.structure_id','=','appraisal_item.structure_id')
                     ->where('appraisal_structure.form_id',1)
                     ->where('appraisal_item.is_active',1)
@@ -77,34 +79,36 @@ class SOItemController extends Controller
     public function show(Request $request){
         $SO = !empty($request->so_id)?$request->so_id:'%';
         $item_name = !empty($request->item_name)?$request->item_name:'';
-        $DB = DB::table('so_item')->select('so_item_id','so_item.so_id','so_item_name','so_item.item_id','so_item.uom_id',
-                                    'so_item.value_type_id','so_item.function_type','appraisal_item.item_name',
-                                    'so_item.is_active','strategic_objective.so_name')
-                    ->join('appraisal_item','so_item.item_id','=','appraisal_item.item_id')
+        $DB = SoKpi::select('so_kpis.id','so_kpis.so_id','so_kpis.name','so_kpis.item_id','so_kpis.uom_id',
+                                'so_kpis.value_type_id','so_kpis.function_type','appraisal_item.item_name',
+                                'so_kpis.is_active','sos.name as so_name')
+                    ->join('appraisal_item','so_kpis.item_id','=','appraisal_item.item_id')
                     ->join('appraisal_structure','appraisal_structure.structure_id','=','appraisal_item.structure_id')
-                    ->join('strategic_objective','strategic_objective.so_id','=','so_item.so_id')
+                    ->join('sos','sos.id','=','so_kpis.so_id')
                     ->where('appraisal_item.item_name','like',"%".$item_name."%")
-                    ->where('strategic_objective.so_id','like',$SO)         
+                    ->where('sos.id','like',$SO)         
                     ->where('appraisal_structure.form_id',1)
                     ->where('appraisal_item.is_active',1)
                     ->where('appraisal_structure.is_active',1)
-                    ->where('strategic_objective.is_active',1)
-                    ->orderBy('so_item_name')
+                    ->where('sos.is_active',1)
+                    ->orderBy('so_kpis.name')
                     ->get();
-
-        $DB_so_id_zero = DB::table('so_item')->select('so_item_id','so_item_name','item_id','uom_id',
-                                    'value_type_id','function_type',
-                                    'so_item.is_active','strategic_objective.so_name','so_item.so_id')
-                                ->join('strategic_objective','strategic_objective.so_id','=','so_item.so_id')
-                                ->where('strategic_objective.so_id','like',$SO)  
-                                ->where('item_id',0)
+        
+        $DB_so_id_zero = SoKpi::select('so_kpis.id','so_kpis.name','so_kpis.item_id','so_kpis.uom_id',
+                                    'so_kpis.value_type_id','so_kpis.function_type',
+                                    'so_kpis.is_active','sos.name as so_name','so_kpis.so_id')
+                                ->join('sos','sos.id','=','so_kpis.so_id')
+                                ->where('sos.id','like',$SO)  
+                                ->where('so_kpis.item_id',0)
+                                ->where('so_kpis.is_active',1)
                                 ->get();
+                           
 
         $data=[];
         foreach($DB as $item){
             $t_data = array(
-                "so_item_id" => $item->so_item_id,
-                "so_item_name" => $item->so_item_name,
+                "so_item_id" => $item->id,
+                "so_item_name" => $item->name,
                 "item_id" => $item->item_id,
                 "uom_id" =>  $item->uom_id,
                 "value_type_id" => $item->value_type_id,
@@ -119,8 +123,8 @@ class SOItemController extends Controller
 
         foreach($DB_so_id_zero as $item){
             $t_data = array(
-                "so_item_id" => $item->so_item_id,
-                "so_item_name" => $item->so_item_name,
+                "so_item_id" => $item->id,
+                "so_item_name" => $item->name,
                 "item_id" => $item->item_id,
                 "uom_id" =>  $item->uom_id,
                 "value_type_id" => $item->value_type_id,
@@ -137,7 +141,7 @@ class SOItemController extends Controller
     }
 
     public function autocomplete(Request $request){
-        $DB = DB::table('appraisal_item')->select('item_name')
+        $DB = AppraisalItem::select('item_name')
                     ->join('appraisal_structure','appraisal_structure.structure_id','=','appraisal_item.structure_id')  
                     ->where('appraisal_structure.form_id',1)
                     ->where('appraisal_item.is_active',1)
@@ -150,8 +154,7 @@ class SOItemController extends Controller
     public function store(Request $request){
 
         $validator = Validator::make($request->all(), [	
-            'so_id' => 'required|integer',
-            'so_item_name' => 'required|unique:so_item,so_item_name',
+            'name' => 'required|unique:so_kpis,name',
             'item_id' => 'required|integer',
             'uom_id' => 'required|integer',
             'value_type_id' => 'required|integer',
@@ -163,7 +166,7 @@ class SOItemController extends Controller
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else{
 
-                $item = new SOItem;
+                $item = new SoKpi;
 				$item->fill($request->all());
 				$item->created_by = Auth::id();
 				$item->updated_by = Auth::id();
@@ -175,14 +178,13 @@ class SOItemController extends Controller
 
     public function update(Request $request,$id){
         try {
-			$item = SOItem::findOrFail($id);
+			$item = SoKpi::findOrFail($id);
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'SO Item not found.']);
 		}
 
         $validator = Validator::make($request->all(), [	
-            'so_id' => 'required|integer',
-            'so_item_name' => 'required|unique:so_item,so_item_name,'.$id . ',so_item_id',
+            'name' => 'required|unique:so_kpis,name,'.$id . ',id',
             'item_id' => 'required|integer',
             'uom_id' => 'required|integer',
             'value_type_id' => 'required|integer',
@@ -204,7 +206,7 @@ class SOItemController extends Controller
 
     public function destroy(Request $request,$id){
         try {
-			$item = SOItem::findOrFail($id);
+			$item = SoKpi::findOrFail($id);
 		}catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'SO Item not found.']);
         }

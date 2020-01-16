@@ -433,16 +433,16 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('job_log/run/{job_log_id}', 'JobLogController@run');
 
 	//SO KPI Item
-	Route::get('so_item/dropdown_so_item_name', 'SOItemController@getDropdownSOItemName');
-	Route::get('so_item/dropdown_uom', 'SOItemController@getDropdownUOM');
-	Route::get('so_item/dropdown_so', 'SOItemController@getDropdownSO');
-	Route::get('so_item/dropdown_smart_kpi', 'SOItemController@getDropdownSmartKPI');
-	Route::get('so_item/dropdown_value_type', 'SOItemController@getDropdownValueType');
-	Route::get('so_item/autocomplete', 'SOItemController@autocomplete');//same code
-	Route::get('so_item/get_so_item_list', 'SOItemController@show');
-	Route::post('so_item', 'SOItemController@store');
-	Route::patch('so_item/{id}', 'SOItemController@update');
-	Route::delete('so_item/{id}', 'SOItemController@destroy');
+	Route::get('so_item/dropdown_so_item_name', 'SO\SOItemController@getDropdownSOItemName');
+	Route::get('so_item/dropdown_uom', 'SO\SOItemController@getDropdownUOM');
+	Route::get('so_item/dropdown_so', 'SO\SOItemController@getDropdownSO');
+	Route::get('so_item/dropdown_smart_kpi', 'SO\SOItemController@getDropdownSmartKPI');
+	Route::get('so_item/dropdown_value_type', 'SO\SOItemController@getDropdownValueType');
+	Route::get('so_item/autocomplete', 'SO\SOItemController@autocomplete');
+	Route::get('so_item/get_so_item_list', 'SO\SOItemController@show');
+	Route::post('so_item', 'SO\SOItemController@store');
+	Route::patch('so_item/{id}', 'SO\SOItemController@update');
+	Route::delete('so_item/{id}', 'SO\SOItemController@destroy');
 
 	//Project KPI Item
 	Route::get('project_kpi_item/dropdown_project_kpi_name', 'ProjectKPIController@dropdownProjectKPIName');
@@ -460,6 +460,7 @@ Route::group(['middleware' => 'cors'], function()
 
 	//Smart-Goal-Dashboard
 	Route::get('smart_goal_dashboard/SmartColor', 'SmartGoalDashboard@getSmartColor');
+
 	
 	
 	Route::get('404', ['as' => 'notfound', function () {
