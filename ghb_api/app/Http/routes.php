@@ -445,12 +445,12 @@ Route::group(['middleware' => 'cors'], function()
 	Route::delete('so_item/{id}', 'SO\SOItemController@destroy');
 
 	//Project KPI Item
-	Route::get('project_kpi_item/dropdown_project_kpi_name', 'ProjectKPIController@dropdownProjectKPIName');
-	Route::get('project_kpi_item/dropdown_project_name', 'ProjectKPIController@dropdownProjectName');
-	Route::get('project_kpi_item', 'ProjectKPIController@show');
-	Route::delete('project_kpi_item/{project_item_id}', 'ProjectKPIController@destroy');
-	Route::post('project_kpi_item', 'ProjectKPIController@store');
-	Route::patch('project_kpi_item/{project_item_id}', 'ProjectKPIController@update');
+	Route::get('project_kpi_item/dropdown_project_kpi_name', 'SO\ProjectKPIController@dropdownProjectKPIName');
+	Route::get('project_kpi_item/dropdown_project_name', 'SO\ProjectKPIController@dropdownProjectName');
+	Route::get('project_kpi_item', 'SO\ProjectKPIController@show');
+	Route::delete('project_kpi_item/{project_item_id}', 'SO\ProjectKPIController@destroy');
+	Route::post('project_kpi_item', 'SO\ProjectKPIController@store');
+	Route::patch('project_kpi_item/{id}', 'SO\ProjectKPIController@update');
 
 	//SO Assignment
 	Route::get('so_assignment/year_and_desc_list', 'SOAssignmentController@dropdownYearAndDesc');
