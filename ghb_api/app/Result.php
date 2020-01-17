@@ -49,18 +49,8 @@ class Result extends Model
      * 
      * (One-To-Many)
      */
-    public function result_totals()
+    public function result_total()
     {
-        return $this->hasMany('App\ResultTotal');
-    }
-
-    /* 
-     * Get KPI (either 'SO KPI' or 'Project KPI')
-     * 
-     * (Polymorphic One-to-Many)
-     */
-    public function mappable()
-    {
-        return $this->morphTo();
+        return $this->belongsTo('App\ResultTotal');
     }
 }

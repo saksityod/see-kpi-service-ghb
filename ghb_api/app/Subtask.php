@@ -35,7 +35,7 @@ class Subtask extends Model
      * 
      * (One-To-Many) (Inverse)
      */
-    public function tasks()
+    public function task()
     {
         return $this->belongsTo('App\Task');
     }

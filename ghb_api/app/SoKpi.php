@@ -35,7 +35,7 @@ class SoKpi extends Model
      * 
      * (One-To-Many) (Inverse)
      */
-    public function sos()
+    public function so()
     {
         return $this->belongsTo('App\So');
     }
@@ -47,7 +47,7 @@ class SoKpi extends Model
      */
     public function projects()
     {
-        return $this->belongsToMany('App\Project');
+        return $this->belongsToMany('App\Project')->withTimestamps();
     }
 
     /* 
@@ -55,8 +55,8 @@ class SoKpi extends Model
      * 
      * (Polymorphic One-to-Many)
      */
-    public function results()
+    public function result_totals()
     {
-        return $this->morphMany('App\Result', 'mappable');
+        return $this->morphMany('App\ResultTotal', 'mappable');
     }
 }

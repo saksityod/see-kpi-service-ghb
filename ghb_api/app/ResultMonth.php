@@ -31,7 +31,7 @@ class ResultMonth extends Model
      * 
      * (One-To-Many) (Inverse)
      */
-    public function results()
+    public function result()
     {
         return $this->belongsTo('App\Result');
     }

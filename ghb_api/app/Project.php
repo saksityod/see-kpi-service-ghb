@@ -41,7 +41,7 @@ class Project extends Model
      */
     public function so_kpis()
     {
-        return $this->belongsToMany('App\SoKpi');
+        return $this->belongsToMany('App\SoKpi')->withTimestamps();
     }
 
     /* 
@@ -51,7 +51,7 @@ class Project extends Model
      */
     public function project_kpis()
     {
-        return $this->belongsToMany('App\ProjectKpi');
+        return $this->belongsToMany('App\ProjectKpi')->withTimestamps();
     }
 
     /* 

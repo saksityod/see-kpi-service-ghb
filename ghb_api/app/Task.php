@@ -31,7 +31,7 @@ class Task extends Model
      * 
      * (One-To-Many) (Inverse)
      */
-    public function action_plans()
+    public function action_plan()
     {
         return $this->belongsTo('App\ActionPlan');
     }

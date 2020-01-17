@@ -33,7 +33,7 @@ class ProjectKpi extends Model
      */
     public function projects()
     {
-        return $this->belongsToMany('App\Project');
+        return $this->belongsToMany('App\Project')->withTimestamps();
     }
 
     /* 
@@ -51,8 +51,8 @@ class ProjectKpi extends Model
      * 
      * (Polymorphic One-to-Many)
      */
-    public function results()
+    public function result_totals()
     {
-        return $this->morphMany('App\Result', 'mappable');
+        return $this->morphMany('App\ResultTotal', 'mappable');
     }
 }

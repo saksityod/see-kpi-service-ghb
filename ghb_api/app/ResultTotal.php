@@ -27,8 +27,18 @@ class ResultTotal extends Model
      * 
      * (One-To-Many) (Inverse)
      */
-    public function results()
+    public function result()
     {
         return $this->belongsTo('App\Result');
+    }
+	
+	/* 
+     * Get the parent KPI (either 'SO KPI' or 'Project KPI')
+     * 
+     * (Polymorphic One-to-Many)
+     */
+    public function mappable()
+    {
+        return $this->morphTo();
     }
 }

@@ -31,7 +31,7 @@ class ActionPlan extends Model
      * 
      * (One-To-Many) (Inverse)
      */
-    public function projects()
+    public function project()
     {
         return $this->belongsTo('App\Project');
     }
@@ -41,7 +41,7 @@ class ActionPlan extends Model
      * 
      * (One-To-Many) (Inverse)
      */
-    public function project_kpis()
+    public function project_kpi()
     {
         return $this->belongsTo('App\ProjectKpi');
     }
