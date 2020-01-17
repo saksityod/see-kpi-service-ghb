@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class So extends Model
 {
     protected $casts = [
+        // 'seq_no' => 'string',
         'name' => 'string',
         'abbr' => 'string',
         'color_code' => 'string',
@@ -16,6 +17,7 @@ class So extends Model
     ];
 
     protected $fillable = [
+        // 'seq_no', 
         'name', 
         'abbr', 
         'color_code',

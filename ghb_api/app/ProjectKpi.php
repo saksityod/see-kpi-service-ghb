@@ -4,12 +4,10 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SoKpi extends Model
+class ProjectKpi extends Model
 {
     protected $casts = [
         'name' => 'string',
-        'item_id' => 'integer',
-        'perspective_criteria_id' => 'int',
         'uom_id' => 'integer',
         'value_type_id' => 'integer',
         'function_type' => 'integer',
@@ -20,10 +18,8 @@ class SoKpi extends Model
 
     protected $fillable = [
         'name', 
-        'item_id', 
-        'perspective_criteria_id',
-        'uom_id',
-        'value_type_id', 
+        'uom_id', 
+        'value_type_id',
         'function_type',
         'is_active',
         'created_by',
@@ -31,23 +27,23 @@ class SoKpi extends Model
     ];
 
     /* 
-     * Get the parent SO (Strategic Objective)
-     * 
-     * (One-To-Many) (Inverse)
-     */
-    public function sos()
-    {
-        return $this->belongsTo('App\So');
-    }
-
-    /* 
-     * Get the Projects that associates with this KPI
+     * Get the parent Projects
      * 
      * (Many-to-Many)
      */
     public function projects()
     {
         return $this->belongsToMany('App\Project');
+    }
+
+    /* 
+     * Get Action Plans for this Project KPI
+     * 
+     * (One-To-Many)
+     */
+    public function action_plans()
+    {
+        return $this->hasMany('App\ActionPlan');
     }
 
     /* 

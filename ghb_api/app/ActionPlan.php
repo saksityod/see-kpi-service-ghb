@@ -6,18 +6,53 @@ use Illuminate\Database\Eloquent\Model;
 
 class ActionPlan extends Model
 {
-    /**
-     * The table associated with the model.
-     *
-     * @var string
+    protected $casts = [
+        'result_text' => 'string',
+        'forecast_text' => 'string',
+        'summary_text' => 'string',
+        'problem_text' => 'string',
+        'solution_text' => 'string',
+        'created_by' => 'string',
+        'updated_by' => 'string',
+    ];
+
+    protected $fillable = [
+        'result_text', 
+        'forecast_text', 
+        'summary_text',
+        'problem_text', 
+        'solution_text',
+        'created_by',
+        'updated_by'
+    ];
+    
+    /* 
+     * Get the parent Project
+     * 
+     * (One-To-Many) (Inverse)
      */
-	 
-	const CREATED_AT = 'created_dttm';
-	const UPDATED_AT = 'updated_dttm';
-    protected $table = 'action_plan';
-	protected $primaryKey = 'action_plan_id';
-	public $incrementing = true;
-	//public $timestamps = false;
-	protected $guarded = array();
-	//protected $hidden = ['created_by', 'updated_by', 'created_dttm', 'updated_dttm'];
+    public function projects()
+    {
+        return $this->belongsTo('App\Project');
+    }
+
+    /* 
+     * Get the parent Project KPI
+     * 
+     * (One-To-Many) (Inverse)
+     */
+    public function project_kpis()
+    {
+        return $this->belongsTo('App\ProjectKpi');
+    }
+
+    /* 
+     * Get Tasks for this action plan
+     * 
+     * (One-To-Many)
+     */
+    public function tasks()
+    {
+        return $this->hasMany('App\Task');
+    }
 }
