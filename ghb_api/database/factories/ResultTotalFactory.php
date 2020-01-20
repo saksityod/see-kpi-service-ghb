@@ -20,7 +20,7 @@ $factory->define(ResultTotal::class, function (Faker $faker) {
         'period_id' => $faker->numberBetween($min = 1, $max = 6),
         'result_threshold_group_id' => $faker->numberBetween($min = 1, $max = 4),
         'form_type' => $faker->numberBetween($min = 1, $max = 4),
-        'result_score' => $faker->randomFloat($nbMaxDecimals = NULL, $min = 0, $max = 5),
+        'result_score' => $faker->randomFloat($nbMaxDecimals = NULL, $min = 0, $max = 100),
         'color_code' => $faker->hexcolor,
         'created_by' => 'Faker',
         'updated_by' => 'Faker'

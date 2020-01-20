@@ -461,7 +461,90 @@ Route::group(['middleware' => 'cors'], function()
 	//Smart-Goal-Dashboard
 	Route::get('smart_goal_dashboard/SmartColor', 'SmartGoalDashboard@getSmartColor');
 
+	// ==================== Result ==================================
+	// List all
+	Route::get('results', 'SO2\ResultController@index');
+	// List by type ('so' for SO-KPI | anything else for Project KPI) 
+	// เอาใส่ DataTable หน้า 'SO Assignment / Insert'
+	Route::get('results/{type}', 'SO2\ResultController@display');
+	// Get One
+	Route::get('result/{id}', 'SO2\ResultController@show');
+	// Get types (ตอนนี้มี SoKPI || ProjectKPI) 
+	// เพื่อเอาใส่ dropdown หน้า 'SO Project Item Result / SO'
+	Route::get('result_types', 'SO2\ResultController@get_types');
+
+	// ================= Result Month ===============================
+
+	// ================= Action Plan ===============================
+	// Get all Tasks
+	Route::get('plan_/{id}/tasks', 'SO2\ActionPlanController@tasks');
+	// Get all SubTasks
+	Route::get('plan_/{id}/subtasks', 'SO2\ActionPlanController@subtasks');
+
+
+	// ==================== SO KPI ==================================
+	// Update Weight
+	// TODO
+	// Update Target
+	// TODO
+	// Update PerMonths
+	// TODO
+
+	// ==================== Project KPI ==================================
+	// Update Weight
+	// TODO
+	// Update Target
+	// TODO
+	// Update PerMonths
+	// TODO
 	
+	// =============== Strategic Objective =============================
+	// Filter SO by Search Results
+	// ปุ่ม Search จากหน้า 'SO Assignment / Insert'
+	Route::get('so_/search', 'SO2\SoController@search');
+
+	// แสดงข้อมูลของ SO
+	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	Route::get('so_/{id}/', 'SO2\SoController@show');
+	// แสดงรายชื่อ KPI ทั้งหมดที่อยู่ใต้ SO
+	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	Route::get('so_/{id}/kpis', 'SO2\SoController@kpis');
+	// แสดงรายชื่อ KPI และน้ำหนัก
+	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	Route::get('so_/{id}/weights', 'SO2\SoController@weights');
+	// แสดง ResultMonth แยกของแต่ละเดือน ตาม KPI
+	// แต่ละช่อง ในหน้า 'SO Project Result' 
+	Route::get('so_/{id}/months', 'SO2\SoController@months');
+	// แสดง Result-Total ทั้งหมดของ SO | แสดงค่า Grand Total
+	// เลข Grand Total หน้า 'SO Assignment / Edit' 
+	Route::get('so_/{id}/total', 'SO2\SoController@total');
+
+	// Update ค่า Grand Total
+	// TODO
+
+	// ===================== Projects ===============================
+	// Filter SO by Search Results
+	// ปุ่ม Search จากหน้า 'SO Assignment / Insert'
+	Route::get('prj_/search', 'SO2\ProjectController@search');
+
+	// แสดงข้อมูลของ Project
+	// ใส่ DataTable หน้า 'Project Assignment / Assign' และ Header หน้า 'ActionPlan'
+	Route::get('prj_/{id}/', 'SO2\ProjectController@show');
+	// แสดงรายชื่อ KPI ทั้งหมดที่อยู่ใน Project
+	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	Route::get('prj_/{id}/kpis', 'SO2\ProjectController@kpis');
+	// แสดงรายชื่อ KPI และน้ำหนัก
+	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	Route::get('prj_/{id}/weights', 'SO2\ProjectController@weights');
+	// แสดง ResultMonth แยกของแต่ละเดือน ตาม KPI
+	// แต่ละช่อง ในหน้า 'SO Project Result' 
+	Route::get('prj_/{id}/months', 'SO2\ProjectController@months');
+	// แสดง Result-Total ทั้งหมดของ SO | แสดงค่า Grand Total
+	// เลข Grand Total หน้า 'SO Assignment / Edit' 
+	Route::get('prj_/{id}/total', 'SO2\ProjectController@total');
+
+	// Update ค่า Grand Total
+	// TODO
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);
