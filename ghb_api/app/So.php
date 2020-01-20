@@ -35,4 +35,14 @@ class So extends Model
     {
         return $this->hasMany('App\SoKpi');
     }
+
+    /* 
+     * Get Results
+     * 
+     * (Polymorphic One-to-Many)
+     */
+    public function result_totals()
+    {
+        return $this->morphMany('App\ResultTotal', 'spmapable');
+    }
 }

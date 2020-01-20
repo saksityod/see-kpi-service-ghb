@@ -51,8 +51,8 @@ class ProjectKpi extends Model
      * 
      * (Polymorphic One-to-Many)
      */
-    public function result_totals()
+    public function results()
     {
-        return $this->morphMany('App\ResultTotal', 'mappable');
+        return $this->morphMany('App\Result', 'mappable');
     }
 }

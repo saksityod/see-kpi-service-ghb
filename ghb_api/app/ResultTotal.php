@@ -27,17 +27,17 @@ class ResultTotal extends Model
      * 
      * (One-To-Many) (Inverse)
      */
-    public function result()
+    public function results()
     {
         return $this->hasMany('App\Result');
     }
 	
 	/* 
-     * Get the parent KPI (either 'SO KPI' or 'Project KPI')
+     * Get the parent object (either 'SO' or 'Project')
      * 
      * (Polymorphic One-to-Many)
      */
-    public function mappable()
+    public function spmapable()
     {
         return $this->morphTo();
     }

@@ -63,4 +63,14 @@ class Project extends Model
     {
         return $this->hasMany('App\ActionPlan');
     }
+
+    /* 
+     * Get Results
+     * 
+     * (Polymorphic One-to-Many)
+     */
+    public function result_totals()
+    {
+        return $this->morphMany('App\ResultTotal', 'spmapable');
+    }
 }

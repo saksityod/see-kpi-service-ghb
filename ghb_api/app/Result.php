@@ -53,4 +53,14 @@ class Result extends Model
     {
         return $this->belongsTo('App\ResultTotal');
     }
+
+    /* 
+     * Get the parent KPI (either 'SO KPI' or 'Project KPI')
+     * 
+     * (Polymorphic One-to-Many)
+     */
+    public function mappable()
+    {
+        return $this->morphTo();
+    }
 }
