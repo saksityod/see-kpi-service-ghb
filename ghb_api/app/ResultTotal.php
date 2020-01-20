@@ -29,7 +29,7 @@ class ResultTotal extends Model
      */
     public function result()
     {
-        return $this->belongsTo('App\Result');
+        return $this->hasMany('App\Result');
     }
 	
 	/* 

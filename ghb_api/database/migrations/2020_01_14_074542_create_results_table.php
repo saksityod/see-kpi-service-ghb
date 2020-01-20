@@ -25,6 +25,10 @@ class CreateResultsTable extends Migration
             $table->bigInteger('result_total_id')->unsigned()->index();
             $table->foreign('result_total_id')->references('id')->on('result_totals');
 
+            // Polymorphic 1-to-Many with SO_KPI | Project_KPI
+            $table->bigInteger('mappable_id')->unsigned();
+            $table->string('mappable_type');
+            
             // FK: Period_ID
             //  $table->integer('period_id')->nullable();
             // $table->bigInteger('period_id')->unsigned()->index();

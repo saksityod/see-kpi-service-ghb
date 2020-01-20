@@ -35,34 +35,22 @@ class DatabaseSeeder extends Seeder
 		$result_totals = factory(App\ResultTotal::class, 300)->create();
         $results = factory(App\Result::class, 300)->create();
         $result_months = factory(App\ResultMonth::class, 300)->create();
-        
 
-        /*
-         *  @TODO
-		 *
-         *  Need to convert these guys to Laravel 5.1 syntax
-         *  
-         */
+        //  Pivot: Project <---> SO_KPI
+        $projects->each(function (App\Project $p) use ($so_kpis) {
+            // To change from version 5.1 to 5.5+, use ->pluck() instead of ->lists()
+            $p->so_kpis()->attach(
+                $so_kpis->random(rand(2, 5))->pluck('id')->toArray()
+            );
+        });
 
-        // //  Pivot: Project <---> SO_KPI
-        // $projects->each(function (App\Project $p) use ($so_kpis) {
-        //     $p->so_kpis()->attach(
-        //         $so_kpis->random(rand(1, 5))->pluck('id')->toArray()
-        //     );
-        // });
-
-        // //  Pivot: Project <---> Project_KPI
-        // $projects->each(function (App\Project $p) use ($project_kpis) {
-        //     $p->project_kpis()->attach(
-        //         $project_kpis->random(rand(1, 5))->pluck('id')->toArray()
-        //     );
-        // });
-
-        /*
-         *
-         * ===================================================
-         * 
-         */
+        //  Pivot: Project <---> Project_KPI
+        $projects->each(function (App\Project $p) use ($project_kpis) {
+            // To change from version 5.1 to 5.5+, use ->pluck() instead of ->lists()
+            $p->project_kpis()->attach(
+                $project_kpis->random(rand(2, 5))->pluck('id')->toArray()
+            );
+        });
 
         Model::reguard();
     }

@@ -3,16 +3,16 @@
 /** @var \Illuminate\Database\Eloquent\Factory $factory */
 
 use App\Result;
-// use App\SoKpi;
-// use App\ProjectKpi;
+use App\SoKpi;
+use App\ProjectKpi;
 use App\ResultTotal;
 use Faker\Generator as Faker;
 
 $factory->define(Result::class, function (Faker $faker) {
     return [
         'description' => $faker->paragraph,
-        // 'mappable_id' => $faker->randomElement($array = array (SoKpi::all()->random()->id, ProjectKpi::all()->random()->id)),
-        // 'mappable_type' => $faker->randomElement($array = array ('App\SoKpi','App\ProjectKpi')),
+        'mappable_id' => $faker->randomElement($array = array (SoKpi::all()->random()->id, ProjectKpi::all()->random()->id)),
+        'mappable_type' => $faker->randomElement($array = array ('App\SoKpi','App\ProjectKpi')),
         // 'period_id' => $faker->numberBetween($min = 1, $max = 6),
 		'result_total_id' => ResultTotal::all()->random()->id,
         'result_threshold_group_id' => $faker->numberBetween($min = 1, $max = 5),
