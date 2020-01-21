@@ -160,4 +160,25 @@ class ProjectController extends Controller
 
         return response()->json($prj);
     }
+
+    /**
+     *  แสดงข้อมูล หน้า ActionPlan (ลงถึงระดับ Tasks และ Subtasks ทั้งหมด)
+     * 
+     * สำหรับหน้า 'Action Plan'
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function plans(Request $request)
+    {
+        // เอาพรวดออกมาทั้งก้อน (ไม่ optimized อย่างมาก)
+        $prj = Project::with(
+                    'project_kpis'
+                    ,'action_plans'
+                    ,'action_plans.tasks'
+                    ,'action_plans.tasks.subtasks'
+                )->find($request->id);      
+
+        return response()->json($prj);
+    }
 }

@@ -19,16 +19,6 @@ class ActionPlanController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -46,29 +36,6 @@ class ActionPlanController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function show(ActionPlan $actionPlan)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\ActionPlan  $actionPlan
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(ActionPlan $actionPlan)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\ActionPlan  $actionPlan
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, ActionPlan $actionPlan)
     {
         //
     }
@@ -111,6 +78,22 @@ class ActionPlanController extends Controller
             'tasks',
             'tasks.subtasks'
         )->find($request->id);      
+
+        return response()->json($ap);
+    }
+
+    /**
+     * Update Tasks under this  ActionPlan 
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function update_tasks(Request $request)
+    {
+        // $ap = ActionPlan::with(
+        //     'tasks',
+        //     'tasks.subtasks'
+        // )->find($request->id);      
 
         return response()->json($ap);
     }

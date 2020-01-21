@@ -464,13 +464,11 @@ Route::group(['middleware' => 'cors'], function()
 	// ==================== Result ==================================
 	// List all
 	Route::get('results', 'SO2\ResultController@index');
-	// List by type ('so' for SO-KPI | anything else for Project KPI) 
-	// เอาใส่ DataTable หน้า 'SO Assignment / Insert'
+	// List by type ('so' for SO-KPI | else for Project KPI) | เอาใส่ DataTable หน้า 'SO Assignment / Insert'
 	Route::get('results/{type}', 'SO2\ResultController@display');
-	// Get One
+	// Just Get One
 	Route::get('result/{id}', 'SO2\ResultController@show');
-	// Get types (ตอนนี้มี SoKPI || ProjectKPI) 
-	// เพื่อเอาใส่ dropdown หน้า 'SO Project Item Result / SO'
+	// Get types (ตอนนี้มี SoKPI || ProjectKPI) | เพื่อเอาใส่ dropdown หน้า 'SO Project Item Result / SO'
 	Route::get('result_types', 'SO2\ResultController@get_types');
 
 	// ================= Result Month ===============================
@@ -481,68 +479,75 @@ Route::group(['middleware' => 'cors'], function()
 	// Get all SubTasks
 	Route::get('plan_/{id}/subtasks', 'SO2\ActionPlanController@subtasks');
 
+	// Update ข้อมูล หน้า ActionPlan
+	// TODO
+
 
 	// ==================== SO KPI ==================================
-	// Update Weight
-	// TODO
-	// Update Target
-	// TODO
+	// Update Target Weights
+	Route::put('skpi_/target', 'SO2\SoKpiController@update_target');
+	// Update Actual Weights
+	Route::put('skpi_/actual', 'SO2\SoKpiController@update_actual');
 	// Update PerMonths
+	Route::put('skpi_/month', 'SO2\SoKpiController@update_month');
+	// Get everything down to ResultMoths (last) level
+	Route::get('skpi_/{id}', 'SO2\SoKpiController@show');
+	
+	// Create Result for this SO-KPI
 	// TODO
 
 	// ==================== Project KPI ==================================
 	// Update Weight
-	// TODO
+	Route::put('pkpi_/target', 'SO2\ProjectKpiController@update_target');
 	// Update Target
-	// TODO
+	Route::put('pkpi_/actual', 'SO2\ProjectKpiController@update_actual');
 	// Update PerMonths
+	Route::put('pkpi_/month', 'SO2\ProjectKpiController@update_month');
+	// Get everything down to ResultMoths (last) level
+	Route::get('pkpi_/{id}', 'SO2\ProjectKpiController@show');
+
+	// Create Result for this Project-KPI
 	// TODO
 	
 	// =============== Strategic Objective =============================
-	// Filter SO by Search Results
-	// ปุ่ม Search จากหน้า 'SO Assignment / Insert'
+	// Filter SO by Search Results | ปุ่ม Search จากหน้า 'SO Assignment / Insert'
 	Route::get('so_/search', 'SO2\SoController@search');
 
-	// แสดงข้อมูลของ SO
-	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	// แสดงข้อมูลของ SO | ใส่ DataTable หน้า 'SO Assignment / Assign'
 	Route::get('so_/{id}/', 'SO2\SoController@show');
-	// แสดงรายชื่อ KPI ทั้งหมดที่อยู่ใต้ SO
-	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	// แสดงรายชื่อ KPI ทั้งหมดที่อยู่ใต้ SO | ใส่ DataTable หน้า 'SO Assignment / Assign'
 	Route::get('so_/{id}/kpis', 'SO2\SoController@kpis');
-	// แสดงรายชื่อ KPI และน้ำหนัก
-	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	// แสดงรายชื่อ KPI และน้ำหนัก | ใส่ DataTable หน้า 'SO Assignment / Assign'
 	Route::get('so_/{id}/weights', 'SO2\SoController@weights');
-	// แสดง ResultMonth แยกของแต่ละเดือน ตาม KPI
-	// แต่ละช่อง ในหน้า 'SO Project Result' 
+	// แสดง ResultMonth แยกของแต่ละเดือน ตาม KPI | แต่ละช่อง ในหน้า 'SO Project Result' 
 	Route::get('so_/{id}/months', 'SO2\SoController@months');
-	// แสดง Result-Total ทั้งหมดของ SO | แสดงค่า Grand Total
-	// เลข Grand Total หน้า 'SO Assignment / Edit' 
+	// แสดง Result-Total ทั้งหมดของ SO | แสดงค่า Grand Total | เลข Grand Total หน้า 'SO Assignment / Edit' 
 	Route::get('so_/{id}/total', 'SO2\SoController@total');
 
+	// Create Result for each of the SO-KPI
+	// TODO
 	// Update ค่า Grand Total
 	// TODO
 
 	// ===================== Projects ===============================
-	// Filter SO by Search Results
-	// ปุ่ม Search จากหน้า 'SO Assignment / Insert'
+	// Filter SO by Search Results | ปุ่ม Search จากหน้า 'SO Assignment / Insert'
 	Route::get('prj_/search', 'SO2\ProjectController@search');
 
-	// แสดงข้อมูลของ Project
-	// ใส่ DataTable หน้า 'Project Assignment / Assign' และ Header หน้า 'ActionPlan'
+	// แสดงข้อมูลของ Project | ใส่ DataTable หน้า 'Project Assignment / Assign' และ Header หน้า 'ActionPlan'
 	Route::get('prj_/{id}/', 'SO2\ProjectController@show');
-	// แสดงรายชื่อ KPI ทั้งหมดที่อยู่ใน Project
-	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	// แสดงรายชื่อ KPI ทั้งหมดที่อยู่ใน Project | ใส่ DataTable หน้า 'SO Assignment / Assign'
 	Route::get('prj_/{id}/kpis', 'SO2\ProjectController@kpis');
-	// แสดงรายชื่อ KPI และน้ำหนัก
-	// ใส่ DataTable หน้า 'SO Assignment / Assign'
+	// แสดงรายชื่อ KPI และน้ำหนัก | ใส่ DataTable หน้า 'SO Assignment / Assign'
 	Route::get('prj_/{id}/weights', 'SO2\ProjectController@weights');
-	// แสดง ResultMonth แยกของแต่ละเดือน ตาม KPI
-	// แต่ละช่อง ในหน้า 'SO Project Result' 
+	// แสดง ResultMonth แยกของแต่ละเดือน ตาม KPI | แต่ละช่อง ในหน้า 'SO Project Result' 
 	Route::get('prj_/{id}/months', 'SO2\ProjectController@months');
-	// แสดง Result-Total ทั้งหมดของ SO | แสดงค่า Grand Total
-	// เลข Grand Total หน้า 'SO Assignment / Edit' 
+	// แสดง Result-Total ทั้งหมดของ SO | แสดงค่า Grand Total | เลข Grand Total หน้า 'SO Assignment / Edit' 
 	Route::get('prj_/{id}/total', 'SO2\ProjectController@total');
+	// แสดงข้อมูล หน้า ActionPlan (ลงถึงระดับ Tasks และ Subtasks ทั้งหมด)
+	Route::get('prj_/{id}/actionplan', 'SO2\ProjectController@plans');
 
+	// Create Result for each of the Project-KPI
+	// TODO
 	// Update ค่า Grand Total
 	// TODO
 	
