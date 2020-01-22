@@ -52,6 +52,12 @@ class ProjectKPIController extends Controller
         return response()->json(['status' => 200, 'data' => $DB]); 
     }
 
+    public function getSelectMapping(Request $request){
+        $dataSelect = Project::select('id','name')->get();
+
+        return response()->json(['status' => 200, 'data' => $dataSelect]); 
+    }
+
     // จะมีแบ่งเป็น admin กับ user โดย ที่ user จะดูได้แต่ ข้อมูลเฉพาะ ที่เป็นของตัวเอง และ ผู้รับผิดชอบ ของโครงการ 
     // ส่วน admin จะดู ได้ทั้งหมด
     public function show(Request $request){

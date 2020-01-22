@@ -155,6 +155,7 @@ class SOItemController extends Controller
 
         $validator = Validator::make($request->all(), [	
             'name' => 'required|unique:so_kpis,name',
+            'so_id' => 'required|integer',
             'item_id' => 'required|integer',
             'uom_id' => 'required|integer',
             'value_type_id' => 'required|integer',

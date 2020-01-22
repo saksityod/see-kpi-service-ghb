@@ -448,6 +448,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('project_kpi_item/dropdown_project_kpi_name', 'SO\ProjectKPIController@dropdownProjectKPIName');
 	Route::get('project_kpi_item/dropdown_project_name', 'SO\ProjectKPIController@dropdownProjectName');
 	Route::get('project_kpi_item', 'SO\ProjectKPIController@show');
+	Route::get('project_kpi_item/select_item_mapping', 'SO\ProjectKPIController@getSelectMapping');
 	Route::delete('project_kpi_item/{project_item_id}', 'SO\ProjectKPIController@destroy');
 	Route::post('project_kpi_item', 'SO\ProjectKPIController@store');
 	Route::patch('project_kpi_item/{id}', 'SO\ProjectKPIController@update');
@@ -459,7 +460,11 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('so_assignment', 'SOAssignmentController@show');
 
 	//Smart-Goal-Dashboard
-	Route::get('smart_goal_dashboard/SmartColor', 'SmartGoalDashboard@getSmartColor');
+	Route::get('smart_goal_dashboard/dropdown_year', 'SO\SmartGoalDashboard@getYear');
+	Route::get('smart_goal_dashboard/smart_color', 'SO\SmartGoalDashboard@getSmartColor');
+	Route::get('smart_goal_dashboard/so_data', 'SO\SmartGoalDashboard@getSOData');
+	Route::get('smart_goal_dashboard/graph_circle/{id}', 'SO\SmartGoalDashboard@getDataGraphCircle');
+	Route::get('smart_goal_dashboard/graph_histogram/{id}', 'SO\SmartGoalDashboard@getDataGraphHistogram');
 
 	// ==================== Result ==================================
 	// List all
